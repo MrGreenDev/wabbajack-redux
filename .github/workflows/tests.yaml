@@ -24,3 +24,22 @@ jobs:
         run: dotnet build --configuration Release --no-restore
       - name: Test
         run: dotnet test ${{ matrix.project }}/${{ matrix.project }}.csproj --no-restore --verbosity normal /p:CollectCoverage=true /p:CoverletOutput=./ /p:CoverletOutputFormat=lcov
+        
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project:
+          - Wabbajack.Paths
+          - Wabbajack.Paths.IO
+          
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Publish ${{ matrix.project}} NuGet
+        uses: brandedoutcast/publish-nuget@v2.5.5
+        with:
+          PROJECT_FILE_PATH: ${{ matrix.project}}/${{ matrix.project}}.csproj
+          NUGET_KEY: ${{secrets.NUGET_KEY}}
+    
