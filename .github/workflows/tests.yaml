@@ -38,7 +38,7 @@ jobs:
         project:
           - Wabbajack.Downloaders.Interfaces
           - Wabbajack.DTOs
-          - Wabbajack.Hashing
+          - Wabbajack.Hashing.xxHash64
           - Wabbajack.Networking.Http.Interfaces
           - Wabbajack.Paths
           - Wabbajack.Paths.IO
