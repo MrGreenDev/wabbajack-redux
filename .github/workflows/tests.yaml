@@ -25,9 +25,9 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
       - name: Install dependencies
-        run: dotnet restore
+        run: dotnet restore ${{ matrix.project }}/${{ matrix.project }}.csproj
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore
       - name: Test
         run: dotnet test ${{ matrix.project }}/${{ matrix.project }}.csproj --no-restore --verbosity normal /p:CollectCoverage=true /p:CoverletOutput=./ /p:CoverletOutputFormat=lcov
         
