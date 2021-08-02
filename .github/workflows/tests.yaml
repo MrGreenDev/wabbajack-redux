@@ -10,7 +10,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        project: [Wabbajack.Paths.IO.Test, Wabbajack.Paths.Test]
+        project:
+          - Wabbajack.Hashing.xxHash64.Test
+          - Wabbajack.Paths.Test
+          - Wabbajack.Paths.IO.Test
 
     steps:
       - uses: actions/checkout@v2
@@ -30,6 +33,7 @@ jobs:
     strategy:
       matrix:
         project:
+          - Wabbajack.Hashing
           - Wabbajack.Paths
           - Wabbajack.Paths.IO
           
@@ -40,6 +44,6 @@ jobs:
       - name: Publish ${{ matrix.project}} NuGet
         uses: brandedoutcast/publish-nuget@v2.5.5
         with:
-          PROJECT_FILE_PATH: ${{ matrix.project}}/${{ matrix.project}}.csproj
+          PROJECT_FILE_PATH: ${{ matrix.project }}/${{ matrix.project }}.csproj
           NUGET_KEY: ${{secrets.NUGET_KEY}}
     

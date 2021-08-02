@@ -8,6 +8,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Paths.IO.Test", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Paths.Test", "Wabbajack.Paths.Test\Wabbajack.Paths.Test.csproj", "{2333FEC4-825E-47EA-ADDC-745349309E85}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Hashing.xxHash64", "Wabbajack.Hashing.xxHash64\Wabbajack.Hashing.xxHash64.csproj", "{228456C6-28D3-4754-8154-11EBA68048F0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Hashing.xxHash64.Benchmark", "Wabbajack.Hashing.xxHash64.Benchmark\Wabbajack.Hashing.xxHash64.Benchmark.csproj", "{32A3E8FD-0707-44D1-940E-44B625C014E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Hashing.xxHash64.Test", "Wabbajack.Hashing.xxHash64.Test\Wabbajack.Hashing.xxHash64.Test.csproj", "{120DD604-6BE8-4B2F-8894-3AB9FD36A374}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +36,17 @@ Global
 		{2333FEC4-825E-47EA-ADDC-745349309E85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2333FEC4-825E-47EA-ADDC-745349309E85}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2333FEC4-825E-47EA-ADDC-745349309E85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{228456C6-28D3-4754-8154-11EBA68048F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{228456C6-28D3-4754-8154-11EBA68048F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{228456C6-28D3-4754-8154-11EBA68048F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{228456C6-28D3-4754-8154-11EBA68048F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32A3E8FD-0707-44D1-940E-44B625C014E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32A3E8FD-0707-44D1-940E-44B625C014E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32A3E8FD-0707-44D1-940E-44B625C014E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32A3E8FD-0707-44D1-940E-44B625C014E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{120DD604-6BE8-4B2F-8894-3AB9FD36A374}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{120DD604-6BE8-4B2F-8894-3AB9FD36A374}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{120DD604-6BE8-4B2F-8894-3AB9FD36A374}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{120DD604-6BE8-4B2F-8894-3AB9FD36A374}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

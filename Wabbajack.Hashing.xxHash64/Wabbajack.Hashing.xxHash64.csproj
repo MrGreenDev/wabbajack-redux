@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <Version>1.0.2.0</Version>
+        <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Wabbajack.Paths" Version="1.0.1" />
+    </ItemGroup>
+
+</Project>
