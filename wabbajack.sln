@@ -24,6 +24,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.DTOs.ConverterGen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.DTOs.Test", "Wabbajack.DTOs.Test\Wabbajack.DTOs.Test.csproj", "{7A6FF06D-779E-4772-BDD6-71DE2980F7DF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Networking.NexusApi", "Wabbajack.Networking.NexusApi\Wabbajack.Networking.NexusApi.csproj", "{CC626358-8E0B-4BC1-93C5-A52451F5818B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Networking.NexusApi.Test", "Wabbajack.Networking.NexusApi.Test\Wabbajack.Networking.NexusApi.Test.csproj", "{E23367B5-360F-4B17-B921-0553B7DB07E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,5 +82,13 @@ Global
 		{7A6FF06D-779E-4772-BDD6-71DE2980F7DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A6FF06D-779E-4772-BDD6-71DE2980F7DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A6FF06D-779E-4772-BDD6-71DE2980F7DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC626358-8E0B-4BC1-93C5-A52451F5818B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC626358-8E0B-4BC1-93C5-A52451F5818B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC626358-8E0B-4BC1-93C5-A52451F5818B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC626358-8E0B-4BC1-93C5-A52451F5818B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E23367B5-360F-4B17-B921-0553B7DB07E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E23367B5-360F-4B17-B921-0553B7DB07E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E23367B5-360F-4B17-B921-0553B7DB07E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E23367B5-360F-4B17-B921-0553B7DB07E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
