@@ -6,12 +6,13 @@ on:
 
 jobs:
   build:
-    name: Test ${{ matrix.project }}(${{ matrix.os }})
+    name: Test ${{ matrix.project }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         project:
+          - Wabbajack.DTOs.Test
           - Wabbajack.Hashing.xxHash64.Test
           - Wabbajack.Paths.Test
           - Wabbajack.Paths.IO.Test
@@ -35,7 +36,10 @@ jobs:
     strategy:
       matrix:
         project:
+          - Wabbajack.Downloaders.Interfaces
+          - Wabbajack.DTOs
           - Wabbajack.Hashing
+          - Wabbajack.Networking.Http.Interfaces
           - Wabbajack.Paths
           - Wabbajack.Paths.IO
           
