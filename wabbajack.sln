@@ -28,6 +28,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Networking.NexusA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Networking.NexusApi.Test", "Wabbajack.Networking.NexusApi.Test\Wabbajack.Networking.NexusApi.Test.csproj", "{E23367B5-360F-4B17-B921-0553B7DB07E9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Downloaders.Nexus", "Wabbajack.Downloaders.Nexus\Wabbajack.Downloaders.Nexus.csproj", "{3BDAD0DF-24E7-4236-B6E5-5FDAAB0EE064}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Downloaders.Nexus.Test", "Wabbajack.Downloaders.Nexus.Test\Wabbajack.Downloaders.Nexus.Test.csproj", "{1BBD3C13-9D56-4940-8D6D-4954C87E917E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Networking.Http", "Wabbajack.Networking.Http\Wabbajack.Networking.Http.csproj", "{7BE598E4-8640-4188-AC19-7E929E1B324D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Networking.Http.Test", "Wabbajack.Networking.Http.Test\Wabbajack.Networking.Http.Test.csproj", "{177C720D-6237-4A3E-8775-320D963FADF0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -90,5 +98,21 @@ Global
 		{E23367B5-360F-4B17-B921-0553B7DB07E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E23367B5-360F-4B17-B921-0553B7DB07E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E23367B5-360F-4B17-B921-0553B7DB07E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BDAD0DF-24E7-4236-B6E5-5FDAAB0EE064}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BDAD0DF-24E7-4236-B6E5-5FDAAB0EE064}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BDAD0DF-24E7-4236-B6E5-5FDAAB0EE064}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BDAD0DF-24E7-4236-B6E5-5FDAAB0EE064}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BBD3C13-9D56-4940-8D6D-4954C87E917E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BBD3C13-9D56-4940-8D6D-4954C87E917E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BBD3C13-9D56-4940-8D6D-4954C87E917E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BBD3C13-9D56-4940-8D6D-4954C87E917E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BE598E4-8640-4188-AC19-7E929E1B324D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BE598E4-8640-4188-AC19-7E929E1B324D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BE598E4-8640-4188-AC19-7E929E1B324D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BE598E4-8640-4188-AC19-7E929E1B324D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{177C720D-6237-4A3E-8775-320D963FADF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{177C720D-6237-4A3E-8775-320D963FADF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{177C720D-6237-4A3E-8775-320D963FADF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{177C720D-6237-4A3E-8775-320D963FADF0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -22,6 +22,8 @@ namespace Wabbajack.DTOs
             return Games.Values
                 .FirstOrDefault(g => g.SteamIDs.Length > 0 && g.SteamIDs.Any(i => i == id));
         }
+
+        public static GameMetaData MetaData(this Game game) => Games[game];
         
         public static IReadOnlyDictionary<Game, GameMetaData> Games = new Dictionary<Game, GameMetaData>
         {

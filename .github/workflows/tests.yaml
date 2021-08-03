@@ -14,7 +14,8 @@ jobs:
         project:
           - Wabbajack.DTOs.Test
           - Wabbajack.Hashing.xxHash64.Test
-          - Wabbajack.Networking.NexusApi
+          - Wabbajack.Networking.Http.Test
+          - Wabbajack.Networking.NexusApi.Test
           - Wabbajack.Paths.Test
           - Wabbajack.Paths.IO.Test
 
@@ -40,6 +41,7 @@ jobs:
           - Wabbajack.Downloaders.Interfaces
           - Wabbajack.DTOs
           - Wabbajack.Hashing.xxHash64
+          - Wabbajack.Networking.Http
           - Wabbajack.Networking.Http.Interfaces
           - Wabbajack.Networking.NexusApi
           - Wabbajack.Paths

@@ -33,25 +33,25 @@ namespace Wabbajack.Networking.NexusApi
             return await Send<ValidateInfo>(msg, token);
         }
         
-        public virtual async Task<(ModInfo info, ResponseMetadata header)> ModInfo(string nexusGameName, int modId, CancellationToken token = default)
+        public virtual async Task<(ModInfo info, ResponseMetadata header)> ModInfo(string nexusGameName, long modId, CancellationToken token = default)
         {
             var msg = await GenerateMessage(HttpMethod.Get, Endpoints.ModInfo, nexusGameName, modId);
             return await Send<ModInfo>(msg, token);
         }
         
-        public virtual async Task<(ModFiles info, ResponseMetadata header)> ModFiles(string nexusGameName, int modId, CancellationToken token = default)
+        public virtual async Task<(ModFiles info, ResponseMetadata header)> ModFiles(string nexusGameName, long modId, CancellationToken token = default)
         {
             var msg = await GenerateMessage(HttpMethod.Get, Endpoints.ModFiles, nexusGameName, modId);
             return await Send<ModFiles>(msg, token);
         }
         
-        public virtual async Task<(ModFile info, ResponseMetadata header)> FileInfo(string nexusGameName, int modId, long fileId, CancellationToken token = default)
+        public virtual async Task<(ModFile info, ResponseMetadata header)> FileInfo(string nexusGameName, long modId, long fileId, CancellationToken token = default)
         {
             var msg = await GenerateMessage(HttpMethod.Get, Endpoints.ModFile, nexusGameName, modId, fileId);
             return await Send<ModFile>(msg, token);
         }
         
-        public virtual async Task<(DownloadLink[] info, ResponseMetadata header)> DownloadLink(string nexusGameName, int modId, long fileId, CancellationToken token = default)
+        public virtual async Task<(DownloadLink[] info, ResponseMetadata header)> DownloadLink(string nexusGameName, long modId, long fileId, CancellationToken token = default)
         {
             var msg = await GenerateMessage(HttpMethod.Get, Endpoints.DownloadLink, nexusGameName, modId, fileId);
             return await Send<DownloadLink[]>(msg, token);

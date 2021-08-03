@@ -43,6 +43,14 @@ namespace Wabbajack.Paths
             var newName = oldName[..^oldExtLength] + newExtension;
             return newName;
         }
+        
+        public RelativePath WithExtension(Extension? ext)
+        {
+            var parts = new string[Parts.Length];
+            Array.Copy(Parts, parts, Parts.Length);
+            parts[-1] = parts[-1] + ext;
+            return new RelativePath(parts);
+        }
 
         public AbsolutePath RelativeTo(AbsolutePath basePath)
         {
