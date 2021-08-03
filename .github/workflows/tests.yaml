@@ -20,6 +20,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         project:
+          - Wabbajack.Downloaders.GoogleDrive.Test
+          - Wabbajack.Downloaders.Nexus.Test
           - Wabbajack.DTOs.Test
           - Wabbajack.Hashing.xxHash64.Test
           - Wabbajack.Networking.Http.Test
@@ -50,6 +52,8 @@ jobs:
       matrix:
         project:
           - Wabbajack.Downloaders.Interfaces
+          - Wabbajack.Downloaders.GoogleDrive
+          - Wabbajack.Downloaders.Nexus
           - Wabbajack.DTOs
           - Wabbajack.Hashing.xxHash64
           - Wabbajack.Networking.Http
