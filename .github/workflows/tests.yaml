@@ -29,11 +29,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+    
       - name: Setup .NET Core SDK 6.0.x
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '6.0.x'
           include-prerelease: true
+          
       - name: Install dependencies
         run: dotnet restore ${{ matrix.project }}/${{ matrix.project }}.csproj
       - name: Build
@@ -69,6 +71,7 @@ jobs:
       - name: Publish ${{ matrix.project}} NuGet
         uses: brandedoutcast/publish-nuget@v2.5.5
         with:
-          PROJECT_FILE_PATH: ${{ matrix.project }}/${{ matrix.project }}.csproj /p:Version=${{ env.VERSION }}
+          PROJECT_FILE_PATH: ${{ matrix.project }}/${{ matrix.project }}.csproj
+          VERSION_STATIC: ${{ env.VERSION }}
           NUGET_KEY: ${{secrets.NUGET_KEY}}
     
