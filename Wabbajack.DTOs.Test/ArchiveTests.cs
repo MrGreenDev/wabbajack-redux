@@ -1,5 +1,3 @@
-using System.Text.Json;
-using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Paths.IO;
 using Xunit;

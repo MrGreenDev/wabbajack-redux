@@ -16,8 +16,10 @@ namespace Wabbajack.CLI.Verbs
         {
         }
 
-        [Option('i', "input", Required = true, HelpText = "Input file name")]        
-        public async Task<int> Run(AbsolutePath input)
+               
+        public async Task<int> Run(
+            [Option('i', Required = true, HelpText = "Input file name")]
+            AbsolutePath input)
         {
             await using var istream = input.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
             var hash = await istream.HashingCopy(Stream.Null, CancellationToken.None);

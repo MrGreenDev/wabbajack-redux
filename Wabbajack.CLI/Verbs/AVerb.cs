@@ -31,15 +31,13 @@ namespace Wabbajack.CLI.Verbs
                 throw new NullReferenceException("All Verbs must have a public Run method");
             command.Handler = CommandHandler.Create(method, this);
 
-            foreach (var prop in Attribute.GetCustomAttributes(method!, typeof(OptionAttribute)))
+            foreach (var parameter in method.GetParameters())
             {
-                var propAttr = (OptionAttribute)prop;
-                var type = method.GetParameters().First(p => p.Name == propAttr.LongName).ParameterType;
-                var option = new Option(propAttr.LongName, propAttr.HelpText, type)
+                var propAttr = (OptionAttribute)Attribute.GetCustomAttribute(parameter!, typeof(OptionAttribute))!;
+                var option = new Option(parameter.Name!, propAttr.HelpText, parameter.ParameterType)
                 {
                     IsRequired = propAttr.Required
                 };
-                
                 
                 option.AddAlias(propAttr.ShortName.ToString());
 
