@@ -8,8 +8,9 @@ using Wabbajack.Paths.IO;
 using Xunit.DependencyInjection;
 using Xunit.DependencyInjection.Logging;
 using Wabbajack.Networking.Http;
+using Wabbajack.Networking.NexusApi.Test.Helpers;
 
-namespace Wabbajack.Downloaders.GoogleDrive.Test
+namespace Wabbajack.Downloaders.Dispatcher.Test
 {
     public class Startup
     {
@@ -18,8 +19,9 @@ namespace Wabbajack.Downloaders.GoogleDrive.Test
             service.AddNexusApi();
             service.AddSingleton<HttpClient, HttpClient>();
             service.AddSingleton<TemporaryFileManager, TemporaryFileManager>();
+            service.AddDownloadDispatcher();
             service.AddHttpDownloader();
-            service.AddGoogleDriveDownloader();
+            service.AddSingleton<ApiKey, StaticApiKey>(p => new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
             service.AddSingleton(new ApplicationInfo()
             {
                 AppName = "Wabbajack.Networking.NexusApi.Test",
