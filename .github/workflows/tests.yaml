@@ -3,6 +3,9 @@ name: Main Pipeline
 on:
   push:
     branches: [ main ]
+    
+env:
+  VERSION: 3.0.0.0-alpha1
 
 jobs:
   build:
@@ -36,7 +39,7 @@ jobs:
       - name: Build
         run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore
       - name: Test
-        run: dotnet test ${{ matrix.project }}/${{ matrix.project }}.csproj --no-restore --verbosity normal /p:CollectCoverage=true /p:CoverletOutput=./ /p:CoverletOutputFormat=lcov
+        run: dotnet test ${{ matrix.project }}/${{ matrix.project }}.csproj --no-restore --verbosity normal
         
   publish:
     name: Publish ${{ matrix.project }}
@@ -56,10 +59,16 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v2
+      
+      - name: Setup .NET Core SDK 6.0.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+          include-prerelease: true      
 
       - name: Publish ${{ matrix.project}} NuGet
         uses: brandedoutcast/publish-nuget@v2.5.5
         with:
-          PROJECT_FILE_PATH: ${{ matrix.project }}/${{ matrix.project }}.csproj
+          PROJECT_FILE_PATH: ${{ matrix.project }}/${{ matrix.project }}.csproj /p:Version=${{ env.VERSION }}
           NUGET_KEY: ${{secrets.NUGET_KEY}}
     
