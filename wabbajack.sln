@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Networking.Http",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Networking.Http.Test", "Wabbajack.Networking.Http.Test\Wabbajack.Networking.Http.Test.csproj", "{177C720D-6237-4A3E-8775-320D963FADF0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.CLI", "Wabbajack.CLI\Wabbajack.CLI.csproj", "{3FE8C32C-C5E5-4EF4-85F7-84C3785378F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -114,5 +116,9 @@ Global
 		{177C720D-6237-4A3E-8775-320D963FADF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{177C720D-6237-4A3E-8775-320D963FADF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{177C720D-6237-4A3E-8775-320D963FADF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FE8C32C-C5E5-4EF4-85F7-84C3785378F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FE8C32C-C5E5-4EF4-85F7-84C3785378F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FE8C32C-C5E5-4EF4-85F7-84C3785378F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FE8C32C-C5E5-4EF4-85F7-84C3785378F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
