@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
+using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
 using Xunit.Sdk;
@@ -42,6 +44,10 @@ namespace Wabbajack.Downloaders
             }
 
             throw new NotImplementedException();
+        }
+        public IDownloader Downloader(Archive archive)
+        {
+            return _downloaders.First(d => d.CanDownload(archive));
         }
     }
 }

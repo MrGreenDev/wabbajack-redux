@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Wabbajack.Downloaders.GoogleDrive;
+using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths.IO;
@@ -38,7 +39,28 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
             Assert.True(await _dispatcher.Verify(goodArchive, CancellationToken.None));
             Assert.False(await _dispatcher.Verify(badArchive, CancellationToken.None));
         }
+
+        [Theory]
+        [MemberData(nameof(TestStates))]
+        public async Task CanParseAndUnParseUrls(Archive goodArchive, Archive badArchive)
+        {
+            var downloader = _dispatcher.Downloader(goodArchive);
+            if (downloader is not IUrlDownloader urlDownloader)
+                return;
+
+            var unparsed = urlDownloader.UnParse(goodArchive.State);
+
+            var parsed = urlDownloader.Parse(unparsed);
+            Assert.NotNull(parsed);
+            
+            Assert.Equal(goodArchive.State.GetType(), parsed.GetType());
+            Assert.True(await _dispatcher.Verify(new Archive { State = parsed }, CancellationToken.None));
+        }
         
+        /// <summary>
+        /// Pairs of archives for each downloader. The first archive is considered valid,
+        /// the second should be invalid.
+        /// </summary>
         public static IEnumerable<object[]> TestStates => 
             new List<object[]>
             {

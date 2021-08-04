@@ -1,11 +1,13 @@
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
+using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.Http;
 using Wabbajack.Networking.Http.Interfaces;
@@ -13,7 +15,7 @@ using Wabbajack.Paths;
 
 namespace Wabbajack.Downloaders.GoogleDrive
 {
-    public class GoogleDriveDownloader : ADownloader<DTOs.DownloadStates.GoogleDrive>
+    public class GoogleDriveDownloader : ADownloader<DTOs.DownloadStates.GoogleDrive>, IUrlDownloader
     {
         private readonly ILogger<GoogleDriveDownloader> _logger;
         private readonly HttpClient _client;
@@ -63,6 +65,24 @@ namespace Wabbajack.Downloaders.GoogleDrive
                 using var response = await _client.GetAsync(url, token);
                 return !response.IsSuccessStatusCode ? null : new HttpRequestMessage(HttpMethod.Get, url);
             }
+        }
+
+        private static readonly Regex GDriveRegex = new("((?<=id=)[a-zA-Z0-9_-]*)|(?<=\\/file\\/d\\/)[a-zA-Z0-9_-]*", RegexOptions.Compiled);
+        public IDownloadState? Parse(Uri uri)
+        {
+            if (uri.Host != "drive.google.com") return null;
+            var match = GDriveRegex.Match(uri.ToString());
+            if (match.Success) 
+                return new DTOs.DownloadStates.GoogleDrive { Id = match.ToString() };
+            _logger.LogWarning($"Tried to parse drive.google.com Url but couldn't get an id from: {uri}");
+            return null;
+
+        }
+
+        public Uri UnParse(IDownloadState state)
+        {
+            return new Uri(
+                $"https://drive.google.com/uc?id={(state as DTOs.DownloadStates.GoogleDrive)?.Id}&export=download");
         }
     }
 }
