@@ -5,12 +5,12 @@ using Wabbajack.DTOs.BSA.FileStates;
 
 namespace Wabbajack.Compression.BSA.Interfaces
 {
-    public class IReader
+    public interface IReader
     {
         /// <summary>
         /// The files defined by the archive
         /// </summary>
-        IEnumerable<AFile> Files { get; }
+        IEnumerable<IFile> Files { get; }
 
         IArchive State { get; }
     }

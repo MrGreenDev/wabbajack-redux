@@ -20,6 +20,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         project:
+          - Wabbajack.Compression.BSA.Test
           - Wabbajack.Downloaders.Dispatcher.Test
           - Wabbajack.DTOs.Test
           - Wabbajack.Hashing.xxHash64.Test

@@ -63,7 +63,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             }
         }
 
-        public static async ValueTask<Reader> LoadAsync(IStreamFactory factory)
+        public static async ValueTask<Reader> Load(IStreamFactory factory)
         {
             await using var stream = await factory.GetStream().ConfigureAwait(false);
             using var br = new BinaryReader(stream);

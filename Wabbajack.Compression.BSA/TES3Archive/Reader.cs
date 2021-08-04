@@ -11,7 +11,7 @@ using Wabbajack.Paths;
 
 namespace Wabbajack.Compression.BSA.TES3Archive
 {
-    public class Reader
+    public class Reader : IReader
     {
         public static string TES3_MAGIC = Encoding.ASCII.GetString(new byte[] {0, 1, 0, 0});
         private uint _versionNumber;
