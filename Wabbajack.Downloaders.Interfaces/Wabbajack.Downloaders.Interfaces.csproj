@@ -4,7 +4,7 @@
         <TargetFramework>net6.0</TargetFramework>
         <Nullable>enable</Nullable>
         <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-        <Version>1.0.1.0</Version>
+        <Version>$(VERSION)</Version>
     </PropertyGroup>
 
     <ItemGroup>
