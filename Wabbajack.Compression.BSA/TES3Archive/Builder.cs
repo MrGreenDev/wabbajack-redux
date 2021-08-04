@@ -2,10 +2,12 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Wabbajack.Common;
 using Wabbajack.Compression.BSA.Interfaces;
 using Wabbajack.DTOs.BSA.ArchiveStates;
 using Wabbajack.DTOs.BSA.FileStates;
 using Wabbajack.Paths;
+using Wabbajack.TaskTracking.Interfaces;
 
 namespace Wabbajack.Compression.BSA.TES3Archive
 {
@@ -20,13 +22,13 @@ namespace Wabbajack.Compression.BSA.TES3Archive
             _files = new (TES3File state, Stream data)[_state.FileCount];
         }
 
-        public async ValueTask AddFile(AFile state, Stream src)
+        public async ValueTask AddFile(AFile state, Stream src, ITrackedTask task, CancellationToken token)
         {
-            var cstate = (TES3File)state;
-            _files[state.Index] = (cstate, src);
+            var tesState = (TES3File)state;
+            _files[state.Index] = (tesState, src);
         }
 
-        public async ValueTask Build(Stream file, CancellationToken token)
+        public async ValueTask Build(Stream file, ITrackedTask task, CancellationToken token)
         {
             await using var bw = new BinaryWriter(file);
             
@@ -68,7 +70,7 @@ namespace Wabbajack.Compression.BSA.TES3Archive
             foreach (var (state, data) in _files)
             {
                 bw.BaseStream.Position = _state.DataOffset + state.Offset;
-                await data.CopyToAsync(bw.BaseStream, token);
+                await data.CopyToWithStatusAsync(data.Length, bw.BaseStream, task, token);
                 await data.DisposeAsync();
             }
         }

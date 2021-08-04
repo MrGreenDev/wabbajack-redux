@@ -8,6 +8,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Wabbajack.DTOs\Wabbajack.DTOs.csproj" />
       <ProjectReference Include="..\Wabbajack.Paths.IO\Wabbajack.Paths.IO.csproj" />
+      <ProjectReference Include="..\Wabbajack.TaskTracking.Interfaces\Wabbajack.TaskTracking.Interfaces.csproj" />
     </ItemGroup>
 
 </Project>

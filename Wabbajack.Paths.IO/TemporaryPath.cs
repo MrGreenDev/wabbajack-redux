@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Wabbajack.Paths.IO
 {
@@ -12,7 +13,6 @@ namespace Wabbajack.Paths.IO
             Path = path;
             _manager = manager;
         }
-        
         public void Dispose()
         {
             Path.Delete();
