@@ -24,6 +24,11 @@ namespace Wabbajack.Paths.IO
             return new FileInfo(file.ToNativePath()).Length;
         }
         
+        public static DateTime LastModifiedUtc(this AbsolutePath file)
+        {
+            return new FileInfo(file.ToNativePath()).LastWriteTimeUtc;
+        }
+        
         public static byte[] ReadAllBytes(this AbsolutePath file)
         {
             using var s = File.Open(file.ToNativePath(), FileMode.Open, FileAccess.Read, FileShare.Read);

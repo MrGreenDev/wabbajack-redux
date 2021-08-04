@@ -49,5 +49,12 @@ namespace Wabbajack.Downloaders
         {
             return _downloaders.First(d => d.CanDownload(archive));
         }
+
+        public IDownloadState? Parse(Uri url)
+        {
+            return _downloaders.OfType<IUrlDownloader>()
+                .Select(downloader => downloader.Parse(url))
+                .FirstOrDefault(parsed => parsed != null);
+        }
     }
 }
