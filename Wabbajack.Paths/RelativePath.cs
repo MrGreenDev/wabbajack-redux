@@ -100,5 +100,20 @@ namespace Wabbajack.Paths
         {
             return ArrayExtensions.CompareString(Parts, other.Parts);
         }
+
+        public int Depth => Parts.Length;
+
+        public RelativePath Parent
+        {
+            get
+            {
+                if (Parts.Length <= 1)
+                    throw new PathException("Can't get parent of a top level path");
+
+                var newParts = new string[Parts.Length - 1];
+                Array.Copy(Parts, newParts, Parts.Length - 1);
+                return new RelativePath(newParts);
+            }
+        }
     }
 }

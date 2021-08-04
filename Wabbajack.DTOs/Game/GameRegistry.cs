@@ -405,5 +405,8 @@ namespace Wabbajack.DTOs
                 }
             }
         };
+        
+        public static ILookup<string?, GameMetaData> ByNexusName = Games.Values.ToLookup(g => g.NexusName ?? "");
+
     }
 }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
@@ -14,7 +15,7 @@ using Wabbajack.Paths;
 
 namespace Wabbajack.Downloaders
 {
-    public class NexusDownloader : ADownloader<Nexus>
+    public class NexusDownloader : ADownloader<Nexus>, IUrlDownloader
     {
         private readonly ILogger<NexusDownloader> _logger;
         private readonly HttpClient _client;
@@ -40,6 +41,45 @@ namespace Wabbajack.Downloaders
         {
             var fileInfo = await _api.FileInfo(state.Game.MetaData().NexusName!, state.ModID, state.FileID, token);
             return fileInfo.info.FileId == state.FileID;
+        }
+
+        public IDownloadState? Parse(Uri uri)
+        {
+            if (uri.Host != "www.nexusmods.com")
+                return null;
+            var relPath = (RelativePath)uri.AbsolutePath;
+            long modId, fileId;
+
+            if (relPath.Depth != 3)
+            {
+                _logger.LogWarning("Got www.nexusmods.com link but it didn't match a parsable pattern: {url}", uri);
+                return null;
+            }
+
+            if (!long.TryParse(relPath.FileName.ToString(), out modId))
+                return null;
+
+            var game = GameRegistry.ByNexusName[relPath.Parent.Parent.ToString()].FirstOrDefault();
+            if (game == null) return null;
+
+            var query = HttpUtility.ParseQueryString(uri.Query);
+            var fileIdStr = query.Get("file_id");
+            if (!long.TryParse(fileIdStr, out fileId))
+                return null;
+
+            return new Nexus
+            {
+                Game = game.Game,
+                ModID = modId,
+                FileID = fileId
+            };
+        }
+
+        public Uri UnParse(IDownloadState state)
+        {
+            var nstate = (Nexus)state;
+            return new Uri(
+                $"https://www.nexusmods.com/{nstate.Game.MetaData().NexusName}/mods/{nstate.ModID}/?tab=files&file_id={nstate.FileID}");
         }
     }
 }
