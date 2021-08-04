@@ -3,7 +3,9 @@ name: Main Pipeline
 on:
   push:
     branches: [ main ]
-    
+  pull_request:
+    branches: [ main ]
+
 env:
   VERSION: 3.0.0.0-alpha1
 
