@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Compression.BSA;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using Wabbajack.Common;
+using Wabbajack.DTOs.BSA.ArchiveStates;
 using Wabbajack.DTOs.BSA.FileStates;
 using Wabbajack.DTOs.Streams;
 using Wabbajack.Paths;
@@ -60,7 +61,7 @@ namespace Wabbajack.Compression.BSA.FO4Archive
 
         public RelativePath Path => FullPath.ToRelativePath();
         public uint Size => (uint)_chunks.Sum(f => f._fullSz) + HeaderSize + sizeof(uint);
-        public AFile State => new BA2DX10EntryState
+        public AFile State => new BA2DX10File
         {
             Path = Path,
             NameHash = _nameHash,

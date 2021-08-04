@@ -1,9 +1,13 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Wabbajack.Common;
 using Wabbajack.Common.FileSignatures;
 using Wabbajack.Compression.BSA.Interfaces;
+using Wabbajack.DTOs.BSA.ArchiveStates;
+using Wabbajack.DTOs.Streams;
 using Wabbajack.Paths;
+using Wabbajack.Paths.IO;
 
 namespace Wabbajack.Compression.BSA
 {
@@ -19,6 +23,29 @@ namespace Wabbajack.Compression.BSA
                 FileType.BSA => await TES5Archive.Reader.Load(new NativeFileStreamFactory(filename)),
                 FileType.BA2 => await FO4Archive.Reader.Load(new NativeFileStreamFactory(filename)),
                 _ => throw new InvalidDataException("Filename is not a .bsa or .ba2")
+            };
+        }
+        
+        public static async ValueTask<IReader> Open(IStreamFactory factory)
+        {
+            await using var stream = await factory.GetStream();
+            return await BSASignatures.MatchesAsync(stream) switch
+            {
+                FileType.TES3 => await TES3Archive.Reader.Load(factory),
+                FileType.BSA => await TES5Archive.Reader.Load(factory),
+                FileType.BA2 => await FO4Archive.Reader.Load(factory),
+                _ => throw new InvalidDataException("Filename is not a .bsa or .ba2")
+            };
+        }
+
+        public static IBuilder CreateBuilder(IArchive oldState, TemporaryFileManager manager)
+        {
+            return oldState switch
+            {
+                TES3State tes3 => new TES3Archive.Builder(tes3),
+                BSAState bsa => TES5Archive.Builder.Create(bsa, manager),
+                BA2State ba2 => FO4Archive.Builder.Create(ba2, manager),
+                _ => throw new NotImplementedException()
             };
         }
     }

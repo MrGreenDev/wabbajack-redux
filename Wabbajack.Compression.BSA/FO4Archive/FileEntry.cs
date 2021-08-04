@@ -81,7 +81,9 @@ namespace Wabbajack.Compression.BSA.FO4Archive
                 inflater.SetInput(bytes);
                 inflater.Inflate(uncompressed);
                 await output.WriteAsync(uncompressed, token);
+
             }
+            await output.FlushAsync(token);
         }
         
         public async ValueTask<IStreamFactory> GetStreamFactory(CancellationToken token)

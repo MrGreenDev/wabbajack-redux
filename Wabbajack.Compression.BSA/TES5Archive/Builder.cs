@@ -29,7 +29,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
         internal uint _totalFileNameLength;
         internal DiskSlabAllocator _slab;
 
-        public static async Task<Builder> Create(long size, TemporaryFileManager tempGenerator)
+        public static Builder Create(TemporaryFileManager tempGenerator)
         {
             var self = new Builder
             {
@@ -40,9 +40,9 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             return self;
         }
 
-        public static async Task<Builder> Create(BSAState bsaStateObject, long size, TemporaryFileManager tempGenerator)
+        public static Builder Create(BSAState bsaStateObject, TemporaryFileManager tempGenerator)
         {
-            var self = await Create(size, tempGenerator).ConfigureAwait(false);
+            var self = Create(tempGenerator);
             self.HeaderType = (VersionType)bsaStateObject.Version;
             self.FileFlags = (FileFlags)bsaStateObject.FileFlags;
             self.ArchiveFlags = (ArchiveFlags)bsaStateObject.ArchiveFlags;
@@ -92,7 +92,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
         public async ValueTask Build(Stream fs, ITrackedTask task, CancellationToken token)
         {
             RegenFolderRecords();
-            await using var wtr = new BinaryWriter(fs);
+            await using var wtr = new BinaryWriter(fs, Encoding.Default, true);
             
             wtr.Write(_fileId);
             wtr.Write((uint)HeaderType);

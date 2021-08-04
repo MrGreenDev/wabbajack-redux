@@ -4,7 +4,7 @@ namespace Wabbajack.DTOs.BSA.FileStates
 {
     [JsonName("BA2DX10Entry")]
     [JsonAlias("BA2DX10Entry, Compression.BSA")]
-    public class BA2DX10EntryState : AFile
+    public class BA2DX10File : AFile
     {
         public BA2Chunk[] Chunks { get; set; }
 

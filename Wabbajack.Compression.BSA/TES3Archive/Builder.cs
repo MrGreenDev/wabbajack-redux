@@ -30,7 +30,7 @@ namespace Wabbajack.Compression.BSA.TES3Archive
 
         public async ValueTask Build(Stream file, ITrackedTask task, CancellationToken token)
         {
-            await using var bw = new BinaryWriter(file);
+            await using var bw = new BinaryWriter(file, Encoding.Default, true);
             
             bw.Write(_state.VersionNumber);
             bw.Write(_state.HashOffset);
