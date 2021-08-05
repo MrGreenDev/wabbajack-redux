@@ -50,7 +50,7 @@ jobs:
       - name: Build
         run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore
       - name: Test
-        run: dotnet test ${{ matrix.project }}/${{ matrix.project }}.csproj --no-restore --verbosity normal
+        run: dotnet test ${{ matrix.project }}/${{ matrix.project }}.csproj --no-restore
         
   publish:
     name: Publish ${{ matrix.project }}

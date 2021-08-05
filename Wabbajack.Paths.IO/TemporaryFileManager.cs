@@ -17,7 +17,7 @@ namespace Wabbajack.Paths.IO
 
         public TemporaryPath CreateFile(Extension? ext = default)
         {
-            var path = _basePath.Combine(new Guid().ToString());
+            var path = _basePath.Combine(Guid.NewGuid().ToString());
             if (path.Extension != default)
                 path = path.WithExtension(ext);
             return new TemporaryPath(path);
@@ -25,7 +25,7 @@ namespace Wabbajack.Paths.IO
         
         public TemporaryPath CreateFolder()
         {
-            var path = _basePath.Combine(new Guid().ToString());
+            var path = _basePath.Combine(Guid.NewGuid().ToString());
             path.CreateDirectory();
             return new TemporaryPath(path);
         }

@@ -91,6 +91,8 @@ namespace Wabbajack.FileExtractor
                 {
                     process.Arguments = new object[] {"x", "-bsp1", "-y", $"-o\"{dest}\"", source, "-mmt=off"};
                 }
+                
+                _logger.LogInformation("{prog} {args}", process.Path, process.Arguments);
 
 
                 var result = process.Output.Where(d => d.Type == ProcessHelper.StreamType.Output)
