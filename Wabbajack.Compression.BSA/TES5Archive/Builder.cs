@@ -205,7 +205,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
                 wtr.Write((uint) 0); // unk
                 wtr.Write(_offset); // offset
             }
-            else if (_bsa.HeaderType == VersionType.FO3 || _bsa.HeaderType == VersionType.TES4)
+            else if (_bsa.HeaderType is VersionType.FO3 or VersionType.TES4)
             {
                 wtr.Write((uint) _offset);
             }

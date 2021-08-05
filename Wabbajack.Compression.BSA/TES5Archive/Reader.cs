@@ -54,14 +54,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
 
         public bool Bit9Set => ArchiveFlags.HasFlag(ArchiveFlags.HasFileNameBlobs);
 
-        public bool HasNameBlobs
-        {
-            get
-            {
-                if (HeaderType == VersionType.FO3 || HeaderType == VersionType.SSE) return Bit9Set;
-                return false;
-            }
-        }
+        public bool HasNameBlobs => HeaderType is VersionType.FO3 or VersionType.SSE && Bit9Set;
 
         public static async ValueTask<Reader> Load(IStreamFactory factory)
         {
