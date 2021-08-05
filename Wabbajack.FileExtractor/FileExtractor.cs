@@ -62,14 +62,14 @@ namespace Wabbajack.FileExtractor
 
                 
                 string initialPath = "";
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     initialPath = @"Extractors\windows-x64\7z.exe";
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                     initialPath = @"Extractors\linux-x64\7zz";
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     initialPath = @"Extractors\mac\7zz";
 
-                var process = new ProcessHelper {Path = @"Extractors\windows-x64\7z.exe".ToRelativePath().RelativeTo(KnownFolders.EntryPoint),};
+                var process = new ProcessHelper {Path = initialPath.ToRelativePath().RelativeTo(KnownFolders.EntryPoint),};
 
                 if (onlyFiles != null)
                 {
