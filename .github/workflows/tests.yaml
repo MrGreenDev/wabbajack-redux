@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  VERSION: 3.0.0.0-alpha1
+  VERSION: 3.0.0.0-alpha2
 
 jobs:
   build:
@@ -53,6 +53,8 @@ jobs:
     strategy:
       matrix:
         project:
+          - Wabbajack.Common
+          - Wabbajack.Compression.BSA
           - Wabbajack.Downloaders.Interfaces
           - Wabbajack.Downloaders.GoogleDrive
           - Wabbajack.Downloaders.Nexus
@@ -63,6 +65,7 @@ jobs:
           - Wabbajack.Networking.NexusApi
           - Wabbajack.Paths
           - Wabbajack.Paths.IO
+        
           
     needs: build
     steps:
