@@ -37,7 +37,7 @@ jobs:
       
       - name: Set Permissions
         if: runner.os != 'Windows'
-        run: chmod +x -R Wabbajack.FileExtractor/Extractors
+        run: chmod -R +x Wabbajack.FileExtractor/Extractors
     
       - name: Setup .NET Core SDK 6.0.x
         uses: actions/setup-dotnet@v1
