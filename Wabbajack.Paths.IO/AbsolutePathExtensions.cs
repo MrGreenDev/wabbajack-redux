@@ -11,6 +11,8 @@ namespace Wabbajack.Paths.IO
 {
     public static class AbsolutePathExtensions
     {
+        public const int BufferSize = 1024 * 128;
+        
         public static Stream Open(this AbsolutePath file, FileMode mode, FileAccess access = FileAccess.Read, FileShare share = FileShare.ReadWrite)
         {
             return File.Open(file.ToNativePath(), mode, access, share);
@@ -18,7 +20,8 @@ namespace Wabbajack.Paths.IO
         
         public static void Delete(this AbsolutePath file)
         {
-            File.Delete(file.ToNativePath());
+            if (File.Exists(file.ToNativePath())) 
+                File.Delete(file.ToNativePath());
         }
 
         public static long Size(this AbsolutePath file)
@@ -76,11 +79,52 @@ namespace Wabbajack.Paths.IO
             using var s = file.Open(FileMode.Create, FileAccess.Write, FileShare.None);
             s.Write(data);
         }
+
+        public static async Task WriteAllAsync(this AbsolutePath file, Stream srcStream, CancellationToken token, bool closeWhenDone = true)
+        {
+            var buff = new byte[BufferSize];
+            await using var dest = file.Open(FileMode.Create, FileAccess.Write, FileShare.None);
+            while (true)
+            {
+                var read = await srcStream.ReadAsync(buff.AsMemory(0, BufferSize), token);
+                if (read == 0)
+                    break;
+                await dest.WriteAsync(buff.AsMemory(0, read), token);
+            }
+            
+            if (closeWhenDone) 
+                await srcStream.DisposeAsync();
+        }
+        
+        public static async Task WriteAllLinesAsync(this AbsolutePath file, IEnumerable<string> src, CancellationToken token, bool closeWhenDone = true)
+        {
+            await using var dest = file.Open(FileMode.Create, FileAccess.Write, FileShare.None);
+            await using var sw = new StreamWriter(dest, Encoding.UTF8);
+
+            foreach (var line in src)
+            {
+                await sw.WriteLineAsync(line);
+            }
+
+            await sw.DisposeAsync();
+        }
         
         public static async ValueTask WriteAllBytesAsync(this AbsolutePath file, Memory<byte> data, CancellationToken token = default)
         {
             await using var s = file.Open(FileMode.Create, FileAccess.Write, FileShare.None);
             await s.WriteAsync(data, token);
+        }
+
+        public static async ValueTask MoveToAsync(this AbsolutePath src, AbsolutePath dest, bool overwrite, CancellationToken token)
+        {
+            // TODO: Make this async
+            File.Move(src.ToString(), dest.ToString(), overwrite);
+        }
+        
+        public static async ValueTask CopyToAsync(this AbsolutePath src, AbsolutePath dest, bool overwrite, CancellationToken token)
+        {
+            // TODO: Make this async
+            File.Copy(src.ToString(), dest.ToString(), overwrite);
         }
 
         public static void WriteAllText(this AbsolutePath file, string str)

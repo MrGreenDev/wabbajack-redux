@@ -19,11 +19,13 @@ namespace Wabbajack.Compression.BSA.Test
     {
         private readonly ILogger<CompressionTestss> _logger;
         private readonly TemporaryFileManager _tempManager;
+        private readonly IRateLimiter _limiter;
 
-        public CompressionTestss(ILogger<CompressionTestss> logger, TemporaryFileManager tempManager)
+        public CompressionTestss(ILogger<CompressionTestss> logger, TemporaryFileManager tempManager, IRateLimiter limiter)
         {
             _logger = logger;
             _tempManager = tempManager;
+            _limiter = limiter;
         }
         [Theory]
         [MemberData(nameof(TestFiles))]
@@ -44,47 +46,48 @@ namespace Wabbajack.Compression.BSA.Test
             if (name == "tes4.bsa") return; // not sure why is is failing
             
             var reader = await BSADispatch.Open(path);
-            var datas = new List<(AFile, MemoryStream)>();
-            foreach (var file in reader.Files)
-            {
-                var ms = new MemoryStream();
-                await file.CopyDataTo(ms, CancellationToken.None);
-                ms.Position = 0;
-                datas.Add((file.State, ms));
-                Assert.Equal(file.Size, ms.Length);
-            }
-
+            
+            var dataStates = await reader.Files
+                .PMap(_limiter,
+                    async file =>
+                    {
+                        var ms = new MemoryStream();
+                        await file.CopyDataTo(ms, CancellationToken.None);
+                        ms.Position = 0;
+                        Assert.Equal(file.Size, ms.Length);
+                        return new {State = file.State, Stream = ms};
+                    }).ToList();
+            
             var oldState = reader.State;
             
             var build = BSADispatch.CreateBuilder(oldState, _tempManager);
 
-            foreach (var (file, memoryStream) in datas)
+            await dataStates.PDo(_limiter, async itm =>
             {
-                await build.AddFile(file, memoryStream, ITrackedTask.None, CancellationToken.None);
-            }
+                await build.AddFile(itm.State, itm.Stream, ITrackedTask.None, CancellationToken.None);
+            });
+
 
             var rebuiltStream = new MemoryStream();
             await build.Build(rebuiltStream, ITrackedTask.None, CancellationToken.None);
             rebuiltStream.Position = 0;
 
             var reader2 = await BSADispatch.Open(new MemoryStreamFactory(rebuiltStream, path, path.LastModifiedUtc()));
-            foreach (var (oldFile, newFile) in reader.Files.Zip(reader2.Files))
-            {
-                _logger.LogInformation("Comparing {old} and {new}", oldFile.Path, newFile.Path);
-                Assert.Equal(oldFile.Path, newFile.Path);
-                Assert.Equal(oldFile.Size, newFile.Size);
+            await reader.Files.Zip(reader2.Files)
+                .PDo(_limiter, async pair =>
+                {
+                    var (oldFile, newFile) = pair;
+                    _logger.LogInformation("Comparing {old} and {new}", oldFile.Path, newFile.Path);
+                    Assert.Equal(oldFile.Path, newFile.Path);
+                    Assert.Equal(oldFile.Size, newFile.Size);
                 
-                var oldData = new MemoryStream();
-                var newData = new MemoryStream();
-                await oldFile.CopyDataTo(oldData, CancellationToken.None);
-                await newFile.CopyDataTo(newData, CancellationToken.None);
-                Assert.Equal(oldData.ToArray(), newData.ToArray());
-                Assert.Equal(oldFile.Size, newFile.Size);
-
-
-                
-
-            }
+                    var oldData = new MemoryStream();
+                    var newData = new MemoryStream();
+                    await oldFile.CopyDataTo(oldData, CancellationToken.None);
+                    await newFile.CopyDataTo(newData, CancellationToken.None);
+                    Assert.Equal(oldData.ToArray(), newData.ToArray());
+                    Assert.Equal(oldFile.Size, newFile.Size);
+                });
         }
 
         public static IEnumerable<object[]> TestFiles

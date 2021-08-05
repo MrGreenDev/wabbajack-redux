@@ -3,17 +3,30 @@ using System.Threading.Tasks;
 
 namespace Wabbajack.Paths.IO
 {
-    public struct TemporaryPath : IDisposable
+    public struct TemporaryPath : IDisposable, IAsyncDisposable
     {
         public readonly AbsolutePath Path { get; init; }
-        private readonly TemporaryFileManager _manager;
 
-        public TemporaryPath(AbsolutePath path, TemporaryFileManager manager)
+        public TemporaryPath(AbsolutePath path)
         {
             Path = path;
-            _manager = manager;
         }
         public void Dispose()
+        {
+            Path.Delete();
+        }
+
+        public override string ToString()
+        {
+            return Path.ToString();
+        }
+
+        public static implicit operator AbsolutePath(TemporaryPath tp)
+        {
+            return tp.Path;
+        }
+
+        public async ValueTask DisposeAsync()
         {
             Path.Delete();
         }

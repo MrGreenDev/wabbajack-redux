@@ -1,11 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.DTOs.JsonConverters;
-using Wabbajack.Hashing.xxHash64;
-using Wabbajack.Paths;
 
 namespace Wabbajack.DTOs.DownloadStates
 {

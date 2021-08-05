@@ -77,6 +77,9 @@ namespace Wabbajack.Paths
 
         public bool Equals(RelativePath other)
         {
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            if (other.Parts == default) return other.Parts == Parts;
+            
             if (other.Parts.Length != Parts.Length) return false;
             for (var idx = 0; idx < Parts.Length; idx++)
             {

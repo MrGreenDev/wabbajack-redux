@@ -20,14 +20,14 @@ namespace Wabbajack.Paths.IO
             var path = _basePath.Combine(new Guid().ToString());
             if (path.Extension != default)
                 path = path.WithExtension(ext);
-            return new TemporaryPath(path, this);
+            return new TemporaryPath(path);
         }
         
         public TemporaryPath CreateFolder()
         {
             var path = _basePath.Combine(new Guid().ToString());
             path.CreateDirectory();
-            return new TemporaryPath(path, this);
+            return new TemporaryPath(path);
         }
 
         public void Dispose()
