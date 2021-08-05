@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +24,11 @@ namespace Wabbajack.Paths.IO
         public static long Size(this AbsolutePath file)
         {
             return new FileInfo(file.ToNativePath()).Length;
+        }
+        
+        public static DateTime LastModifiedUtc(this AbsolutePath file)
+        {
+            return new FileInfo(file.ToNativePath()).LastWriteTimeUtc;
         }
         
         public static byte[] ReadAllBytes(this AbsolutePath file)
@@ -108,6 +115,14 @@ namespace Wabbajack.Paths.IO
         {
             return Directory.Exists(path.ToNativePath());
         }
+
+        public static IEnumerable<AbsolutePath> EnumerateFiles(this AbsolutePath path, string pattern = "*", bool recursive = true)
+        {
+            return Directory.EnumerateFiles(path.ToString(), pattern,
+                    recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                .Select(file => file.ToAbsolutePath());
+        }
+        
         #endregion
     }
 }

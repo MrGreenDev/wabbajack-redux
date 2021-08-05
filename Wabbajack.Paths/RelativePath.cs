@@ -18,6 +18,11 @@ namespace Wabbajack.Paths
                 throw new PathException($"Tried to parse `{i} but `:` not valid in a path name");
             return new(splits);
         }
+        
+        public static explicit operator string(RelativePath i)
+        {
+            return i.ToString();
+        }
 
         public Extension Extension => Extension.FromPath(Parts[^1]);
         public RelativePath FileName => Parts.Length == 1 ? this : new RelativePath(new[] {Parts[^1]});

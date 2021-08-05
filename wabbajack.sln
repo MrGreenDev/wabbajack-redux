@@ -42,6 +42,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Downloaders.Dispa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Downloaders.Dispatcher.Test", "Wabbajack.Downloaders.Dispatcher.Test\Wabbajack.Downloaders.Dispatcher.Test.csproj", "{0DBCA05C-1D39-46B6-A4AB-9CDD8551F2FE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Compression.BSA", "Wabbajack.Compression.BSA\Wabbajack.Compression.BSA.csproj", "{B7EF7004-7F55-456F-949E-7A9C643E1009}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Common", "Wabbajack.Common\Wabbajack.Common.csproj", "{59E7A72B-1B8F-4BDC-BE31-7D6CC8AEEFCC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.TaskTracking.Interfaces", "Wabbajack.TaskTracking.Interfaces\Wabbajack.TaskTracking.Interfaces.csproj", "{54FE04F8-FF41-4AAD-9858-6333A9C2C419}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Compression.BSA.Test", "Wabbajack.Compression.BSA.Test\Wabbajack.Compression.BSA.Test.csproj", "{BF64FBE6-8085-43B6-ABCB-9A7DFDFB5E7A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -132,5 +140,21 @@ Global
 		{0DBCA05C-1D39-46B6-A4AB-9CDD8551F2FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0DBCA05C-1D39-46B6-A4AB-9CDD8551F2FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0DBCA05C-1D39-46B6-A4AB-9CDD8551F2FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7EF7004-7F55-456F-949E-7A9C643E1009}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7EF7004-7F55-456F-949E-7A9C643E1009}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7EF7004-7F55-456F-949E-7A9C643E1009}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7EF7004-7F55-456F-949E-7A9C643E1009}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59E7A72B-1B8F-4BDC-BE31-7D6CC8AEEFCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59E7A72B-1B8F-4BDC-BE31-7D6CC8AEEFCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59E7A72B-1B8F-4BDC-BE31-7D6CC8AEEFCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59E7A72B-1B8F-4BDC-BE31-7D6CC8AEEFCC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54FE04F8-FF41-4AAD-9858-6333A9C2C419}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54FE04F8-FF41-4AAD-9858-6333A9C2C419}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54FE04F8-FF41-4AAD-9858-6333A9C2C419}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54FE04F8-FF41-4AAD-9858-6333A9C2C419}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF64FBE6-8085-43B6-ABCB-9A7DFDFB5E7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF64FBE6-8085-43B6-ABCB-9A7DFDFB5E7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF64FBE6-8085-43B6-ABCB-9A7DFDFB5E7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF64FBE6-8085-43B6-ABCB-9A7DFDFB5E7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
