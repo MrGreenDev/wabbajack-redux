@@ -27,4 +27,9 @@
       <ProjectReference Include="..\Wabbajack.Paths.IO\Wabbajack.Paths.IO.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Verbs\AVerb.cs" />
+      <Compile Remove="Verbs\DownloadUrl.cs" />
+    </ItemGroup>
+
 </Project>

@@ -1,4 +1,6 @@
 using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,21 +11,30 @@ using Wabbajack.Paths.IO;
 
 namespace Wabbajack.CLI.Verbs
 {
-    [Verb("hash-file", HelpText = "Hash a file and print the result")]
-    public class HashFile : AVerb<HashFile>
+    public class HashFile : IVerb
     {
-        public HashFile(ILogger<HashFile> logger) : base(logger)
+        private readonly ILogger<HashFile> _logger;
+
+        public HashFile(ILogger<HashFile> logger)
         {
+            _logger = logger;
+        }
+
+        public Command MakeCommand()
+        {
+            var command = new Command("hash-file");
+            command.Add(new Option<AbsolutePath>(new [] {"-i", "-input"}, "Path to the file to hash"));
+            command.Description = "Hashes a file with Wabbajack's xxHash64 implementation";
+            command.Handler = CommandHandler.Create(Run);
+            return command;
         }
 
                
-        public async Task<int> Run(
-            [Option('i', Required = true, HelpText = "Input file name")]
-            AbsolutePath input)
+        public async Task<int> Run(AbsolutePath input)
         {
             await using var istream = input.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
             var hash = await istream.HashingCopy(Stream.Null, CancellationToken.None);
-            Logger.LogInformation($"{input} hash: {hash} {hash.ToHex()} {(long)hash}");
+            _logger.LogInformation($"{input} hash: {hash} {hash.ToHex()} {(long)hash}");
             return 0;
         }
 

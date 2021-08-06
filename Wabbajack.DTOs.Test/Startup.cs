@@ -1,3 +1,4 @@
+using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Wabbajack.DTOs.JsonConverters;
 
@@ -9,6 +10,7 @@ namespace Wabbajack.DTOs.Test
         {
             services.AddDTOConverters();
             services.AddDTOSerializer();
+            services.AddSingleton<HttpClient>();
         }
     }
 }

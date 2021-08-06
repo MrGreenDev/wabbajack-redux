@@ -11,12 +11,11 @@ namespace Wabbajack.Common
     // FIFO - waiters are put onto a stack, not a queue. Meaning we starve old tasks, but don't go wide in calculations,
     //        instead we go deep. This is needed for most of WJ as we don't want to open 32 archives, and then 32 more before
     //        we've looped back to the first 32 and completed those tasks
-    // Semephore - a lock with a checkout allotment. 
+    // Semaphore - a lock with a checkout allotment. 
     public class AsyncSemaphore : IUnlockable, IRateLimiter
     {
-        private Stack<(int TaskId, TaskCompletionSource<bool> Tcs)> _waiting = new();
-        private int _maxAllotment;
-        private int _currentallotment = 0;
+        private readonly Stack<(int TaskId, TaskCompletionSource<bool> Tcs)> _waiting = new();
+        private readonly int _maxAllotment;
         private readonly Dictionary<int, int> _checkoutDepth = new();
 
         public AsyncSemaphore(int max)

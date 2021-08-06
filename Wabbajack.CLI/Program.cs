@@ -20,11 +20,6 @@ namespace Wabbajack.CLI
 {
     class Program
     {
-        public static Type[] AllVerbs =>
-            typeof(Program).Assembly.GetTypes()
-                .Where(t => !t.IsAbstract && !t.IsInterface)
-                .Where(t => t.IsAssignableTo(typeof(IVerb))).ToArray();
-        
         static async Task<int> Main(string[] args)
         {
             TypeDescriptor.AddAttributes(typeof(AbsolutePath), new TypeConverterAttribute(typeof(AbsolutePathTypeConverter)));
@@ -32,11 +27,6 @@ namespace Wabbajack.CLI
             var host = Host.CreateDefaultBuilder(Array.Empty<string>())
                 .ConfigureServices((host, services) =>
                 {
-                    foreach (var verb in AllVerbs)
-                    {
-                        services.AddSingleton(typeof(IVerb), verb);
-                    }
-                    
                     services.AddSingleton(new ApplicationInfo()
                     {
                         AppName = "Wabbajack.Networking.NexusApi.Test",
@@ -51,6 +41,7 @@ namespace Wabbajack.CLI
                     services.AddDownloadDispatcher();
                     services.AddSingleton<IConsole, SystemConsole>();
                     services.AddSingleton<CommandLineBuilder, CommandLineBuilder>();
+                    services.AddSingleton<IVerb, HashFile>();
 
                 }).Build();
 
