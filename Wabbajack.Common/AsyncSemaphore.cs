@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 
 namespace Wabbajack.Common
 {
-    class Box<T>
-    {
-        public T Value { get; set; }
-    }
-
+    // A Reentrant Async FIFO semaphore.
+    // Reentrant - the same task can call the same lock and not deadlock itself. Each lock must be matched with a unlock
+    // Async - all based on ValueTasks so its fairly allocation free
+    // FIFO - waiters are put onto a stack, not a queue. Meaning we starve old tasks, but don't go wide in calculations,
+    //        instead we go deep. This is needed for most of WJ as we don't want to open 32 archives, and then 32 more before
+    //        we've looped back to the first 32 and completed those tasks
+    // Semephore - a lock with a checkout allotment. 
     public class AsyncSemaphore : IUnlockable, IRateLimiter
     {
         private Stack<(int TaskId, TaskCompletionSource<bool> Tcs)> _waiting = new();
