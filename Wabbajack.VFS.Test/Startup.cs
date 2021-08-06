@@ -13,7 +13,7 @@ namespace Wabbajack.VFS.Test
         public void ConfigureServices(IServiceCollection service)
         {
             service.AddSingleton<TemporaryFileManager, TemporaryFileManager>();
-            service.AddSingleton<IRateLimiter>(new StaticRateLimiter(Environment.ProcessorCount));
+            service.AddSingleton<IRateLimiter>(new StaticRateLimiter(32));//Environment.ProcessorCount));
             service.AddSingleton(new FileHashCache(KnownFolders.EntryPoint.Combine("hashcache.sqlite")));
             service.AddSingleton<Context>();
             service.AddSingleton<FileExtractor.FileExtractor>();
