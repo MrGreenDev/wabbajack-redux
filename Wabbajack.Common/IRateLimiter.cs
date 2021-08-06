@@ -6,6 +6,6 @@ namespace Wabbajack.Common
 {
     public interface IRateLimiter
     {
-        public ValueTask<DisposableUnlockable> Checkout();
+        public ValueTask<DisposableUnlockable> Checkout(CancellationToken token);
     }
 }

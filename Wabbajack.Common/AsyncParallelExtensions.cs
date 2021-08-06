@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Wabbajack.Common
@@ -11,7 +12,7 @@ namespace Wabbajack.Common
         {
             List<Task<TOut>> outs = coll.Select(itm => Task.Run(async () =>
                 {
-                    using var _ = await limiter.Checkout();
+                    using var _ = await limiter.Checkout(CancellationToken.None);
                     return await mapFn(itm);
                 }))
                 .ToList();
@@ -26,7 +27,7 @@ namespace Wabbajack.Common
         {
             List<Task> outs = coll.Select(itm => Task.Run(async () =>
                 {
-                    using var _ = await limiter.Checkout();
+                    using var _ = await limiter.Checkout(CancellationToken.None);
                     await mapFn(itm);
                 }))
                 .ToList();
