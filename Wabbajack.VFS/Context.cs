@@ -30,13 +30,14 @@ namespace Wabbajack.VFS
         public readonly FileExtractor.FileExtractor Extractor;
         public readonly FileHashCache HashCache;
 
-        public Context(ILogger<Context> logger, TemporaryFileManager manager, VFSCache vfsCache, FileHashCache hashCache, FileExtractor.FileExtractor extractor)
+        public Context(ILogger<Context> logger, IRateLimiter limiter, TemporaryFileManager manager, VFSCache vfsCache, FileHashCache hashCache, FileExtractor.FileExtractor extractor)
         {
             Logger = logger;
             _manager = manager;
             Extractor = extractor;
             VfsCache = vfsCache;
             HashCache = hashCache;
+            _limiter = limiter;
 
         }
         public IndexRoot Index { get; private set; } = IndexRoot.Empty;

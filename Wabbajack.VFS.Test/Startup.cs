@@ -15,6 +15,9 @@ namespace Wabbajack.VFS.Test
             service.AddSingleton<TemporaryFileManager, TemporaryFileManager>();
             service.AddSingleton<IRateLimiter>(new StaticRateLimiter(Environment.ProcessorCount));
             service.AddSingleton(new FileHashCache(KnownFolders.EntryPoint.Combine("hashcache.sqlite")));
+            service.AddSingleton<Context>();
+            service.AddSingleton<FileExtractor.FileExtractor>();
+            service.AddSingleton(new VFSCache(KnownFolders.EntryPoint.Combine("vfscache.sqlite")));
         }
         
         public void Configure(ILoggerFactory loggerFactory, ITestOutputHelperAccessor accessor) =>
