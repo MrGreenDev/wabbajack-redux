@@ -47,5 +47,13 @@ namespace Wabbajack.Paths
             }
         }
         
+        public static T[] Add<T>(this T[] arr, T itm)
+        {
+            var newArr = new T[arr.Length + 1];
+            Array.Copy(arr, 0, newArr, 0, arr.Length);
+            newArr[arr.Length] = itm;
+            return newArr;
+        }
+        
     }
 }

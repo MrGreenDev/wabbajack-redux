@@ -109,7 +109,7 @@ namespace Wabbajack.VFS
             WriteHashCache(file, hash);
         }
 
-        public async Task<Hash?> FileHashCachedAsync(AbsolutePath file, CancellationToken token)
+        public async Task<Hash> FileHashCachedAsync(AbsolutePath file, CancellationToken token)
         {
             if (TryGetHashCache(file, out var foundHash)) return foundHash;
 

@@ -47,6 +47,18 @@ namespace Wabbajack.FileExtractor
 
         private static Extension BSAExtension = new(".bsa");
         
+        public static readonly HashSet<Extension> ExtractableExtensions = new()
+        {
+            new(".bsa"),
+            new(".ba2"),
+            new(".7z"),
+            new(".7zip"),
+            new(".rar"),
+            new(".zip"),
+            OMODExtension,
+            FOMODExtension
+        };
+        
         public async Task<IDictionary<RelativePath, T>> GatheringExtract<T>(
              IStreamFactory sFn,
             Predicate<RelativePath> shouldExtract, 

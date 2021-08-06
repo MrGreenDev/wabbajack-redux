@@ -110,6 +110,35 @@ namespace Wabbajack.Paths
         }
 
         public int Depth => Parts.Length;
+        
+        public RelativePath Combine(params object[] paths)
+        {
+            var converted = paths.Select(p =>
+            {
+                return p switch
+                {
+                    string s => (RelativePath) s,
+                    RelativePath path => path,
+                    _ => throw new PathException($"Cannot cast {p} of type {p.GetType()} to Path")
+                };
+            }).ToArray();
+            return Combine(converted);
+        }
+        
+        public RelativePath Combine(params RelativePath[] paths)
+        {
+            var newLen = Parts.Length + paths.Sum(p => p.Parts.Length);
+            var newParts = new string[newLen];
+            Array.Copy(Parts, newParts, Parts.Length);
+            
+            var toIdx = Parts.Length;
+            foreach (var p in paths)
+            {
+                Array.Copy(p.Parts, 0, newParts, toIdx, p.Parts.Length);
+                toIdx += p.Parts.Length;
+            }
+            return new RelativePath(newParts);
+        }
 
         public RelativePath Parent
         {

@@ -7,7 +7,7 @@ namespace Wabbajack.DTOs.Texture
 {
     public struct PHash
     {
-        private const int SIZE = 40;
+        public const int SIZE = 40;
         private readonly int _hash;
 
         public byte[] Data { get; }
