@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.Data.SQLite.Core" Version="1.0.114.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Wabbajack.Common\Wabbajack.Common.csproj" />
+      <ProjectReference Include="..\Wabbajack.Hashing.xxHash64\Wabbajack.Hashing.xxHash64.csproj" />
+      <ProjectReference Include="..\Wabbajack.Paths.IO\Wabbajack.Paths.IO.csproj" />
+      <ProjectReference Include="..\Wabbajack.Paths\Wabbajack.Paths.csproj" />
+    </ItemGroup>
+
+</Project>

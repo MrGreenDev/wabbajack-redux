@@ -159,6 +159,11 @@ namespace Wabbajack.Paths.IO
         {
             return Directory.Exists(path.ToNativePath());
         }
+        
+        public static bool FileExists(this AbsolutePath path)
+        {
+            return File.Exists(path.ToNativePath());
+        }
 
         public static IEnumerable<AbsolutePath> EnumerateFiles(this AbsolutePath path, string pattern = "*", bool recursive = true)
         {

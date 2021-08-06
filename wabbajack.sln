@@ -54,6 +54,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.FileExtractor", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.FileExtractor.Test", "Wabbajack.FileExtractor.Test\Wabbajack.FileExtractor.Test.csproj", "{5D792FA8-8120-4A5C-A969-2258D3D05F1A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.VFS", "Wabbajack.VFS\Wabbajack.VFS.csproj", "{27DF11E9-886E-4D3C-B619-BB93F2764FC8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.VFS.Test", "Wabbajack.VFS.Test\Wabbajack.VFS.Test.csproj", "{66742357-9BB1-4AC5-858A-7898472B9A4A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -168,5 +172,13 @@ Global
 		{5D792FA8-8120-4A5C-A969-2258D3D05F1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D792FA8-8120-4A5C-A969-2258D3D05F1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D792FA8-8120-4A5C-A969-2258D3D05F1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27DF11E9-886E-4D3C-B619-BB93F2764FC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27DF11E9-886E-4D3C-B619-BB93F2764FC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27DF11E9-886E-4D3C-B619-BB93F2764FC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27DF11E9-886E-4D3C-B619-BB93F2764FC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66742357-9BB1-4AC5-858A-7898472B9A4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66742357-9BB1-4AC5-858A-7898472B9A4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66742357-9BB1-4AC5-858A-7898472B9A4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66742357-9BB1-4AC5-858A-7898472B9A4A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

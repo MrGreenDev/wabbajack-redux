@@ -31,6 +31,7 @@ jobs:
           - Wabbajack.Networking.NexusApi.Test
           - Wabbajack.Paths.Test
           - Wabbajack.Paths.IO.Test
+          - Wabbajack.VFS.Test
 
     steps:
       - uses: actions/checkout@v2
