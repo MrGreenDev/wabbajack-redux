@@ -222,8 +222,11 @@ namespace Wabbajack.FileExtractor
                     //It's stupid that we have to do this, but 7zip's file pattern matching isn't very fuzzy
                     IEnumerable<string> AllVariants(string input)
                     {
+                        var forward = input.Replace("\\", "/");
                         yield return $"\"{input}\"";
                         yield return $"\"\\{input}\"";
+                        yield return $"\"{forward}\"";
+                        yield return $"\"/{forward}\"";
                     }
 
                     tmpFile = _manager.CreateFile();
