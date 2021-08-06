@@ -26,13 +26,29 @@ namespace Wabbajack.FileExtractor.Test
         {
             var src = KnownFolders.EntryPoint.Combine("TestData", "cheese.7z");
             var results = await _extractor.GatheringExtractWith7Zip(
-                new NativeFileStreamFactory(src), FileType._7Z, path => true,
+                new NativeFileStreamFactory(src), path => true,
                 async (path, file) =>
                 {
                     await using var s = await file.GetStream();
                     using var sr = new StreamReader(s);
                     return new { Path = path, Data = await sr.ReadToEndAsync() };
                 }, null, CancellationToken.None);
+            
+            Assert.True(results.Count == 1);
+        }
+        
+        [Fact]
+        public async Task CanExtractWithGatheringExtract()
+        {
+            var src = KnownFolders.EntryPoint.Combine("TestData", "cheese.7z");
+            var results = await _extractor.GatheringExtract(
+                new NativeFileStreamFactory(src), path => true,
+                async (path, file) =>
+                {
+                    await using var s = await file.GetStream();
+                    using var sr = new StreamReader(s);
+                    return new { Path = path, Data = await sr.ReadToEndAsync() };
+                }, CancellationToken.None);
             
             Assert.True(results.Count == 1);
         }

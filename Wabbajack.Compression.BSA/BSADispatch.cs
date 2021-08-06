@@ -37,6 +37,18 @@ namespace Wabbajack.Compression.BSA
                 _ => throw new InvalidDataException("Filename is not a .bsa or .ba2")
             };
         }
+        
+        public static async ValueTask<IReader> Open(IStreamFactory factory, FileType sig)
+        {
+            await using var stream = await factory.GetStream();
+            return sig switch
+            {
+                FileType.TES3 => await TES3Archive.Reader.Load(factory),
+                FileType.BSA => await TES5Archive.Reader.Load(factory),
+                FileType.BA2 => await FO4Archive.Reader.Load(factory),
+                _ => throw new InvalidDataException("Filename is not a .bsa or .ba2")
+            };
+        }
 
         public static IBuilder CreateBuilder(IArchive oldState, TemporaryFileManager manager)
         {
