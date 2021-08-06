@@ -26,6 +26,7 @@ jobs:
           - Wabbajack.Downloaders.Dispatcher.Test
           - Wabbajack.DTOs.Test
           - Wabbajack.FileExtractor.Test
+          - Wabbajack.Hashing.PHash.Test
           - Wabbajack.Hashing.xxHash64.Test
           - Wabbajack.Networking.Http.Test
           - Wabbajack.Networking.NexusApi.Test

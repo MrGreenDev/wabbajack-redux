@@ -58,6 +58,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.VFS", "Wabbajack.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.VFS.Test", "Wabbajack.VFS.Test\Wabbajack.VFS.Test.csproj", "{66742357-9BB1-4AC5-858A-7898472B9A4A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Hashing.PHash", "Wabbajack.Hashing.PHash\Wabbajack.Hashing.PHash.csproj", "{878B76C7-F11F-4B99-BEEB-86D4A3EBE572}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Hashing.PHash.Test", "Wabbajack.Hashing.PHash.Test\Wabbajack.Hashing.PHash.Test.csproj", "{1A698B87-3952-4CFD-87C8-79CC4704EB5C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -180,5 +184,13 @@ Global
 		{66742357-9BB1-4AC5-858A-7898472B9A4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66742357-9BB1-4AC5-858A-7898472B9A4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66742357-9BB1-4AC5-858A-7898472B9A4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{878B76C7-F11F-4B99-BEEB-86D4A3EBE572}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{878B76C7-F11F-4B99-BEEB-86D4A3EBE572}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{878B76C7-F11F-4B99-BEEB-86D4A3EBE572}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{878B76C7-F11F-4B99-BEEB-86D4A3EBE572}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A698B87-3952-4CFD-87C8-79CC4704EB5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A698B87-3952-4CFD-87C8-79CC4704EB5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A698B87-3952-4CFD-87C8-79CC4704EB5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A698B87-3952-4CFD-87C8-79CC4704EB5C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
