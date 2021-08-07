@@ -6,22 +6,22 @@ namespace Wabbajack.DTOs.JsonConverters
 {
     public class DTOSerializer
     {
-        private readonly JsonSerializerOptions _options;
+        public readonly JsonSerializerOptions Options;
 
         public DTOSerializer(IEnumerable<JsonConverter> converters)
         {
-            _options = new JsonSerializerOptions();
-            foreach (var c in converters) _options.Converters.Add(c);
+            Options = new JsonSerializerOptions();
+            foreach (var c in converters) Options.Converters.Add(c);
         }
 
         public T? Deserialize<T>(string text)
         {
-            return JsonSerializer.Deserialize<T>(text, _options);
+            return JsonSerializer.Deserialize<T>(text, Options);
         }
 
         public string Serialize<T>(T data)
         {
-            return JsonSerializer.Serialize(data, _options);
+            return JsonSerializer.Serialize(data, Options);
         }
     }
 }
