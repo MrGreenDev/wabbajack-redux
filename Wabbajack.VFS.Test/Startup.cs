@@ -13,7 +13,9 @@ namespace Wabbajack.VFS.Test
         public void ConfigureServices(IServiceCollection service)
         {
             service.AddSingleton<TemporaryFileManager, TemporaryFileManager>();
-            service.AddSingleton<IRateLimiter>(new AsyncSemaphore(Environment.ProcessorCount));
+            
+            // Keep this fixed at 2 so that we can detect deadlocks in the VFS limiter
+            service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(2));
             service.AddSingleton(new FileHashCache(KnownFolders.EntryPoint.Combine("hashcache.sqlite")));
             service.AddSingleton<Context>();
             service.AddSingleton<FileExtractor.FileExtractor>();

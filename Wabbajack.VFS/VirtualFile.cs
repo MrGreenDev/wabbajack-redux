@@ -14,6 +14,7 @@ using Wabbajack.Common;
 using Wabbajack.Common.FileSignatures;
 using Wabbajack.DTOs.Streams;
 using Wabbajack.DTOs.Texture;
+using Wabbajack.Hashing.PHash;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
@@ -194,20 +195,18 @@ namespace Wabbajack.VFS
                 Hash = hash,
             };
 
-            /* TODO: Enable PHashing
+            
             if (TextureExtensions.Contains(relPath.FileName.Extension) && (await DDSSig.MatchesAsync(stream)) != null)
             {
                 try
                 {
-                    self.ImageState = await ImageState.FromImageStream(stream, relPath.FileName.Extension, false);
+                    self.ImageState = await ImageLoader.Load(stream);
                     stream.Position = 0;
                 }
                 catch (Exception)
                 {
-                    Utils.Log($"Unable to perform perceptual hashing on {relPath.FileName} in {parent.FullPath}");
-                    throw;
                 }
-            }*/
+            }
 
             self.FillFullPath(depth);
             

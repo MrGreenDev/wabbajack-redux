@@ -14,7 +14,7 @@ namespace Wabbajack.FileExtractor.Test
         public void ConfigureServices(IServiceCollection service)
         {
             service.AddSingleton<TemporaryFileManager, TemporaryFileManager>();
-            service.AddSingleton<IRateLimiter>(new AsyncSemaphore(Environment.ProcessorCount));
+            service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(Environment.ProcessorCount));
             service.AddSingleton<FileExtractor>();
             service.AddSingleton(new JsonSerializerOptions());
         }

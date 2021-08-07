@@ -25,6 +25,7 @@
       <ProjectReference Include="..\Wabbajack.Downloaders.Dispatcher\Wabbajack.Downloaders.Dispatcher.csproj" />
       <ProjectReference Include="..\Wabbajack.Hashing.xxHash64\Wabbajack.Hashing.xxHash64.csproj" />
       <ProjectReference Include="..\Wabbajack.Paths.IO\Wabbajack.Paths.IO.csproj" />
+      <ProjectReference Include="..\Wabbajack.VFS\Wabbajack.VFS.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -8,31 +8,36 @@ namespace Wabbajack.Common
 {
     public static class AsyncParallelExtensions
     {
-        public static async IAsyncEnumerable<TOut> PMap<TIn, TOut>(this IEnumerable<TIn> coll, IRateLimiter limiter, Func<TIn, ValueTask<TOut>> mapFn)
+        public static async IAsyncEnumerable<TOut> PMap<TIn, TOut>(this IEnumerable<TIn> coll, IRateLimiter limiter, Func<TIn, Task<TOut>> mapFn)
         {
-            List<Task<TOut>> outs = coll.Select(itm => Task.Run(async () =>
-                {
-                    using var _ = await limiter.Checkout(CancellationToken.None);
-                    return await mapFn(itm);
-                }))
-                .ToList();
+            var tasks = coll.Select(itm => limiter.Enqueue( () => mapFn(itm)));
+
+            CancellationTokenSource cts = new();
+            if (limiter.IsWorkerTask)
+            {
+                limiter.Assist(cts.Token);
+            }
             
-            foreach (var result in outs)
+            foreach (var result in tasks)
             {
                 yield return await result;
             }
+            cts.Cancel();
         }
         
-        public static async Task PDo<TIn>(this IEnumerable<TIn> coll, IRateLimiter limiter, Func<TIn, ValueTask> mapFn)
+        public static async Task PDo<TIn>(this IEnumerable<TIn> coll, IRateLimiter limiter, Func<TIn, Task> mapFn)
         {
-            List<Task> outs = coll.Select(itm => Task.Run(async () =>
-                {
-                    using var _ = await limiter.Checkout(CancellationToken.None);
-                    await mapFn(itm);
-                }))
-                .ToList();
+            var tasks = coll.Select(itm => limiter.Enqueue( () => mapFn(itm)));
+
+            CancellationTokenSource cts = new();
+            if (limiter.IsWorkerTask)
+            {
+                limiter.Assist(cts.Token);
+            }
             
-            await Task.WhenAll(outs);
+            await Task.WhenAll(tasks);
+            
+            cts.Cancel();
         }
 
         public static async Task<IList<T>> ToList<T>(this IAsyncEnumerable<T> coll)

@@ -20,8 +20,11 @@ namespace Wabbajack.Paths.IO
         
         public static void Delete(this AbsolutePath file)
         {
-            if (File.Exists(file.ToNativePath())) 
-                File.Delete(file.ToNativePath());
+            var path = file.ToNativePath();
+            if (File.Exists(path)) 
+                File.Delete(path);
+            if (Directory.Exists(path))
+                Directory.Delete(path, true);
         }
 
         public static long Size(this AbsolutePath file)
