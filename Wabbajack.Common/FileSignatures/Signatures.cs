@@ -104,6 +104,7 @@ namespace Wabbajack.Common.FileSignatures {
           DBX,
           DCI,
           DCX,
+          DDS,
           dex,
           DIB,
           DLL,
@@ -454,7 +455,10 @@ namespace Wabbajack.Common.FileSignatures {
                 // RAR4 or older
         (FileType.RAR_OLD, new byte[] {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00}),
 
-                // JPEG2000 image files
+                // DDS
+        (FileType.DDS, new byte[] {0x44, 0x44, 0x53, 0x20}),
+
+                // PEG2000 image files
         (FileType.JP2, new byte[] {0x00, 0x00, 0x00, 0x0C, 0x6A, 0x50, 0x20, 0x20}),
 
                 // 3GPP multimedia files

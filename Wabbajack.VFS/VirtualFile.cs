@@ -159,7 +159,7 @@ namespace Wabbajack.VFS
             };
         }
 
-        private static SignatureChecker DDSSig = new(FileType.DSS);
+        private static SignatureChecker DDSSig = new(FileType.DDS);
         public static async Task<VirtualFile> Analyze(Context context, VirtualFile? parent, IStreamFactory extractedFile,
             IPath relPath, CancellationToken token, int depth = 0)
         {
@@ -196,7 +196,7 @@ namespace Wabbajack.VFS
             };
 
             
-            if (TextureExtensions.Contains(relPath.FileName.Extension) && (await DDSSig.MatchesAsync(stream)) != null)
+            if (TextureExtensions.Contains(relPath.FileName.Extension) && await DDSSig.MatchesAsync(stream) != null)
             {
                 try
                 {
@@ -205,6 +205,7 @@ namespace Wabbajack.VFS
                 }
                 catch (Exception)
                 {
+                    
                 }
             }
 

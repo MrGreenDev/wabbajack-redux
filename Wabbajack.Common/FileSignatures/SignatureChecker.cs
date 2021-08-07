@@ -20,17 +20,18 @@ namespace Wabbajack.Common.FileSignatures
             _maxLength = _signatures.First().Item2.Length;
         }
 
-        public async Task<FileType?> MatchesAsync(AbsolutePath path)
+        public async ValueTask<FileType?> MatchesAsync(AbsolutePath path)
         {
             await using var fs = path.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
             return await MatchesAsync(fs);
         }
         
-        public async Task<FileType?> MatchesAsync(Stream stream)
+        public async ValueTask<FileType?> MatchesAsync(Stream stream)
         {
             var buffer = new byte[_maxLength];
             stream.Position = 0;
             await stream.ReadAsync(buffer);
+            stream.Position = 0;
 
             foreach (var (fileType, signature) in _signatures)
             {

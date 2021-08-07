@@ -10,13 +10,11 @@ namespace Wabbajack.Common
     {
         public static async IAsyncEnumerable<TOut> PMap<TIn, TOut>(this IEnumerable<TIn> coll, IRateLimiter limiter, Func<TIn, Task<TOut>> mapFn)
         {
-            var tasks = coll.Select(itm => limiter.Enqueue( () => mapFn(itm)));
+            var tasks = coll.Select(itm => limiter.Enqueue( () => mapFn(itm))).ToList();
 
             CancellationTokenSource cts = new();
-            if (limiter.IsWorkerTask)
-            {
-                limiter.Assist(cts.Token);
-            }
+            limiter.Assist(cts.Token);
+
             
             foreach (var result in tasks)
             {
@@ -30,10 +28,7 @@ namespace Wabbajack.Common
             var tasks = coll.Select(itm => limiter.Enqueue( () => mapFn(itm)));
 
             CancellationTokenSource cts = new();
-            if (limiter.IsWorkerTask)
-            {
-                limiter.Assist(cts.Token);
-            }
+            limiter.Assist(cts.Token);
             
             await Task.WhenAll(tasks);
             
