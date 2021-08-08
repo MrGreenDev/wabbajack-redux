@@ -1,5 +1,8 @@
+using Wabbajack.DTOs.JsonConverters;
+
 namespace Wabbajack.DTOs.BSA.ArchiveStates
 {
+    [JsonName("TES3State")]
     public class TES3State : IArchive
     {
         public uint FileCount { get; set; }

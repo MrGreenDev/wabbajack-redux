@@ -1,5 +1,8 @@
+using Wabbajack.DTOs.JsonConverters;
+
 namespace Wabbajack.DTOs.BSA.FileStates
 {
+    [JsonName("TES3File")]
     public class TES3File : AFile
     {
         public uint Offset { get; set; }

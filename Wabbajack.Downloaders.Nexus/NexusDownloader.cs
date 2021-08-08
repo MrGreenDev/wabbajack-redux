@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi;
@@ -44,6 +45,11 @@ namespace Wabbajack.Downloaders
         }
 
         public override async Task<bool> Prepare()
+        {
+            return true;
+        }
+
+        public override bool IsAllowed(ServerAllowList allowList, IDownloadState state)
         {
             return true;
         }

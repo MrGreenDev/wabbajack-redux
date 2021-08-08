@@ -7,7 +7,7 @@ namespace Wabbajack.DTOs.DownloadStates
 {
     [JsonName("Nexus")]
     [JsonAlias("NexusDownloader, Wabbajack.Lib")]
-    public class Nexus : IDownloadState
+    public class Nexus : ADownloadState
     {
         public string? Name { get; set; }
 
@@ -30,6 +30,7 @@ namespace Wabbajack.DTOs.DownloadStates
             return true;
         }
 
-        public object[] PrimaryKey => new object[] {Game, ModID, FileID};
+        public override string TypeName => "NexusDownloader+State";
+        public override object[] PrimaryKey => new object[] {Game, ModID, FileID};
     }
 }

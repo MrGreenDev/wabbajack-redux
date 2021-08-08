@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.DTOs.Validation;
+using Wabbajack.Hashing.xxHash64;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -38,6 +39,20 @@ namespace Wabbajack.Networking.WabbajackClientApi
                 .WithNamingConvention(PascalCaseNamingConvention.Instance)
                 .Build();
             return d.Deserialize<ServerAllowList>(str);
+        }
+
+        public async Task<Uri?> GetMirrorUrl(Hash archiveHash)
+        {
+            try
+            {
+                var result = await _client.GetStringAsync($"{_configuration.BuildServerUrl}mirror/{archiveHash.ToHex()}");
+                return new Uri(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "While downloading mirror for {hash}", archiveHash);
+                return null;
+            }
         }
     }
 }

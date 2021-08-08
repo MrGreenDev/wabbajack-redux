@@ -11,6 +11,7 @@ using Wabbajack.Common;
 using Wabbajack.Downloaders;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.Directives;
+using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Installer.Utilities;
@@ -177,7 +178,7 @@ namespace Wabbajack.Installer
             }, token);
         }
 
-        public async Task DownloadArchives()
+        public async Task DownloadArchives(CancellationToken token)
         {
             var missing = ModList.Archives.Where(a => !HashedArchives.ContainsKey(a.Hash)).ToList();
             _logger.LogInformation("Missing {count} archives", missing.Count);
@@ -190,45 +191,45 @@ namespace Wabbajack.Installer
 
             var validationData = await _wjClient.LoadAllowList();
 
-            foreach (var archive in missing.Where(archive => !archive.State.IsWhitelisted(validationData.ServerWhitelist)))
+            foreach (var archive in missing.Where(archive => !_downloadDispatcher.Downloader(archive).IsAllowed(validationData, archive.State)))
             {
                 throw new Exception($"File {archive.State.PrimaryKeyString} failed validation");
             }
 
-            await DownloadMissingArchives(missing);
+            await DownloadMissingArchives(missing, token);
         }
 
-        public async Task DownloadMissingArchives(List<Archive> missing, bool download = true, CancellationToken token)
+        public async Task DownloadMissingArchives(List<Archive> missing, CancellationToken token, bool download = true)
         {
             if (download)
             {
                 var result = SendDownloadMetrics(missing);
-                foreach (var a in missing.Where(a => a.State.GetType() == typeof(ManualDownloader.State)))
+                foreach (var a in missing.Where(a => a.State is Manual))
                 {
-                    var outputPath = DownloadFolder.Combine(a.Name);
-                    await a.State.Download(a, outputPath);
+                    var outputPath = _configuration.Downloads.Combine(a.Name);
+                    await _downloadDispatcher.Download(a, outputPath, token);
                 }
             }
 
-            await missing.Where(a => a.State.GetType() != typeof(ManualDownloader.State))
-                .PMap(_limiter, async archive =>
+            await missing.Where(a => a.State is not Manual)
+                .PDo(_limiter, async archive =>
                 {
                     _logger.LogInformation("Downloading {archive}", archive.Name);
                     var outputPath = _configuration.Downloads.Combine(archive.Name);
 
                     if (download)
                     {
-                        if (outputPath.Exists)
+                        if (outputPath.FileExists())
                         {
                             var origName = Path.GetFileNameWithoutExtension(archive.Name);
                             var ext = Path.GetExtension(archive.Name);
                             var uniqueKey = archive.State.PrimaryKeyString.StringSha256Hex();
                             outputPath = _configuration.Downloads.Combine(origName + "_" + uniqueKey + "_" + ext);
-                            await outputPath.DeleteAsync();
+                            outputPath.Delete();
                         }
                     }
 
-                    return await DownloadArchive(archive, download, outputPath);
+                    await DownloadArchive(archive, download, token, outputPath);
                 });
         }
 
@@ -237,20 +238,20 @@ namespace Wabbajack.Installer
             var grouped = missing.GroupBy(m => m.State.GetType());
             foreach (var group in grouped)
             {
-                await Metrics.Send($"downloading_{group.Key.FullName!.Split(".").Last().Split("+").First()}", group.Sum(g => g.Size).ToString());
+                await _wjClient.SendMetric($"downloading_{group.Key.FullName!.Split(".").Last().Split("+").First()}", group.Sum(g => (long)g.Size).ToString());
             }
         }
 
-        public async Task<bool> DownloadArchive(Archive archive, bool download, AbsolutePath? destination = null)
+        public async Task<bool> DownloadArchive(Archive archive, bool download, CancellationToken token, AbsolutePath? destination = null)
         {
             try
             {
-                destination ??= DownloadFolder.Combine(archive.Name);
+                destination ??= _configuration.Downloads.Combine(archive.Name);
                 
-                var result = await DownloadDispatcher.DownloadWithPossibleUpgrade(archive, destination.Value);
-                if (result == DownloadDispatcher.DownloadResult.Update)
+                var result = await _downloadDispatcher.DownloadWithPossibleUpgrade(archive, destination.Value, token);
+                if (result == DownloadResult.Update)
                 {
-                    await destination.Value.MoveToAsync(destination.Value.Parent.Combine(archive.Hash.ToHex()));
+                    await destination.Value.MoveToAsync(destination.Value.Parent.Combine(archive.Hash.ToHex()), true, token);
                 }
             }
             catch (Exception ex)
@@ -272,7 +273,7 @@ namespace Wabbajack.Installer
 
             var hashDict = allFiles.GroupBy(f => f.Size()).ToDictionary(g => g.Key);
 
-            var toHash = ModList.Archives.Where(a => hashDict.ContainsKey(a.Size)).SelectMany(a => hashDict[a.Size]).ToList();
+            var toHash = ModList.Archives.Where(a => hashDict.ContainsKey((long)a.Size)).SelectMany(a => hashDict[(long)a.Size]).ToList();
             
             _logger.LogInformation("Found {count} total files, {hashedCount} matching filesize", allFiles.Count, toHash.Count);
 

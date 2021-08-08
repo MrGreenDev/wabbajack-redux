@@ -5,9 +5,10 @@ namespace Wabbajack.DTOs.DownloadStates
 {
     [JsonName("WabbajackCDN")]
     [JsonAlias("WabbajackCDNDownloader+State, Wabbajack.Lib")]
-    public class WabbajackCDN : IDownloadState
+    public class WabbajackCDN : ADownloadState
     {
         public Uri Url { get; init; }
-        public object[] PrimaryKey => new object[] {Url};
+        public override string TypeName => "WabbajackCDNDownloader+State";
+        public override object[] PrimaryKey => new object[] {Url};
     }
 }

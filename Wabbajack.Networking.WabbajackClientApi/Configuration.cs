@@ -8,6 +8,6 @@ namespace Wabbajack.Networking.WabbajackClientApi
         public string MetricsKey { get; set; }
         public string MetricsKeyHeader { get; set; } = "x-metrics-key";
         public Uri ServerAllowList { get; set; } = new("https://raw.githubusercontent.com/wabbajack-tools/opt-out-lists/master/ServerWhitelist.yml");
-        public Uri BuildServerUrl { get; set; } = new ("https://build.wabbajack.org/")
+        public Uri BuildServerUrl { get; set; } = new("https://build.wabbajack.org/");
     }
 }

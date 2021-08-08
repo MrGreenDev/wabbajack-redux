@@ -31,6 +31,7 @@ namespace Wabbajack.Installer
                 }
             }
 
+            path = default;
             return false;
         }
 

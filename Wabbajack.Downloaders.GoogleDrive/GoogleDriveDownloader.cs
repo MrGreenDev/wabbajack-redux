@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.Http;
 using Wabbajack.Networking.Http.Interfaces;
@@ -44,6 +45,11 @@ namespace Wabbajack.Downloaders.GoogleDrive
         public override async Task<bool> Prepare()
         {
             return true;
+        }
+
+        public override bool IsAllowed(ServerAllowList allowList, IDownloadState state)
+        {
+            return allowList.GoogleIDs.Contains(((DTOs.DownloadStates.GoogleDrive)state).Id);
         }
 
         private async Task<HttpRequestMessage?> ToMessage(DTOs.DownloadStates.GoogleDrive state, bool download, CancellationToken token)

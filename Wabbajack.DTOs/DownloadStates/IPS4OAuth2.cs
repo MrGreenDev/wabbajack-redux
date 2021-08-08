@@ -2,7 +2,7 @@ using System;
 
 namespace Wabbajack.DTOs.DownloadStates
 {
-    public abstract class IPS4OAuth2 : IDownloadState, IMetaState
+    public abstract class IPS4OAuth2 : ADownloadState, IMetaState
     {
         public long IPS4Mod { get; set; }
             
@@ -10,7 +10,7 @@ namespace Wabbajack.DTOs.DownloadStates
         public string IPS4File { get; set; } = "";
         public string IPS4Url { get; set; } = "";
         
-        public object[] PrimaryKey { get; }
+        public override object[] PrimaryKey { get; }
         public Uri URL { get; }
         public string? Name { get; set; }
         public string? Author { get; set; }
