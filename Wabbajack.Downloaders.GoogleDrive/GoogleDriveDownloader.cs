@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
@@ -50,6 +51,11 @@ namespace Wabbajack.Downloaders.GoogleDrive
         public override bool IsAllowed(ServerAllowList allowList, IDownloadState state)
         {
             return allowList.GoogleIDs.Contains(((DTOs.DownloadStates.GoogleDrive)state).Id);
+        }
+
+        public override IEnumerable<string> MetaIni(Archive a, DTOs.DownloadStates.GoogleDrive state)
+        {
+            return new [] {$"directURL=https://drive.google.com/uc?id={state.Id}&export=download"};
         }
 
         private async Task<HttpRequestMessage?> ToMessage(DTOs.DownloadStates.GoogleDrive state, bool download, CancellationToken token)

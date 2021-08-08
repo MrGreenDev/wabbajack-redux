@@ -31,7 +31,7 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             await _slab.DisposeAsync();
         }
 
-        public async ValueTask AddFile(AFile state, Stream src, ITrackedTask task, CancellationToken token)
+        public async ValueTask AddFile(AFile state, Stream src, CancellationToken token)
         {
             switch (_state.Type)
             {
@@ -46,7 +46,7 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             }
         }
 
-        public async ValueTask Build(Stream fs, ITrackedTask task, CancellationToken token)
+        public async ValueTask Build(Stream fs, CancellationToken token)
         {
             SortEntries();
             await using var bw = new BinaryWriter(fs, Encoding.Default, true);

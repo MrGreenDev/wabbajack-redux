@@ -24,7 +24,7 @@ namespace Wabbajack.Common
             await tw.FlushAsync(token);
         }
         
-        public static async Task CopyToWithStatusAsync(this Stream input, long maxSize, Stream output, ITrackedTask task, CancellationToken token)
+        public static async Task CopyToWithStatusAsync(this Stream input, long maxSize, Stream output, CancellationToken token)
         {
             var buffer = new byte[1024 * 1024];
             if (maxSize == 0) maxSize = 1;
@@ -38,7 +38,6 @@ namespace Wabbajack.Common
                 if (read == 0) break;
                 totalRead += read;
                 await output.WriteAsync(buffer.AsMemory(0, read), token);
-                await task.ReportProgress(Percent.FactoryPutInRange(totalRead, maxSize), totalRead);
             }
 
             await output.FlushAsync(token);

@@ -41,6 +41,11 @@ namespace Wabbajack.Installer
                 return path;
             throw new Exception($"Can't find game {game}");
         }
+        
+        public bool IsInstalled(Game game)
+        {
+            return TryFindLocation(game, out _);
+        }
 
         public bool TryFindLocation(Game game, out AbsolutePath path)
         {

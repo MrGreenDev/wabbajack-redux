@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -52,6 +53,11 @@ namespace Wabbajack.Downloaders
         public override bool IsAllowed(ServerAllowList allowList, IDownloadState state)
         {
             return true;
+        }
+
+        public override IEnumerable<string> MetaIni(Archive a, Nexus state)
+        {
+            return new[] {$"gameName={state.Game.MetaData().MO2ArchiveName}", $"modID={state.ModID}", $"fileID={state.FileID}"};
         }
 
         public IDownloadState? Parse(Uri uri)

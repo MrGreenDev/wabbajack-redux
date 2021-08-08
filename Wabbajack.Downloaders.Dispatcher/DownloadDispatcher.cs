@@ -158,5 +158,10 @@ namespace Wabbajack.Downloaders
                 .Select(downloader => downloader.Parse(url))
                 .FirstOrDefault(parsed => parsed != null);
         }
+
+        public IEnumerable<string> MetaIni(Archive archive)
+        {
+            return Downloader(archive).MetaIni(archive);
+        }
     }
 }

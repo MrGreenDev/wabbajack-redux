@@ -11,5 +11,6 @@ namespace Wabbajack.Installer
         public AbsolutePath Downloads { get; set; }
         public SystemParameters? SystemParameters { get; set; }
         public Game Game { get; set; }
+        public AbsolutePath GameFolder { get; set; }
     }
 }

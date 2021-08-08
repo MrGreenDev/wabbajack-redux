@@ -12,7 +12,6 @@ namespace Wabbajack.Networking.WabbajackClientApi
     public class Client
     {
 
-        
         private readonly Configuration _configuration;
         private readonly HttpClient _client;
         private readonly ILogger<Client> _logger;

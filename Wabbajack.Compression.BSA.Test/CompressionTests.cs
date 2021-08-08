@@ -64,12 +64,12 @@ namespace Wabbajack.Compression.BSA.Test
 
             await dataStates.PDo(_limiter, async itm =>
             {
-                await build.AddFile(itm.State, itm.Stream, ITrackedTask.None, CancellationToken.None);
+                await build.AddFile(itm.State, itm.Stream, CancellationToken.None);
             });
 
 
             var rebuiltStream = new MemoryStream();
-            await build.Build(rebuiltStream, ITrackedTask.None, CancellationToken.None);
+            await build.Build(rebuiltStream, CancellationToken.None);
             rebuiltStream.Position = 0;
 
             var reader2 = await BSADispatch.Open(new MemoryStreamFactory(rebuiltStream, path, path.LastModifiedUtc()));
