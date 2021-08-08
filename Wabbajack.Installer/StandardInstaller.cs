@@ -21,6 +21,7 @@ using Wabbajack.DTOs.Directives;
 using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Hashing.xxHash64;
+using Wabbajack.Installer.Utilities;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
@@ -120,7 +121,7 @@ namespace Wabbajack.Installer
             await BuildBSAs(token);
 
             // TODO: Port this
-            //wait zEditIntegration.GenerateMerges(this);
+            await GenerateZEditMerges(token);
 
             await ForcePortable();
 
@@ -367,6 +368,25 @@ namespace Wabbajack.Installer
             data = data.Replace(Consts.DOWNLOAD_PATH_MAGIC_FORWARD, (_configuration.Downloads.ToString()).Replace("\\", "/"));
 
             await _configuration.Install.Combine(directive.To).WriteAllTextAsync(data);
+        }
+        
+        public async Task GenerateZEditMerges(CancellationToken token)
+        {
+            await _configuration.ModList
+                .Directives
+                .OfType<MergedPatch>()
+                .PDo(_limiter, async m =>
+                {
+                    _logger.LogInformation("Generating zEdit merge: {to}}", m.To);
+
+                    var srcData = (await Task.WhenAll(m.Sources.Select(async s => await _configuration.Install.Combine(s.RelativePath).ReadAllBytesAsync(token))))
+                        .ConcatArrays();
+
+                    var patchData = await LoadBytesFromPath(m.PatchID);
+
+                    await using var fs = _configuration.Install.Combine(m.To).Open(FileMode.Create, FileAccess.Write, FileShare.None);
+                    await BinaryPatching.ApplyPatch(new MemoryStream(srcData), new MemoryStream(patchData), fs);
+                });
         }
     }
 }
