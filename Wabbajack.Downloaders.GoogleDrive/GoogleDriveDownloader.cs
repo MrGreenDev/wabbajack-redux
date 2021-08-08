@@ -40,7 +40,12 @@ namespace Wabbajack.Downloaders.GoogleDrive
             var result = await ToMessage(state, false, token);
             return result != null;
         }
-        
+
+        public override async Task<bool> Prepare()
+        {
+            return true;
+        }
+
         private async Task<HttpRequestMessage?> ToMessage(DTOs.DownloadStates.GoogleDrive state, bool download, CancellationToken token)
         {
             if (download)

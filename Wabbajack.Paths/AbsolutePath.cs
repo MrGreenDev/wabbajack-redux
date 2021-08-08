@@ -123,6 +123,11 @@ namespace Wabbajack.Paths
             Array.Copy(Parts, basePath.Parts.Length, newParts, 0, newParts.Length);
             return new RelativePath(newParts);
         }
+        
+        public bool InFolder(AbsolutePath parent)
+        {
+            return ArrayExtensions.AreEqual(parent.Parts, 0, Parts, 0, parent.Parts.Length);
+        }
 
         public AbsolutePath Combine(params object[] paths)
         {

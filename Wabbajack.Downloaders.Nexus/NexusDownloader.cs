@@ -43,6 +43,11 @@ namespace Wabbajack.Downloaders
             return fileInfo.info.FileId == state.FileID;
         }
 
+        public override async Task<bool> Prepare()
+        {
+            return true;
+        }
+
         public IDownloadState? Parse(Uri uri)
         {
             if (uri.Host != "www.nexusmods.com")
