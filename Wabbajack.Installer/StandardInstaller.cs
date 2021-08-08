@@ -7,6 +7,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using IniParser;
+using IniParser.Model;
+using IniParser.Model.Configuration;
+using IniParser.Parser;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.Common;
@@ -115,7 +119,8 @@ namespace Wabbajack.Installer
 
             await BuildBSAs(token);
 
-            await zEditIntegration.GenerateMerges(this);
+            // TODO: Port this
+            //wait zEditIntegration.GenerateMerges(this);
 
             await ForcePortable();
 
@@ -132,34 +137,31 @@ namespace Wabbajack.Installer
         private void CreateOutputMods()
         {
             _configuration.Install.Combine("profiles")
-                .EnumerateFiles(true)
+                .EnumerateFiles()
                 .Where(f => f.FileName == Consts.SettingsIni)
                 .Do(f =>
             {
-                var ini = f.LoadIniFile();
-                if (ini == null)
+                if (!f.FileExists())
                 {
-                    Utils.Log($"settings.ini is null for {f}, skipping");
+                    _logger.LogInformation("settings.ini is null for {profile}, skipping", f);
                     return;
                 }
+                var ini = f.LoadIniFile();
 
-                var overwrites = ini.custom_overwrites;
+                var overwrites = ini["custom_overrides"];
                 if (overwrites == null)
                 {
-                    Utils.Log("No custom overwrites found, skipping");
+                    _logger.LogInformation("No custom overwrites found, skipping");
                     return;
                 }
-
-                if (overwrites is SectionData data)
+                
+                overwrites!.Do(keyData =>
                 {
-                    data.Coll.Do(keyData =>
-                    {
-                        var v = keyData.Value;
-                        var mod = _configuration.Install.Combine(Consts.MO2ModFolderName, (RelativePath)v);
+                    var v = keyData.Value;
+                    var mod = _configuration.Install.Combine(Consts.MO2ModFolderName, (RelativePath)v);
 
-                        mod.CreateDirectory();
-                    });
-                }
+                    mod.CreateDirectory();
+                });
             });
         }
 
@@ -192,7 +194,7 @@ namespace Wabbajack.Installer
                                await metaPath.WriteAllLinesAsync(meta, token);
                            }
                        }
-                   }, token);
+                   });
         }
 
         private IEnumerable<string> AddInstalled(IEnumerable<string> getMetaIni)
@@ -268,10 +270,11 @@ namespace Wabbajack.Installer
         
         private void SetScreenSizeInPrefs()
         {
-            if (SystemParameters == null)
+            if (_configuration.SystemParameters == null)
             {
                 throw new ArgumentNullException("System Parameters was null.  Cannot set screen size prefs");
             }
+            
             var config = new IniParserConfiguration {AllowDuplicateKeys = true, AllowDuplicateSections = true};
             var oblivionPath = (RelativePath)"Oblivion.ini";
             foreach (var file in _configuration.Install.Combine("profiles").EnumerateFiles()
@@ -280,7 +283,7 @@ namespace Wabbajack.Installer
                 try
                 {
                     var parser = new FileIniDataParser(new IniDataParser(config));
-                    var data = parser.ReadFile((string)file);
+                    var data = parser.ReadFile(file.ToString());
                     bool modified = false;
                     if (data.Sections["Display"] != null)
                     {
@@ -288,9 +291,9 @@ namespace Wabbajack.Installer
                         if (data.Sections["Display"]["iSize W"] != null && data.Sections["Display"]["iSize H"] != null)
                         {
                             data.Sections["Display"]["iSize W"] =
-                                SystemParameters.ScreenWidth.ToString(CultureInfo.CurrentCulture);
+                                _configuration.SystemParameters.ScreenWidth.ToString(CultureInfo.CurrentCulture);
                             data.Sections["Display"]["iSize H"] =
-                                SystemParameters.ScreenHeight.ToString(CultureInfo.CurrentCulture);
+                                _configuration.SystemParameters.ScreenHeight.ToString(CultureInfo.CurrentCulture);
                             modified = true;
                         }
 
@@ -300,17 +303,17 @@ namespace Wabbajack.Installer
                         if (data.Sections["MEMORY"]["VideoMemorySizeMb"] != null)
                         {
                             data.Sections["MEMORY"]["VideoMemorySizeMb"] =
-                                SystemParameters.EnbLEVRAMSize.ToString(CultureInfo.CurrentCulture);
+                                _configuration.SystemParameters.EnbLEVRAMSize.ToString(CultureInfo.CurrentCulture);
                             modified = true;
                         }
                     }
 
                     if (modified) 
-                        parser.WriteFile((string)file, data);
+                        parser.WriteFile(file.ToString(), data);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    Utils.Log($"Skipping screen size remap for {file} due to parse error.");
+                    _logger.LogCritical(ex, "Skipping screen size remap for {file} due to parse error.", file);
                 }
             }
             
@@ -321,7 +324,7 @@ namespace Wabbajack.Installer
                 try
                 {
                     var parser = new FileIniDataParser(new IniDataParser(config));
-                    var data = parser.ReadFile((string)file);
+                    var data = parser.ReadFile(file.ToString());
                     bool modified = false;
                     if (data.Sections["Render"] != null)
                     {
@@ -329,18 +332,18 @@ namespace Wabbajack.Installer
                         if (data.Sections["Render"]["Resolution"] != null)
                         {
                             data.Sections["Render"]["Resolution"] =
-                                $"{SystemParameters.ScreenWidth.ToString(CultureInfo.CurrentCulture)}x{SystemParameters.ScreenHeight.ToString(CultureInfo.CurrentCulture)}";
+                                $"{_configuration.SystemParameters.ScreenWidth.ToString(CultureInfo.CurrentCulture)}x{_configuration.SystemParameters.ScreenHeight.ToString(CultureInfo.CurrentCulture)}";
                             modified = true;
                         }
 
                     }
                     
                     if (modified) 
-                        parser.WriteFile((string)file, data);
+                        parser.WriteFile(file.ToString(), data);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    Utils.Log($"Skipping screen size remap for {file} due to parse error.");
+                    _logger.LogCritical(ex, "Skipping screen size remap for {file} due to parse error.", file);
                 }
             }
         }
