@@ -55,6 +55,8 @@ namespace Wabbajack.Hashing.xxHash64
                 await pendingWrite;
             }
 
+            await outputStream.FlushAsync(token);
+
             return new Hash(finalHash);
         }
     }
