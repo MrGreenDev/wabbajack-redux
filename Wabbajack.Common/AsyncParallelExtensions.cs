@@ -25,12 +25,15 @@ namespace Wabbajack.Common
         
         public static async Task PDo<TIn>(this IEnumerable<TIn> coll, IRateLimiter limiter, Func<TIn, Task> mapFn)
         {
-            var tasks = coll.Select(itm => limiter.Enqueue( () => mapFn(itm)));
+            var tasks = coll.Select(itm => limiter.Enqueue( () => mapFn(itm)))
+                .ToArray();
 
             CancellationTokenSource cts = new();
             limiter.Assist(cts.Token);
             
             await Task.WhenAll(tasks);
+            
+            tasks.Where(t => t.IsFaulted).Do(f => throw f.Exception!);
             
             cts.Cancel();
         }
@@ -44,7 +47,23 @@ namespace Wabbajack.Common
             }
             return lst;
         }
+
+        public static async Task Do<T>(this IAsyncEnumerable<T> coll, Func<T, Task> fn)
+        {
+            await foreach (var itm in coll)
+            {
+                await fn(itm);
+            }
+        }
         
+        public static async Task Do<T>(this IAsyncEnumerable<T> coll, Action<T> fn)
+        {
+            await foreach (var itm in coll)
+            {
+                fn(itm);
+            }
+        }
+
         public static async Task<IDictionary<TK, T>> ToDictionary<T, TK>(this IAsyncEnumerable<T> coll, Func<T, TK> kSelector)
             where TK: notnull
         {

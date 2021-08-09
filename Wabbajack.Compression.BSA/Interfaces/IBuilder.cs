@@ -9,7 +9,7 @@ namespace Wabbajack.Compression.BSA.Interfaces
 {
     public interface IBuilder
     {
-        ValueTask AddFile(AFile state, Stream src, ITrackedTask task, CancellationToken token);
-        ValueTask Build(Stream filename, ITrackedTask task, CancellationToken token);
+        ValueTask AddFile(AFile state, Stream src, CancellationToken token);
+        ValueTask Build(Stream filename, CancellationToken token);
     }
 }

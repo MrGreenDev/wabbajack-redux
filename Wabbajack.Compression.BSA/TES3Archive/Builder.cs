@@ -22,13 +22,13 @@ namespace Wabbajack.Compression.BSA.TES3Archive
             _files = new (TES3File state, Stream data)[_state.FileCount];
         }
 
-        public async ValueTask AddFile(AFile state, Stream src, ITrackedTask task, CancellationToken token)
+        public async ValueTask AddFile(AFile state, Stream src, CancellationToken token)
         {
             var tesState = (TES3File)state;
             _files[state.Index] = (tesState, src);
         }
 
-        public async ValueTask Build(Stream file, ITrackedTask task, CancellationToken token)
+        public async ValueTask Build(Stream file, CancellationToken token)
         {
             await using var bw = new BinaryWriter(file, Encoding.Default, true);
             
@@ -70,7 +70,7 @@ namespace Wabbajack.Compression.BSA.TES3Archive
             foreach (var (state, data) in _files)
             {
                 bw.BaseStream.Position = _state.DataOffset + state.Offset;
-                await data.CopyToWithStatusAsync(data.Length, bw.BaseStream, task, token);
+                await data.CopyToWithStatusAsync(data.Length, bw.BaseStream, token);
                 await data.DisposeAsync();
             }
         }

@@ -77,11 +77,11 @@ namespace Wabbajack.Compression.BSA.TES5Archive
         {
             await _slab.DisposeAsync();
         }
-        public async ValueTask AddFile(AFile state, Stream src, ITrackedTask task, CancellationToken token)
+        public async ValueTask AddFile(AFile state, Stream src, CancellationToken token)
         {
             var bsaState = (BSAFile) state;
 
-            var r = await FileEntry.Create(this, bsaState.Path, src, bsaState.FlipCompression, task, token);
+            var r = await FileEntry.Create(this, bsaState.Path, src, bsaState.FlipCompression, token);
 
             lock (this)
             {
@@ -89,7 +89,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             }
         }
 
-        public async ValueTask Build(Stream fs, ITrackedTask task, CancellationToken token)
+        public async ValueTask Build(Stream fs, CancellationToken token)
         {
             RegenFolderRecords();
             await using var wtr = new BinaryWriter(fs, Encoding.Default, true);
@@ -232,7 +232,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
         internal byte[] _pathBytes;
         private Stream _srcData;
 
-        public static async Task<FileEntry> Create(Builder bsa, RelativePath path, Stream src, bool flipCompression, ITrackedTask task, CancellationToken token)
+        public static async Task<FileEntry> Create(Builder bsa, RelativePath path, Stream src, bool flipCompression, CancellationToken token)
         {
             var entry = new FileEntry();
             entry._bsa = bsa;
@@ -248,7 +248,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             entry._originalSize = (int)entry._srcData.Length;
 
             if (entry.Compressed)
-                await entry.CompressData(task, token);
+                await entry.CompressData(token);
             return entry;
         }
 
@@ -270,7 +270,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
 
         public FolderRecordBuilder Folder => _folder;
 
-        private async Task CompressData(ITrackedTask task, CancellationToken token)
+        private async Task CompressData(CancellationToken token)
         {
             switch (_bsa.HeaderType)
             {
@@ -279,13 +279,13 @@ namespace Wabbajack.Compression.BSA.TES5Archive
                     var r = new MemoryStream();
                     await using (var w = LZ4Stream.Encode(r, new LZ4EncoderSettings {CompressionLevel = LZ4Level.L12_MAX}, true))
                     {
-                        await _srcData.CopyToWithStatusAsync(_srcData.Length, w, task, token);
+                        await _srcData.CopyToWithStatusAsync(_srcData.Length, w, token);
                     }
 
                     await _srcData.DisposeAsync();
                     _srcData = _bsa._slab.Allocate(r.Length);
                     r.Position = 0;
-                    await r.CopyToWithStatusAsync(r.Length, _srcData, task, token);
+                    await r.CopyToWithStatusAsync(r.Length, _srcData, token);
                     _srcData.Position = 0;
                     break;
                 }
@@ -296,13 +296,13 @@ namespace Wabbajack.Compression.BSA.TES5Archive
                     using (var w = new DeflaterOutputStream(r))
                     {
                         w.IsStreamOwner = false;
-                        await _srcData.CopyToWithStatusAsync(_srcData.Length, w, task, token);
+                        await _srcData.CopyToWithStatusAsync(_srcData.Length, w, token);
                     }
 
                     await _srcData.DisposeAsync();
                     _srcData = _bsa._slab.Allocate(r.Length);
                     r.Position = 0;
-                    await r.CopyToWithStatusAsync(r.Length, _srcData, task, token);
+                    await r.CopyToWithStatusAsync(r.Length, _srcData, token);
                     _srcData.Position = 0;
                     break;
                 }

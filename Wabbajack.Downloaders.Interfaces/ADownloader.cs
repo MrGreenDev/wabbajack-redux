@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
 
@@ -27,5 +29,14 @@ namespace Wabbajack.Downloaders.Interfaces
         {
             return Verify(archive, (T) archive.State, token);
         }
+
+        public abstract Task<bool> Prepare();
+        public abstract bool IsAllowed(ServerAllowList allowList, IDownloadState state);
+
+        public IEnumerable<string> MetaIni(Archive a)
+        {
+            return MetaIni(a, (T)a.State);
+        }
+        public abstract IEnumerable<string> MetaIni(Archive a, T state);
     }
 }

@@ -5,11 +5,13 @@ namespace Wabbajack.DTOs.DownloadStates
 {
     [JsonName("GoogleDrive")]
     [JsonAlias("GoogleDriveDownloader, Wabbajack.Lib")]
-    public class GoogleDrive : IDownloadState
+    public class GoogleDrive : ADownloadState
     {
         public string Id { get; init; }
 
-        [JsonIgnore] 
-        public object[] PrimaryKey => new object[] {Id};
+        public override string TypeName => "GoogleDriveDownloader+State";
+
+        [JsonIgnore]
+        public override object[] PrimaryKey => new object[] {Id};
     }
 }

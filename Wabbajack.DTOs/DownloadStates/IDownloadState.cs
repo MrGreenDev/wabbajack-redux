@@ -6,5 +6,10 @@ namespace Wabbajack.DTOs.DownloadStates
     {
         [JsonIgnore]
         object[] PrimaryKey { get; }
+        
+        [JsonIgnore]
+        string TypeName { get; }
+        
+        string PrimaryKeyString { get;  }
     }
 }

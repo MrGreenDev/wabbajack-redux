@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ namespace Wabbajack.Hashing.xxHash64
         {
             var buffer = new byte[1024 * 1024];
 
-            var hasher = new xxHashAlgorithm();
+            var hasher = new xxHashAlgorithm(0);
 
             var running = true;
             ulong finalHash = 0;
@@ -20,7 +21,7 @@ namespace Wabbajack.Hashing.xxHash64
 
                 while (totalRead != buffer.Length)
                 {
-                    var read = await inputStream.ReadAsync(buffer, totalRead, buffer.Length - totalRead, token);
+                    var read = await inputStream.ReadAsync(buffer.AsMemory(totalRead, buffer.Length - totalRead), token);
                     if (read == 0)
                     {
                         running = false;
@@ -31,17 +32,32 @@ namespace Wabbajack.Hashing.xxHash64
                 }
 
                 var pendingWrite = outputStream.WriteAsync(buffer, 0, totalRead, token);
-                if (totalRead != buffer.Length)
+                if (running)
                 {
-                    finalHash = hasher.FinalizeHashValueInternal(buffer[..totalRead]);
+                    hasher.TransformByteGroupsInternal(buffer);
+                    await pendingWrite;
                 }
                 else
                 {
-                    hasher.TransformByteGroupsInternal(buffer);
+                    var preSize = totalRead >> 5 << 5;
+                    if (preSize > 0)
+                    {
+                        hasher.TransformByteGroupsInternal(buffer.AsSpan()[..preSize]);
+                        finalHash = hasher.FinalizeHashValueInternal(buffer.AsSpan()[preSize..totalRead]);
+                        await pendingWrite;
+                        break;
+                    }
+                    else
+                    {
+                        finalHash = hasher.FinalizeHashValueInternal(buffer.AsSpan()[..totalRead]);
+                        await pendingWrite;
+                        break;
+                    }
                 }
 
-                await pendingWrite;
             }
+
+            await outputStream.FlushAsync(token);
 
             return new Hash(finalHash);
         }

@@ -5,9 +5,10 @@ namespace Wabbajack.DTOs.DownloadStates
 {
     [JsonName("Mega")]
     [JsonAlias("MegaDownloader, Wabbajack.Lib")]
-    public class Mega : IDownloadState
+    public class Mega : ADownloadState
     {
         public Uri Url { get; init; }
-        public object[] PrimaryKey => new object[] {Url};
+        public override string TypeName => "MegaDownloader+State";
+        public override object[] PrimaryKey => new object[] {Url};
     }
 }

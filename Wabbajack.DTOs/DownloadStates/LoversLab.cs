@@ -6,6 +6,6 @@ namespace Wabbajack.DTOs.DownloadStates
     [JsonAlias("LoversLabOAuthDownloader, Wabbajack.Lib")]
     public class LoversLab : IPS4OAuth2
     {
-        
+        public override string TypeName => "LoversLabOAuthDownloader+State";
     }
 }

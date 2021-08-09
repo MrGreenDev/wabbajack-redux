@@ -6,12 +6,13 @@ namespace Wabbajack.DTOs.DownloadStates
 {
     [JsonName("GameFileSource")]
     [JsonAlias("GameFileSourceDownloader, Wabbajack.Lib")]
-    public class GameFileSource : IDownloadState
+    public class GameFileSource : ADownloadState
     {
         public Game Game { get; set; }
         public RelativePath GameFile { get; set; }
         public Hash Hash { get; set; }
         public string GameVersion { get; set; } = "";
-        public object[] PrimaryKey => new object[] {Game, GameVersion ?? "0.0.0.0", GameFile.ToString().ToLowerInvariant()};
+        public override string TypeName => "GameFileSourceDownloader+State";
+        public override object[] PrimaryKey => new object[] {Game, GameVersion ?? "0.0.0.0", GameFile.ToString().ToLowerInvariant()};
     }
 }

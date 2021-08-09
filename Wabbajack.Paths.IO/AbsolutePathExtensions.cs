@@ -37,6 +37,11 @@ namespace Wabbajack.Paths.IO
             return new FileInfo(file.ToNativePath()).LastWriteTimeUtc;
         }
         
+        public static DateTime LastModified(this AbsolutePath file)
+        {
+            return new FileInfo(file.ToNativePath()).LastWriteTime;
+        }
+        
         public static byte[] ReadAllBytes(this AbsolutePath file)
         {
             using var s = File.Open(file.ToNativePath(), FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -152,9 +157,10 @@ namespace Wabbajack.Paths.IO
             Directory.CreateDirectory(ToNativePath(path));
         }
 
-        public static void DeleteDirectory(this AbsolutePath path)
+        public static void DeleteDirectory(this AbsolutePath path, bool dontDeleteIfNotEmpty = false)
         {
             if (!path.DirectoryExists()) return;
+            if (dontDeleteIfNotEmpty && (path.EnumerateFiles().Any() || path.EnumerateDirectories().Any())) return;
             Directory.Delete(ToNativePath(path), true);
         }
 
@@ -173,6 +179,13 @@ namespace Wabbajack.Paths.IO
             return Directory.EnumerateFiles(path.ToString(), pattern,
                     recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
                 .Select(file => file.ToAbsolutePath());
+        }
+        
+                
+        public static IEnumerable<AbsolutePath> EnumerateDirectories(this AbsolutePath path, bool recursive = true)
+        {
+            return Directory.EnumerateDirectories(path.ToString(), "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                .Select(p => (AbsolutePath)p);
         }
         
         #endregion

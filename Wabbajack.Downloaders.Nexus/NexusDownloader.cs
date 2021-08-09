@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi;
@@ -41,6 +43,21 @@ namespace Wabbajack.Downloaders
         {
             var fileInfo = await _api.FileInfo(state.Game.MetaData().NexusName!, state.ModID, state.FileID, token);
             return fileInfo.info.FileId == state.FileID;
+        }
+
+        public override async Task<bool> Prepare()
+        {
+            return true;
+        }
+
+        public override bool IsAllowed(ServerAllowList allowList, IDownloadState state)
+        {
+            return true;
+        }
+
+        public override IEnumerable<string> MetaIni(Archive a, Nexus state)
+        {
+            return new[] {$"gameName={state.Game.MetaData().MO2ArchiveName}", $"modID={state.ModID}", $"fileID={state.FileID}"};
         }
 
         public IDownloadState? Parse(Uri uri)

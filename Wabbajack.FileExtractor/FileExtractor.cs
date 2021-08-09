@@ -299,5 +299,18 @@ namespace Wabbajack.FileExtractor
                 }
             }
         }
+        
+        public async Task ExtractAll(AbsolutePath src, AbsolutePath dest, CancellationToken token)
+        {
+            await GatheringExtract(new NativeFileStreamFactory(src), _ => true, async (path, factory) =>
+            {
+                var abs = path.RelativeTo(dest);
+                abs.Parent.CreateDirectory();
+                await using var stream = await factory.GetStream();
+                await abs.WriteAllAsync(stream, token);
+                return 0;
+            }, token);
+        }
+
     }
 }

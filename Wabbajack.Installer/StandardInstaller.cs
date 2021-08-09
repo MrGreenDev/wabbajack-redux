@@ -1,0 +1,392 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using IniParser;
+using IniParser.Model;
+using IniParser.Model.Configuration;
+using IniParser.Parser;
+using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic.CompilerServices;
+using Wabbajack.Common;
+using Wabbajack.Compression.BSA;
+using Wabbajack.Downloaders;
+using Wabbajack.DTOs;
+using Wabbajack.DTOs.Directives;
+using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.DTOs.JsonConverters;
+using Wabbajack.Hashing.xxHash64;
+using Wabbajack.Installer.Utilities;
+using Wabbajack.Networking.WabbajackClientApi;
+using Wabbajack.Paths;
+using Wabbajack.Paths.IO;
+using Wabbajack.VFS;
+
+namespace Wabbajack.Installer
+{
+    public class StandardInstaller : AInstaller<StandardInstaller>
+    {
+        public StandardInstaller(ILogger<StandardInstaller> logger, 
+            InstallerConfiguration config, 
+            IGameLocator gameLocator, FileExtractor.FileExtractor extractor, 
+            DTOSerializer jsonSerializer, Context vfs, FileHashCache fileHashCache, 
+            DownloadDispatcher downloadDispatcher, IRateLimiter limiter, Client wjClient) :
+            base(logger, config, gameLocator, extractor, jsonSerializer, vfs, fileHashCache, downloadDispatcher, limiter, wjClient)
+        {
+
+        }
+        
+        public override async Task<bool> Begin(CancellationToken token)
+        {
+            if (token.IsCancellationRequested) return false;
+            await _wjClient.SendMetric(MetricNames.BeginInstall, ModList.Name);
+            _logger.LogInformation("Configuring Processor");
+
+            if (_configuration.GameFolder == default)
+            {
+                _configuration.GameFolder = _gameLocator.GameLocation(_configuration.Game);
+            }
+            
+            if (_configuration.GameFolder == default)
+            {
+                var otherGame = _configuration.Game.MetaData().CommonlyConfusedWith.Where(g => _gameLocator.IsInstalled(g)).Select(g => g.MetaData()).FirstOrDefault();
+                if (otherGame != null)
+                {
+                    _logger.LogError(
+                        "In order to do a proper install Wabbajack needs to know where your {lookingFor} folder resides. However this game doesn't seem to be installed, we did however find an installed " +
+                        "copy of {otherGame}, did you install the wrong game?",
+                        _configuration.Game.MetaData().HumanFriendlyGameName, otherGame.HumanFriendlyGameName);
+                }
+                else
+                {
+                    _logger.LogError(
+                        "In order to do a proper install Wabbajack needs to know where your {lookingFor} folder resides. However this game doesn't seem to be installed.",
+                        _configuration.Game.MetaData().HumanFriendlyGameName);
+                }
+
+                return false;
+            }
+
+            if (!_configuration.GameFolder.DirectoryExists())
+            {
+                _logger.LogError("Located game {game} at \"{gameFolder}\" but the folder does not exist!", _configuration.Game, _configuration.GameFolder);
+                return false;
+            }
+            
+
+
+            _logger.LogInformation("Install Folder: {installFolder}", _configuration.Install);
+            _logger.LogInformation("Downloads Folder: {downloadFolder}", _configuration.Downloads);
+            _logger.LogInformation("Game Folder: {gameFolder}", _configuration.GameFolder);
+            _logger.LogInformation("Wabbajack Folder: {wabbajackFolder}", KnownFolders.EntryPoint);
+            
+            _configuration.Install.CreateDirectory();
+            _configuration.Downloads.CreateDirectory();
+            
+            await OptimizeModlist(token);
+
+
+            await HashArchives(token);
+
+            await DownloadArchives(token);
+            
+            await HashArchives(token);
+
+            var missing = ModList.Archives.Where(a => !HashedArchives.ContainsKey(a.Hash)).ToList();
+            if (missing.Count > 0)
+            {
+                foreach (var a in missing)
+                    _logger.LogCritical("Unable to download {name} ({primaryKeyString})", a.Name, a.State.PrimaryKeyString);
+                _logger.LogCritical("Cannot continue, was unable to download one or more archives");
+                return false;
+            }
+
+            await ExtractModlist(token);
+
+            await PrimeVFS();
+
+            BuildFolderStructure();
+            
+            await InstallArchives(token);
+            
+            await InstallIncludedFiles(token);
+            
+            await InstallIncludedDownloadMetas(token);
+
+            await BuildBSAs(token);
+
+            // TODO: Port this
+            await GenerateZEditMerges(token);
+
+            await ForcePortable();
+
+            CreateOutputMods();
+
+            SetScreenSizeInPrefs();
+
+            await ExtractedModlistFolder!.DisposeAsync();
+            await _wjClient.SendMetric(MetricNames.FinishInstall, ModList.Name);
+
+            return true;
+        }
+        
+        private void CreateOutputMods()
+        {
+            _configuration.Install.Combine("profiles")
+                .EnumerateFiles()
+                .Where(f => f.FileName == Consts.SettingsIni)
+                .Do(f =>
+            {
+                if (!f.FileExists())
+                {
+                    _logger.LogInformation("settings.ini is null for {profile}, skipping", f);
+                    return;
+                }
+                var ini = f.LoadIniFile();
+
+                var overwrites = ini["custom_overrides"];
+                if (overwrites == null)
+                {
+                    _logger.LogInformation("No custom overwrites found, skipping");
+                    return;
+                }
+                
+                overwrites!.Do(keyData =>
+                {
+                    var v = keyData.Value;
+                    var mod = _configuration.Install.Combine(Consts.MO2ModFolderName, (RelativePath)v);
+
+                    mod.CreateDirectory();
+                });
+            });
+        }
+
+        private async Task ForcePortable()
+        {
+            var path = _configuration.Install.Combine("portable.txt");
+            if (path.FileExists()) return;
+
+            try
+            {
+                await path.WriteAllTextAsync("Created by Wabbajack");
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e, "Could not create portable.txt in {_configuration.Install}", _configuration.Install);
+            }
+        }
+
+        private async Task InstallIncludedDownloadMetas(CancellationToken token)
+        {
+            await ModList.Archives
+                   .PDo(_limiter, async archive =>
+                   {
+                       if (HashedArchives.TryGetValue(archive.Hash, out var paths))
+                       {
+                           var metaPath = paths.WithExtension(Ext.Meta);
+                           if (!metaPath.FileExists() && archive.State is not GameFileSource)
+                           {
+                               var meta = AddInstalled(_downloadDispatcher.MetaIni(archive));
+                               await metaPath.WriteAllLinesAsync(meta, token);
+                           }
+                       }
+                   });
+        }
+
+        private IEnumerable<string> AddInstalled(IEnumerable<string> getMetaIni)
+        {
+            foreach (var f in getMetaIni)
+            {
+                yield return f;
+                if (f == "[General]")
+                {
+                    yield return "installed=true";
+                }
+            }
+        }
+        
+        
+        public static RelativePath BSACreationDir = "TEMP_BSA_FILES".ToRelativePath();
+        private async Task BuildBSAs(CancellationToken token)
+        {
+            var bsas = ModList.Directives.OfType<CreateBSA>().ToList();
+            _logger.LogInformation("Building {bsasCount} bsa files", bsas.Count);
+
+            foreach (var bsa in bsas)
+            {
+                _logger.LogInformation("Building {bsaTo}", bsa.To.FileName);
+                var sourceDir = _configuration.Downloads.Combine(BSACreationDir, bsa.TempID);
+                
+                var a = BSADispatch.CreateBuilder(bsa.State, _manager);
+                var streams = await bsa.FileStates.PMap(_limiter, async state =>
+                {
+                    var fs = sourceDir.Combine(state.Path).Open(FileMode.Open, FileAccess.Read, FileShare.Read);
+                    await a.AddFile(state, fs, token);
+                    return fs;
+                }).ToList();
+
+                _logger.LogInformation("Writing {bsaTo}", bsa.To);
+                await using var outStream = _configuration.Install.Combine(bsa.To)
+                    .Open(FileMode.Create, FileAccess.Write, FileShare.None);
+                await a.Build(outStream, token);
+                streams.Do(s => s.Dispose());
+
+                sourceDir.DeleteDirectory();
+            }
+
+            var bsaDir = _configuration.Install.Combine(BSACreationDir);
+            if (bsaDir.DirectoryExists())
+            {
+                _logger.LogInformation("Removing temp folder {bsaCreationDir}", BSACreationDir);
+                bsaDir.DeleteDirectory();
+            }
+        }
+
+        private async Task InstallIncludedFiles(CancellationToken token)
+        {
+            _logger.LogInformation("Writing inline files");
+            await ModList.Directives
+                .OfType<InlineFile>()
+                .PDo(_limiter, async directive =>
+                {
+                    var outPath = _configuration.Install.Combine(directive.To);
+                    outPath.Delete();
+
+                    switch (directive)
+                    {
+                        case RemappedInlineFile file:
+                            await WriteRemappedFile(file);
+                            break;
+                        default:
+                            await outPath.WriteAllBytesAsync(await LoadBytesFromPath(directive.SourceDataID));
+                            break;
+                    }
+                });
+        }
+        
+        private void SetScreenSizeInPrefs()
+        {
+            if (_configuration.SystemParameters == null)
+            {
+                throw new ArgumentNullException("System Parameters was null.  Cannot set screen size prefs");
+            }
+            
+            var config = new IniParserConfiguration {AllowDuplicateKeys = true, AllowDuplicateSections = true};
+            var oblivionPath = (RelativePath)"Oblivion.ini";
+            foreach (var file in _configuration.Install.Combine("profiles").EnumerateFiles()
+                .Where(f => ((string)f.FileName).EndsWith("refs.ini") || f.FileName == oblivionPath))
+            {
+                try
+                {
+                    var parser = new FileIniDataParser(new IniDataParser(config));
+                    var data = parser.ReadFile(file.ToString());
+                    bool modified = false;
+                    if (data.Sections["Display"] != null)
+                    {
+
+                        if (data.Sections["Display"]["iSize W"] != null && data.Sections["Display"]["iSize H"] != null)
+                        {
+                            data.Sections["Display"]["iSize W"] =
+                                _configuration.SystemParameters.ScreenWidth.ToString(CultureInfo.CurrentCulture);
+                            data.Sections["Display"]["iSize H"] =
+                                _configuration.SystemParameters.ScreenHeight.ToString(CultureInfo.CurrentCulture);
+                            modified = true;
+                        }
+
+                    }
+                    if (data.Sections["MEMORY"] != null)
+                    {
+                        if (data.Sections["MEMORY"]["VideoMemorySizeMb"] != null)
+                        {
+                            data.Sections["MEMORY"]["VideoMemorySizeMb"] =
+                                _configuration.SystemParameters.EnbLEVRAMSize.ToString(CultureInfo.CurrentCulture);
+                            modified = true;
+                        }
+                    }
+
+                    if (modified) 
+                        parser.WriteFile(file.ToString(), data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(ex, "Skipping screen size remap for {file} due to parse error.", file);
+                }
+            }
+            
+            var tweaksPath = (RelativePath)"SSEDisplayTweaks.ini";
+            foreach (var file in _configuration.Install.EnumerateFiles()
+                .Where(f => f.FileName == tweaksPath))
+            {
+                try
+                {
+                    var parser = new FileIniDataParser(new IniDataParser(config));
+                    var data = parser.ReadFile(file.ToString());
+                    bool modified = false;
+                    if (data.Sections["Render"] != null)
+                    {
+
+                        if (data.Sections["Render"]["Resolution"] != null)
+                        {
+                            data.Sections["Render"]["Resolution"] =
+                                $"{_configuration.SystemParameters.ScreenWidth.ToString(CultureInfo.CurrentCulture)}x{_configuration.SystemParameters.ScreenHeight.ToString(CultureInfo.CurrentCulture)}";
+                            modified = true;
+                        }
+
+                    }
+                    
+                    if (modified) 
+                        parser.WriteFile(file.ToString(), data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(ex, "Skipping screen size remap for {file} due to parse error.", file);
+                }
+            }
+        }
+
+        private async Task WriteRemappedFile(RemappedInlineFile directive)
+        {
+            var data = Encoding.UTF8.GetString(await LoadBytesFromPath(directive.SourceDataID));
+
+            var gameFolder = _configuration.GameFolder.ToString();
+
+            data = data.Replace(Consts.GAME_PATH_MAGIC_BACK, gameFolder);
+            data = data.Replace(Consts.GAME_PATH_MAGIC_DOUBLE_BACK, gameFolder.Replace("\\", "\\\\"));
+            data = data.Replace(Consts.GAME_PATH_MAGIC_FORWARD, gameFolder.Replace("\\", "/"));
+
+            data = data.Replace(Consts.MO2_PATH_MAGIC_BACK, _configuration.Install.ToString());
+            data = data.Replace(Consts.MO2_PATH_MAGIC_DOUBLE_BACK, (_configuration.Install.ToString()).Replace("\\", "\\\\"));
+            data = data.Replace(Consts.MO2_PATH_MAGIC_FORWARD, (_configuration.Install.ToString()).Replace("\\", "/"));
+
+            data = data.Replace(Consts.DOWNLOAD_PATH_MAGIC_BACK, _configuration.Downloads.ToString());
+            data = data.Replace(Consts.DOWNLOAD_PATH_MAGIC_DOUBLE_BACK, (_configuration.Downloads.ToString()).Replace("\\", "\\\\"));
+            data = data.Replace(Consts.DOWNLOAD_PATH_MAGIC_FORWARD, (_configuration.Downloads.ToString()).Replace("\\", "/"));
+
+            await _configuration.Install.Combine(directive.To).WriteAllTextAsync(data);
+        }
+        
+        public async Task GenerateZEditMerges(CancellationToken token)
+        {
+            await _configuration.ModList
+                .Directives
+                .OfType<MergedPatch>()
+                .PDo(_limiter, async m =>
+                {
+                    _logger.LogInformation("Generating zEdit merge: {to}}", m.To);
+
+                    var srcData = (await Task.WhenAll(m.Sources.Select(async s => await _configuration.Install.Combine(s.RelativePath).ReadAllBytesAsync(token))))
+                        .ConcatArrays();
+
+                    var patchData = await LoadBytesFromPath(m.PatchID);
+
+                    await using var fs = _configuration.Install.Combine(m.To).Open(FileMode.Create, FileAccess.Write, FileShare.None);
+                    await BinaryPatching.ApplyPatch(new MemoryStream(srcData), new MemoryStream(patchData), fs);
+                });
+        }
+    }
+}

@@ -20,9 +20,16 @@ namespace Wabbajack.Networking.Http
         {
             _logger = logger;
         }
-        
+
         public async Task<Hash> Download(HttpResponseMessage response, AbsolutePath outputPath, CancellationToken token)
         {
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogCritical("Can't download a unsuccessful response, got {status} {reason}",
+                    response.StatusCode, response.ReasonPhrase);
+                return default;
+            }
+
             await using var stream = await response.Content.ReadAsStreamAsync(token);
             await using var outputStream = outputPath.Open(FileMode.Create, FileAccess.Write);
             return await stream.HashingCopy(outputStream, token);

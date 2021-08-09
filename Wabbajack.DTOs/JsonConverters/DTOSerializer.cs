@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace Wabbajack.DTOs.JsonConverters
 {
@@ -17,6 +19,11 @@ namespace Wabbajack.DTOs.JsonConverters
         public T? Deserialize<T>(string text)
         {
             return JsonSerializer.Deserialize<T>(text, Options);
+        }
+        
+        public ValueTask<T?> DeserializeAsync<T>(Stream stream)
+        {
+            return JsonSerializer.DeserializeAsync<T>(stream, Options);
         }
 
         public string Serialize<T>(T data)

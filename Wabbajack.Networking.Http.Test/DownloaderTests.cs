@@ -34,7 +34,7 @@ namespace Wabbajack.Networking.Http.Test
             var tempFile = KnownFolders.EntryPoint.Combine("tempLargeFile");
             var hash = await _downloader.Download(response, tempFile, CancellationToken.None);
             Assert.Equal(response.Content.Headers.ContentLength, tempFile.Size());
-            Assert.Equal(Hash.FromBase64("CcoJhlP48ic="), hash);
+            Assert.Equal(Hash.FromBase64("KcPNNlWJ+7Y="), hash);
             
             tempFile.Delete();
         }
