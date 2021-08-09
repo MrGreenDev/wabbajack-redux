@@ -9,6 +9,7 @@ using Xunit.DependencyInjection;
 using Xunit.DependencyInjection.Logging;
 using Wabbajack.Networking.Http;
 using Wabbajack.Networking.NexusApi.Test.Helpers;
+using Wabbajack.Networking.WabbajackClientApi;
 
 namespace Wabbajack.Downloaders.Dispatcher.Test
 {
@@ -19,6 +20,8 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
             service.AddNexusApi();
             service.AddSingleton<HttpClient, HttpClient>();
             service.AddSingleton<TemporaryFileManager, TemporaryFileManager>();
+            service.AddSingleton<Client>();
+            service.AddSingleton<Configuration>();
             service.AddDownloadDispatcher();
             service.AddHttpDownloader();
             service.AddSingleton<ApiKey, StaticApiKey>(p => new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));

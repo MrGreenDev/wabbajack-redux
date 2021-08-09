@@ -55,6 +55,8 @@ namespace Wabbajack.Installer.Test
 
             var installer = _provider.GetService<StandardInstaller>();
             Assert.True(await installer.Begin(CancellationToken.None));
+            
+            Assert.True("ModOrganizer.exe".ToRelativePath().RelativeTo(installFolder).FileExists());
 
         }
     }

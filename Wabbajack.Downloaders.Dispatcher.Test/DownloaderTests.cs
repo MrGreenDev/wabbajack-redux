@@ -27,7 +27,7 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
         [MemberData(nameof(TestStates))]
         public async Task TestDownloadingFile(Archive archive, Archive badArchive)
         {
-            using var tempFile = _temp.CreateFile();
+            await using var tempFile = _temp.CreateFile();
             var hash = await _dispatcher.Download(archive, tempFile.Path, CancellationToken.None);
             Assert.Equal(archive.Hash, hash);
         }
@@ -69,7 +69,7 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
                 {
                     new Archive
                     {
-                        Hash = Hash.FromBase64("MFp65uNz/N0="),
+                        Hash = Hash.FromBase64("U9NkoW0w21k="),
                         State = new DTOs.DownloadStates.Nexus
                         {
                             Game = Game.SkyrimSpecialEdition,
