@@ -28,6 +28,7 @@ jobs:
           - Wabbajack.FileExtractor.Test
           - Wabbajack.Hashing.PHash.Test
           - Wabbajack.Hashing.xxHash64.Test
+          - Wabbajack.Installer.Test
           - Wabbajack.Networking.Http.Test
           - Wabbajack.Networking.NexusApi.Test
           - Wabbajack.Paths.Test
