@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
 
@@ -33,6 +35,16 @@ namespace Wabbajack.Downloaders.Interfaces
         /// <param name="token"></param>
         /// <returns></returns>
         public Task<bool> Verify(Archive archive, CancellationToken token);
+
+        /// <summary>
+        /// Starts the downloader and configures it to start downloading. Should return null if more data is needed
+        /// before this download can download data
+        /// </summary>
+        /// <returns></returns>
+        public Task<bool> Prepare();
+
+        public bool IsAllowed(ServerAllowList allowList, IDownloadState state);
+        IEnumerable<string> MetaIni(Archive a);
     }
 
     public interface IDownloader<T> : IDownloader
