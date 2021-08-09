@@ -30,13 +30,11 @@ namespace Wabbajack.Downloaders
 
         public async Task<Hash> Download(Archive a, AbsolutePath dest, CancellationToken token)
         {
-            foreach (var downloader in _downloaders)
-            {
-                if (downloader.CanDownload(a))
-                    return await downloader.Download(a, dest, token);
-            }
+            using var downloadScope = _logger.BeginScope("Downloading {primaryKeyString", a.State.PrimaryKeyString);
 
-            throw new NotImplementedException();
+            var hash = await Downloader(a).Download(a, dest, token);
+            _logger.BeginScope("Completed {hash}", hash);
+            return hash;
         }
         
         public async Task<bool> Verify(Archive a, CancellationToken token)
