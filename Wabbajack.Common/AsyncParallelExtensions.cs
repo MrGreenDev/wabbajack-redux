@@ -25,12 +25,15 @@ namespace Wabbajack.Common
         
         public static async Task PDo<TIn>(this IEnumerable<TIn> coll, IRateLimiter limiter, Func<TIn, Task> mapFn)
         {
-            var tasks = coll.Select(itm => limiter.Enqueue( () => mapFn(itm)));
+            var tasks = coll.Select(itm => limiter.Enqueue( () => mapFn(itm)))
+                .ToArray();
 
             CancellationTokenSource cts = new();
             limiter.Assist(cts.Token);
             
             await Task.WhenAll(tasks);
+            
+            tasks.Where(t => t.IsFaulted).Do(f => throw f.Exception!);
             
             cts.Cancel();
         }

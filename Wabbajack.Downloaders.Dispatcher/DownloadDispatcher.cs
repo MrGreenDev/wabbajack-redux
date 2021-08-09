@@ -30,7 +30,7 @@ namespace Wabbajack.Downloaders
 
         public async Task<Hash> Download(Archive a, AbsolutePath dest, CancellationToken token)
         {
-            using var downloadScope = _logger.BeginScope("Downloading {primaryKeyString", a.State.PrimaryKeyString);
+            using var downloadScope = _logger.BeginScope("Downloading {primaryKeyString}", a.State.PrimaryKeyString);
 
             var hash = await Downloader(a).Download(a, dest, token);
             _logger.BeginScope("Completed {hash}", hash);

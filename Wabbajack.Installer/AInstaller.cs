@@ -194,7 +194,8 @@ namespace Wabbajack.Installer
 
             foreach (var archive in missing.Where(archive => !_downloadDispatcher.Downloader(archive).IsAllowed(validationData, archive.State)))
             {
-                throw new Exception($"File {archive.State.PrimaryKeyString} failed validation");
+                _logger.LogCritical("File {primaryKeyString} failed validation", archive.State.PrimaryKeyString);
+                return;
             }
 
             await DownloadMissingArchives(missing, token);
@@ -211,6 +212,7 @@ namespace Wabbajack.Installer
                     await _downloadDispatcher.Download(a, outputPath, token);
                 }
             }
+            _logger.LogInformation("Downloading {count} archives", missing.Count);
 
             await missing.Where(a => a.State is not Manual)
                 .PDo(_limiter, async archive =>
