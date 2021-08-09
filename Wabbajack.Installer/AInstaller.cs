@@ -25,7 +25,6 @@ namespace Wabbajack.Installer
     public abstract class AInstaller<T>
     where T : AInstaller<T>
     {
-        public AbsolutePath ModListArchive { get; private set; }
         public Dictionary<Hash, AbsolutePath> HashedArchives { get; set; } = new();
         public bool UseCompression { get; set; }
 
@@ -61,7 +60,7 @@ namespace Wabbajack.Installer
         public async Task ExtractModlist(CancellationToken token)
         {
             ExtractedModlistFolder = _manager.CreateFolder();
-            await _extractor.ExtractAll(ModListArchive, ExtractedModlistFolder, token);
+            await _extractor.ExtractAll(_configuration.ModlistArchive, ExtractedModlistFolder, token);
         }
 
         public async Task<byte[]> LoadBytesFromPath(RelativePath path)
@@ -111,6 +110,7 @@ namespace Wabbajack.Installer
         {
             _logger.LogInformation("Building Folder Structure");
             ModList.Directives
+                .Where(d => d.To.Depth > 1)
                 .Select(d => _configuration.Install.Combine(d.To.Parent))
                 .Distinct()
                 .Do(f => f.CreateDirectory());

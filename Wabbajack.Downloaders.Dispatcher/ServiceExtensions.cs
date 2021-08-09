@@ -1,7 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using Wabbajack.Downloaders.GoogleDrive;
-using Wabbajack.Downloaders.Interfaces;
-using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.Downloaders.Http;
 
 namespace Wabbajack.Downloaders
 {
@@ -11,6 +9,7 @@ namespace Wabbajack.Downloaders
         {
             services.AddGoogleDriveDownloader();
             services.AddNexusDownloader();
+            services.AddHttpDownloader();
             services.AddSingleton<DownloadDispatcher>();
         }
     }

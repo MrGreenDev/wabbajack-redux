@@ -44,6 +44,14 @@ namespace Wabbajack.Installer.Test
             config.ModlistArchive = _modList;
             config.ModList = modlist;
             config.Game = modlist.GameType;
+            config.SystemParameters = new SystemParameters
+            {
+                ScreenWidth = 1920,
+                ScreenHeight = 1080,
+                SystemMemorySize = 8L * 1024 * 1024 * 1024,
+                SystemPageSize = 8L * 1024 * 1024 * 1024,
+                VideoMemorySize = 8L * 1024 * 1024 * 1024
+            };
 
             var installer = _provider.GetService<StandardInstaller>();
             Assert.True(await installer.Begin(CancellationToken.None));
