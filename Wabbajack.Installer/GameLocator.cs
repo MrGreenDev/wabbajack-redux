@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GameFinder.StoreHandlers.Steam;
 using Microsoft.Extensions.Logging;
 using Wabbajack.DTOs;
@@ -22,12 +23,16 @@ namespace Wabbajack.Installer
 
         private bool TryFindLocationInner(Game game, out AbsolutePath path)
         {
-            foreach (var steamId in game.MetaData().SteamIDs)
+            var metaData = game.MetaData();
+            if (_steam.FindAllGames())
             {
-                if (_steam.TryGetByID(steamId, out var steamGame))
+                foreach (var steamGame in _steam.Games)
                 {
-                    path = steamGame!.Path.ToAbsolutePath();
-                    return true;
+                    if (metaData.SteamIDs.Contains(steamGame.ID))
+                    {
+                        path = steamGame!.Path.ToAbsolutePath();
+                        return true;
+                    }
                 }
             }
 

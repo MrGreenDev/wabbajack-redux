@@ -66,6 +66,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Installer", "Wabb
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Networking.WabbajackClientApi", "Wabbajack.Networking.WabbajackClientApi\Wabbajack.Networking.WabbajackClientApi.csproj", "{313A71B2-C08C-4B2F-98A5-7F3FAFF22AB8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Installer.Test", "Wabbajack.Installer.Test\Wabbajack.Installer.Test.csproj", "{471C3EFB-9C2B-45F1-9E3A-568F293F16BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -204,5 +206,9 @@ Global
 		{313A71B2-C08C-4B2F-98A5-7F3FAFF22AB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{313A71B2-C08C-4B2F-98A5-7F3FAFF22AB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{313A71B2-C08C-4B2F-98A5-7F3FAFF22AB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{471C3EFB-9C2B-45F1-9E3A-568F293F16BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{471C3EFB-9C2B-45F1-9E3A-568F293F16BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{471C3EFB-9C2B-45F1-9E3A-568F293F16BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{471C3EFB-9C2B-45F1-9E3A-568F293F16BD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

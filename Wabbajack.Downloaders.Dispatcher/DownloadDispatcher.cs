@@ -149,7 +149,11 @@ namespace Wabbajack.Downloaders
         
         public IDownloader Downloader(Archive archive)
         {
-            return _downloaders.First(d => d.CanDownload(archive));
+            var result =  _downloaders.FirstOrDefault(d => d.CanDownload(archive));
+            if (result != null) return result!;
+            _logger.LogError("No downloader found for {type}", archive.State.GetType());
+            throw new NotImplementedException($"No downloader for {archive.State.GetType()}");
+
         }
 
         public IDownloadState? Parse(Uri url)

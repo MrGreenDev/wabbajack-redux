@@ -72,7 +72,7 @@ namespace Wabbajack.Installer
                 return false;
             }
 
-            if (_configuration.GameFolder.DirectoryExists())
+            if (!_configuration.GameFolder.DirectoryExists())
             {
                 _logger.LogError("Located game {game} at \"{gameFolder}\" but the folder does not exist!", _configuration.Game, _configuration.GameFolder);
                 return false;
