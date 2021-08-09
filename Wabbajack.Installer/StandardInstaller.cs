@@ -33,7 +33,7 @@ namespace Wabbajack.Installer
     {
         public StandardInstaller(ILogger<StandardInstaller> logger, 
             InstallerConfiguration config, 
-            GameLocator gameLocator, FileExtractor.FileExtractor extractor, 
+            IGameLocator gameLocator, FileExtractor.FileExtractor extractor, 
             DTOSerializer jsonSerializer, Context vfs, FileHashCache fileHashCache, 
             DownloadDispatcher downloadDispatcher, IRateLimiter limiter, Client wjClient) :
             base(logger, config, gameLocator, extractor, jsonSerializer, vfs, fileHashCache, downloadDispatcher, limiter, wjClient)

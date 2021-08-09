@@ -35,7 +35,7 @@ namespace Wabbajack.Installer
         protected readonly InstallerConfiguration _configuration;
         protected readonly ILogger<T> _logger;
         
-        public AInstaller(ILogger<T> logger, InstallerConfiguration config, GameLocator gameLocator, FileExtractor.FileExtractor extractor,
+        public AInstaller(ILogger<T> logger, InstallerConfiguration config, IGameLocator gameLocator, FileExtractor.FileExtractor extractor,
             DTOSerializer jsonSerializer, Context vfs, FileHashCache fileHashCache, DownloadDispatcher downloadDispatcher,
             IRateLimiter limiter, Client wjClient)
         {
@@ -43,7 +43,6 @@ namespace Wabbajack.Installer
             ExtractedModlistFolder = _manager.CreateFolder();
             _configuration = config;
             _logger = logger;
-            _gameLocation = gameLocator;
             _extractor = extractor;
             _jsonSerializer = jsonSerializer;
             _vfs = vfs;
@@ -295,14 +294,13 @@ namespace Wabbajack.Installer
         
         private static readonly Regex NoDeleteRegex = new(@"(?i)[\\\/]\[NoDelete\]", RegexOptions.Compiled);
         protected readonly TemporaryFileManager _manager;
-        private readonly GameLocator _gameLocation;
         private readonly FileExtractor.FileExtractor _extractor;
         private readonly DTOSerializer _jsonSerializer;
         private readonly Context _vfs;
         private readonly FileHashCache _fileHashCache;
         protected readonly DownloadDispatcher _downloadDispatcher;
         protected readonly IRateLimiter _limiter;
-        protected readonly GameLocator _gameLocator;
+        protected readonly IGameLocator _gameLocator;
         protected readonly Client _wjClient;
 
 

@@ -8,7 +8,7 @@ using Wabbajack.Paths;
 
 namespace Wabbajack.Installer
 {
-    public class GameLocator
+    public class GameLocator : IGameLocator
     {
         private readonly ILogger<GameLocator> _logger;
         private readonly SteamHandler _steam;

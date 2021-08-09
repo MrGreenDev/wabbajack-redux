@@ -6,7 +6,7 @@ namespace Wabbajack.Installer
     {
         public static void AddStandardInstaller(this IServiceCollection services)
         {
-            services.AddScoped<GameLocator>();
+            services.AddScoped<IGameLocator, StubbedGameLocator>();
             services.AddScoped<InstallerConfiguration>();
             services.AddScoped<StandardInstaller>();
         }
