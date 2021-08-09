@@ -48,19 +48,19 @@ namespace Wabbajack.Downloaders
             throw new NotImplementedException();
         }
         
-        public async Task<DownloadResult> DownloadWithPossibleUpgrade(Archive archive, AbsolutePath destination, CancellationToken token)
+        public async Task<(DownloadResult, Hash)> DownloadWithPossibleUpgrade(Archive archive, AbsolutePath destination, CancellationToken token)
         {
             var downloadedHash = await Download(archive, destination, token);
             if (downloadedHash != default && (downloadedHash == archive.Hash || archive.Hash == default)) 
-                return DownloadResult.Success;
+                return (DownloadResult.Success, downloadedHash);
 
             downloadedHash = await DownloadFromMirror(archive, destination, token);
             if (downloadedHash != default)
             {
-                return DownloadResult.Mirror;
+                return (DownloadResult.Mirror, downloadedHash);
             }
 
-            return DownloadResult.Failure;
+            return (DownloadResult.Failure, downloadedHash);
 
             // TODO: implement patching
             /*

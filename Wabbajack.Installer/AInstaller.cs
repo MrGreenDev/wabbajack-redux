@@ -251,7 +251,11 @@ namespace Wabbajack.Installer
             {
                 destination ??= _configuration.Downloads.Combine(archive.Name);
                 
-                var result = await _downloadDispatcher.DownloadWithPossibleUpgrade(archive, destination.Value, token);
+                var (result, hash) = await _downloadDispatcher.DownloadWithPossibleUpgrade(archive, destination.Value, token);
+                
+                if (hash != default) 
+                    _fileHashCache.FileHashWriteCache(destination.Value, hash);
+                
                 if (result == DownloadResult.Update)
                 {
                     await destination.Value.MoveToAsync(destination.Value.Parent.Combine(archive.Hash.ToHex()), true, token);
