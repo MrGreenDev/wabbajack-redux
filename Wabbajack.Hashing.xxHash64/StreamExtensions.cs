@@ -35,6 +35,7 @@ namespace Wabbajack.Hashing.xxHash64
                 if (running)
                 {
                     hasher.TransformByteGroupsInternal(buffer);
+                    await pendingWrite;
                 }
                 else
                 {
@@ -43,16 +44,17 @@ namespace Wabbajack.Hashing.xxHash64
                     {
                         hasher.TransformByteGroupsInternal(buffer.AsSpan()[..preSize]);
                         finalHash = hasher.FinalizeHashValueInternal(buffer.AsSpan()[preSize..totalRead]);
+                        await pendingWrite;
                         break;
                     }
                     else
                     {
                         finalHash = hasher.FinalizeHashValueInternal(buffer.AsSpan()[..totalRead]);
+                        await pendingWrite;
                         break;
                     }
                 }
 
-                await pendingWrite;
             }
 
             await outputStream.FlushAsync(token);

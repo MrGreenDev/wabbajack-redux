@@ -29,7 +29,7 @@ namespace Wabbajack.Installer.Test
             service.AddHttpDownloader();
             service.AddNexusApi();
             service.AddSingleton<ApiKey, StaticApiKey>(p => new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
-            service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(Environment.ProcessorCount));
+            service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(2));
             service.AddSingleton<FileExtractor.FileExtractor>();
             service.AddSingleton(new JsonSerializerOptions());
             service.AddDTOSerializer();
