@@ -15,12 +15,13 @@ namespace Wabbajack.CLI.Verbs
         {
             _context = context;
         }
+
         public Command MakeCommand()
         {
             var command = new Command("vfs-index");
-            command.Add(new Option<AbsolutePath>(new[]{"-f", "--folder"}, "Folder to index"));
+            command.Add(new Option<AbsolutePath>(new[] { "-f", "--folder" }, "Folder to index"));
             command.Description = "Index and cache the contents of a folder";
-            
+
             command.Handler = CommandHandler.Create(Run);
             return command;
         }

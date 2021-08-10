@@ -12,7 +12,7 @@ namespace Wabbajack.Installer
     {
         private static IniDataParser IniParser()
         {
-            var config = new IniParserConfiguration {AllowDuplicateKeys = true, AllowDuplicateSections = true};
+            var config = new IniParserConfiguration { AllowDuplicateKeys = true, AllowDuplicateSections = true };
             var parser = new IniDataParser(config);
             return parser;
         }
@@ -30,15 +30,14 @@ namespace Wabbajack.Installer
         }
 
         /// <summary>
-        /// Loads a INI from the given string
+        ///     Loads a INI from the given string
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
         public static IniData LoadIniString(this string file)
         {
-            return new FileIniDataParser(IniParser()).ReadData(new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(file))));
+            return new FileIniDataParser(IniParser()).ReadData(
+                new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(file))));
         }
-
-        
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using Wabbajack.DTOs;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
@@ -7,8 +6,8 @@ namespace Wabbajack.Installer
 {
     public class StubbedGameLocator : IGameLocator
     {
-        private readonly TemporaryFileManager _manager;
         private readonly TemporaryPath _location;
+        private readonly TemporaryFileManager _manager;
 
         public StubbedGameLocator(TemporaryFileManager manager)
         {

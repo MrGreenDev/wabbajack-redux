@@ -11,7 +11,6 @@ namespace Wabbajack.DTOs.DownloadStates
 
         public override string TypeName => "GoogleDriveDownloader+State";
 
-        [JsonIgnore]
-        public override object[] PrimaryKey => new object[] {Id};
+        [JsonIgnore] public override object[] PrimaryKey => new object[] { Id };
     }
 }

@@ -4,32 +4,27 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.Paths;
 
 namespace Wabbajack.Common
 {
-public class ProcessHelper
+    public class ProcessHelper
     {
         public enum StreamType
         {
-            Output, 
-            Error,
+            Output,
+            Error
         }
+
+        public readonly Subject<(StreamType Type, string Line)> Output = new Subject<(StreamType Type, string)>();
+
 
         public AbsolutePath Path { get; set; }
         public IEnumerable<object> Arguments { get; set; } = Enumerable.Empty<object>();
 
         public bool LogError { get; set; } = true;
-        
-        public readonly Subject<(StreamType Type, string Line)> Output = new Subject<(StreamType Type, string)>();
 
         public bool ThrowOnNonZeroExitCode { get; set; } = false;
-
-
-        public ProcessHelper()
-        {
-        }
 
         public async Task<int> Start()
         {
@@ -59,10 +54,7 @@ public class ProcessHelper
                 StartInfo = info,
                 EnableRaisingEvents = true
             };
-            EventHandler Exited = (sender, args) =>
-            {
-                finished.SetResult(p.ExitCode);
-            };
+            EventHandler Exited = (sender, args) => { finished.SetResult(p.ExitCode); };
             p.Exited += Exited;
 
             DataReceivedEventHandler OutputDataReceived = (sender, data) =>
@@ -95,8 +87,8 @@ public class ProcessHelper
                 // ignored
             }
 
-            
-            var result =  await finished.Task;
+
+            var result = await finished.Task;
             // Do this to make sure everything flushes
             p.WaitForExit();
             p.CancelErrorRead();
@@ -104,13 +96,13 @@ public class ProcessHelper
             p.OutputDataReceived -= OutputDataReceived;
             p.ErrorDataReceived -= ErrorEventHandler;
             p.Exited -= Exited;
-            
+
             Output.OnCompleted();
 
             if (result != 0 && ThrowOnNonZeroExitCode)
-                throw new Exception($"Error executing {Path} - Exit Code {result} - Check the log for more information - {string.Join(" ", args.Select(a => a!.ToString()))}");
+                throw new Exception(
+                    $"Error executing {Path} - Exit Code {result} - Check the log for more information - {string.Join(" ", args.Select(a => a!.ToString()))}");
             return result;
         }
-        
     }
 }

@@ -6,7 +6,6 @@ namespace Wabbajack.Compression.BSA
     {
         public BSAException(string message) : base(message)
         {
-            
         }
     }
 }

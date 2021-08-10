@@ -7,7 +7,8 @@ namespace Wabbajack.Hashing.xxHash64
 {
     public static class StreamExtensions
     {
-        public static async Task<Hash> HashingCopy(this Stream inputStream, Stream outputStream, CancellationToken token)
+        public static async Task<Hash> HashingCopy(this Stream inputStream, Stream outputStream,
+            CancellationToken token)
         {
             var buffer = new byte[1024 * 1024];
 
@@ -21,7 +22,8 @@ namespace Wabbajack.Hashing.xxHash64
 
                 while (totalRead != buffer.Length)
                 {
-                    var read = await inputStream.ReadAsync(buffer.AsMemory(totalRead, buffer.Length - totalRead), token);
+                    var read = await inputStream.ReadAsync(buffer.AsMemory(totalRead, buffer.Length - totalRead),
+                        token);
                     if (read == 0)
                     {
                         running = false;
@@ -39,7 +41,7 @@ namespace Wabbajack.Hashing.xxHash64
                 }
                 else
                 {
-                    var preSize = totalRead >> 5 << 5;
+                    var preSize = (totalRead >> 5) << 5;
                     if (preSize > 0)
                     {
                         hasher.TransformByteGroupsInternal(buffer.AsSpan()[..preSize]);
@@ -47,14 +49,11 @@ namespace Wabbajack.Hashing.xxHash64
                         await pendingWrite;
                         break;
                     }
-                    else
-                    {
-                        finalHash = hasher.FinalizeHashValueInternal(buffer.AsSpan()[..totalRead]);
-                        await pendingWrite;
-                        break;
-                    }
-                }
 
+                    finalHash = hasher.FinalizeHashValueInternal(buffer.AsSpan()[..totalRead]);
+                    await pendingWrite;
+                    break;
+                }
             }
 
             await outputStream.FlushAsync(token);

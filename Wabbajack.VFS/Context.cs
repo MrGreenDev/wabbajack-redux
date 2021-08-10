@@ -2,13 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.Common;
 using Wabbajack.FileExtractor.ExtractedFiles;
 using Wabbajack.Hashing.xxHash64;
@@ -17,20 +13,21 @@ using Wabbajack.Paths.IO;
 
 namespace Wabbajack.VFS
 {
-   public class Context
+    public class Context
     {
         public const ulong FileVersion = 0x03;
         public const string Magic = "WABBAJACK VFS FILE";
-        
+
         private readonly IRateLimiter _limiter;
-        public readonly ILogger<Context> Logger;
         private readonly TemporaryFileManager _manager;
-        public readonly VFSCache VfsCache;
 
         public readonly FileExtractor.FileExtractor Extractor;
         public readonly FileHashCache HashCache;
+        public readonly ILogger<Context> Logger;
+        public readonly VFSCache VfsCache;
 
-        public Context(ILogger<Context> logger, IRateLimiter limiter, TemporaryFileManager manager, VFSCache vfsCache, FileHashCache hashCache, FileExtractor.FileExtractor extractor)
+        public Context(ILogger<Context> logger, IRateLimiter limiter, TemporaryFileManager manager, VFSCache vfsCache,
+            FileHashCache hashCache, FileExtractor.FileExtractor extractor)
         {
             Logger = logger;
             _manager = manager;
@@ -38,29 +35,28 @@ namespace Wabbajack.VFS
             VfsCache = vfsCache;
             HashCache = hashCache;
             _limiter = limiter;
-
         }
+
         public IndexRoot Index { get; private set; } = IndexRoot.Empty;
 
         public async Task<IndexRoot> AddRoot(AbsolutePath root, CancellationToken token)
         {
-            var filtered = Index.AllFiles.Where(file => file.IsNative && ((AbsolutePath) file.Name).FileExists()).ToList();
+            var filtered = Index.AllFiles.Where(file => file.IsNative && ((AbsolutePath)file.Name).FileExists())
+                .ToList();
 
             var byPath = filtered.ToDictionary(f => f.Name);
 
             var filesToIndex = root.EnumerateFiles().Distinct().ToList();
-            
-            var allFiles = await filesToIndex
-                            .PMap(_limiter, async f =>
-                            {
-                                if (byPath.TryGetValue(f, out var found))
-                                {
-                                    if (found.LastModified == f.LastModifiedUtc().AsUnixTime() && found.Size == f.Size())
-                                        return found;
-                                }
 
-                                return await VirtualFile.Analyze(this, null, new NativeFileStreamFactory(f), f, token, 0);
-                            }).ToList();
+            var allFiles = await filesToIndex
+                .PMap(_limiter, async f =>
+                {
+                    if (byPath.TryGetValue(f, out var found))
+                        if (found.LastModified == f.LastModifiedUtc().AsUnixTime() && found.Size == f.Size())
+                            return found;
+
+                    return await VirtualFile.Analyze(this, null, new NativeFileStreamFactory(f), f, token);
+                }).ToList();
 
             var newIndex = await IndexRoot.Empty.Integrate(filtered.Concat(allFiles).ToList());
 
@@ -84,12 +80,10 @@ namespace Wabbajack.VFS
                 .PMap(_limiter, async f =>
                 {
                     if (native.TryGetValue(f, out var found))
-                    {
                         if (found.LastModified == f.LastModifiedUtc().AsUnixTime() && found.Size == f.Size())
                             return found;
-                    }
 
-                    return await VirtualFile.Analyze(this, null, new NativeFileStreamFactory(f), f, token, 0);
+                    return await VirtualFile.Analyze(this, null, new NativeFileStreamFactory(f), f, token);
                 }).ToList();
 
             var newIndex = await IndexRoot.Empty.Integrate(filtered.Concat(allFiles).ToList());
@@ -102,13 +96,8 @@ namespace Wabbajack.VFS
             return newIndex;
         }
 
-        class Box<T>
-        {
-            public T Value { get; set; }
-        }
-        
         /// <summary>
-        /// Extracts a file
+        ///     Extracts a file
         /// </summary>
         /// <param name="queue">Work queue to use when required by some formats</param>
         /// <param name="files">Predefined list of files to extract, all others will be skipped</param>
@@ -117,7 +106,8 @@ namespace Wabbajack.VFS
         /// <param name="updateTracker">Optional: Status update tracker</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task Extract(HashSet<VirtualFile> files, Func<VirtualFile, IExtractedFile, ValueTask> callback, CancellationToken token, AbsolutePath? tempFolder = null)
+        public async Task Extract(HashSet<VirtualFile> files, Func<VirtualFile, IExtractedFile, ValueTask> callback,
+            CancellationToken token, AbsolutePath? tempFolder = null)
         {
             var top = new VirtualFile();
             var filesByParent = files.SelectMany(f => f.FilesInFullPath)
@@ -129,7 +119,7 @@ namespace Wabbajack.VFS
             {
                 if (filesByParent.ContainsKey(file))
                     sfn.CanMove = false;
-                
+
                 if (files.Contains(file)) await callback(file, sfn);
                 if (filesByParent.TryGetValue(file, out var children))
                 {
@@ -151,21 +141,26 @@ namespace Wabbajack.VFS
                         await using var stream = await sfn.GetStream();
                         var hash = await stream.HashingCopy(Stream.Null, token);
                         if (hash != file.Hash)
-                        {
-                            throw new Exception($"File {file.FullPath} is corrupt, please delete it and retry the installation");
-                        }
+                            throw new Exception(
+                                $"File {file.FullPath} is corrupt, please delete it and retry the installation");
                         throw;
                     }
                 }
-
             }
-            await filesByParent[top].PDo(_limiter, async file => await HandleFile(file, new ExtractedNativeFile(file.AbsoluteName) {CanMove = false}));
+
+            await filesByParent[top].PDo(_limiter,
+                async file => await HandleFile(file, new ExtractedNativeFile(file.AbsoluteName) { CanMove = false }));
+        }
+
+        private class Box<T>
+        {
+            public T Value { get; set; }
         }
 
         #region KnownFiles
 
-        private List<HashRelativePath> _knownFiles = new List<HashRelativePath>();
-        private Dictionary<Hash, AbsolutePath> _knownArchives = new Dictionary<Hash, AbsolutePath>();
+        private List<HashRelativePath> _knownFiles = new();
+        private readonly Dictionary<Hash, AbsolutePath> _knownArchives = new();
 
 
         public void AddKnown(IEnumerable<HashRelativePath> known, Dictionary<Hash, AbsolutePath> archives)
@@ -180,9 +175,9 @@ namespace Wabbajack.VFS
             var newFiles = _knownArchives.ToDictionary(kv => kv.Key,
                 kv => new VirtualFile
                 {
-                    Name = kv.Value, 
-                    Size = kv.Value.Size(), 
-                    Hash = kv.Key,
+                    Name = kv.Value,
+                    Size = kv.Value.Size(),
+                    Hash = kv.Key
                 });
 
             foreach (var f in newFiles.Values)
@@ -201,25 +196,26 @@ namespace Wabbajack.VFS
                         continue;
                     }
 
-                    var nf = new VirtualFile {Name = path, Parent = parent};
+                    var nf = new VirtualFile { Name = path, Parent = parent };
                     nf.FillFullPath();
                     parent.Children = parent.Children.Add(nf);
                     parentchild.Add((parent, path), nf);
                     parent = nf;
                 }
             }
+
             _knownFiles.Where(f => f.Parts.Length > 0).Do(BackFillOne);
 
             var newIndex = await Index.Integrate(newFiles.Values.ToList());
 
             lock (this)
+            {
                 Index = newIndex;
+            }
 
             _knownFiles = new List<HashRelativePath>();
-
         }
 
         #endregion
     }
-
 }

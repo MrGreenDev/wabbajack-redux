@@ -11,6 +11,7 @@ namespace Wabbajack.Paths.IO
         {
             Path = path;
         }
+
         public void Dispose()
         {
             Path.Delete();

@@ -8,30 +8,29 @@ using System.Threading.Tasks;
 using Compression.BSA;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using Wabbajack.Common;
-using Wabbajack.DTOs.BSA.ArchiveStates;
 using Wabbajack.DTOs.BSA.FileStates;
 using Wabbajack.DTOs.Streams;
+using Wabbajack.DTOs.Texture;
 using Wabbajack.Paths;
-using DXGI_FORMAT = Wabbajack.DTOs.Texture.DXGI_FORMAT;
 
 namespace Wabbajack.Compression.BSA.FO4Archive
 {
-  public class DX10Entry : IBA2FileEntry
+    public class DX10Entry : IBA2FileEntry
     {
-        internal uint _nameHash;
-        internal string _extension;
-        internal uint _dirHash;
-        internal byte _unk8;
-        internal byte _numChunks;
+        private readonly Reader _bsa;
         internal ushort _chunkHdrLen;
-        internal ushort _height;
-        internal ushort _width;
-        internal byte _numMips;
-        internal byte _format;
-        internal ushort _unk16;
         internal List<TextureChunk> _chunks;
-        private Reader _bsa;
+        internal uint _dirHash;
+        internal string _extension;
+        internal byte _format;
+        internal ushort _height;
         internal int _index;
+        internal uint _nameHash;
+        internal byte _numChunks;
+        internal byte _numMips;
+        internal ushort _unk16;
+        internal byte _unk8;
+        internal ushort _width;
 
         public DX10Entry(Reader ba2Reader, int idx)
         {
@@ -54,13 +53,15 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             _chunks = Enumerable.Range(0, _numChunks)
                 .Select(_ => new TextureChunk(_rdr))
                 .ToList();
-
         }
+
+        public uint HeaderSize => DDS.HeaderSizeForFormat((DXGI_FORMAT)_format);
 
         public string FullPath { get; set; }
 
         public RelativePath Path => FullPath.ToRelativePath();
         public uint Size => (uint)_chunks.Sum(f => f._fullSz) + HeaderSize + sizeof(uint);
+
         public AFile State => new BA2DX10File
         {
             Path = Path,
@@ -82,10 +83,8 @@ namespace Wabbajack.Compression.BSA.FO4Archive
                 EndMip = ch._endMip,
                 Align = ch._align,
                 Compressed = ch._packSz != 0
-            }).ToArray(),
+            }).ToArray()
         };
-
-        public uint HeaderSize => DDS.HeaderSizeForFormat((DXGI_FORMAT)_format);
 
         public async ValueTask CopyDataTo(Stream output, CancellationToken token)
         {
@@ -118,12 +117,22 @@ namespace Wabbajack.Compression.BSA.FO4Archive
                 await bw.BaseStream.WriteAsync(full, token);
             }
         }
+
+        public async ValueTask<IStreamFactory> GetStreamFactory(CancellationToken token)
+        {
+            var ms = new MemoryStream();
+            await CopyDataTo(ms, token);
+            ms.Position = 0;
+            return new MemoryStreamFactory(ms, Path, _bsa._streamFactory.LastModifiedUtc);
+        }
+
         private void WriteHeader(BinaryWriter bw)
         {
             var ddsHeader = new DDS_HEADER();
 
             ddsHeader.dwSize = ddsHeader.GetSize();
-            ddsHeader.dwHeaderFlags = DDS.DDS_HEADER_FLAGS_TEXTURE | DDS.DDS_HEADER_FLAGS_LINEARSIZE | DDS.DDS_HEADER_FLAGS_MIPMAP;
+            ddsHeader.dwHeaderFlags = DDS.DDS_HEADER_FLAGS_TEXTURE | DDS.DDS_HEADER_FLAGS_LINEARSIZE |
+                                      DDS.DDS_HEADER_FLAGS_MIPMAP;
             ddsHeader.dwHeight = _height;
             ddsHeader.dwWidth = _width;
             ddsHeader.dwMipMapCount = _numMips;
@@ -151,7 +160,9 @@ namespace Wabbajack.Compression.BSA.FO4Archive
                 case DXGI_FORMAT.BC5_UNORM:
                     ddsHeader.PixelFormat.dwFlags = DDS.DDS_FOURCC;
                     if (_bsa.UseATIFourCC)
-                        ddsHeader.PixelFormat.dwFourCC = DDS.MAKEFOURCC('A', 'T', 'I', '2'); // this is more correct but the only thing I have found that supports it is the nvidia photoshop plugin
+                        ddsHeader.PixelFormat.dwFourCC =
+                            DDS.MAKEFOURCC('A', 'T', 'I',
+                                '2'); // this is more correct but the only thing I have found that supports it is the nvidia photoshop plugin
                     else
                         ddsHeader.PixelFormat.dwFourCC = DDS.MAKEFOURCC('B', 'C', '5', 'U');
                     ddsHeader.dwPitchOrLinearSize = (uint)(_width * _height); // 8bpp
@@ -213,7 +224,7 @@ namespace Wabbajack.Compression.BSA.FO4Archive
                 case DXGI_FORMAT.BC6H_UF16:
                 case DXGI_FORMAT.BC7_UNORM:
                 case DXGI_FORMAT.BC7_UNORM_SRGB:
-                    var dxt10 = new DDS_HEADER_DXT10()
+                    var dxt10 = new DDS_HEADER_DXT10
                     {
                         dxgiFormat = _format,
                         resourceDimension = (uint)DXT10_RESOURCE_DIMENSION.DIMENSION_TEXTURE2D,
@@ -224,14 +235,6 @@ namespace Wabbajack.Compression.BSA.FO4Archive
                     dxt10.Write(bw);
                     break;
             }
-        }
-        
-        public async ValueTask<IStreamFactory> GetStreamFactory(CancellationToken token)
-        {
-            var ms = new MemoryStream();
-            await CopyDataTo(ms, token);
-            ms.Position = 0;
-            return new MemoryStreamFactory(ms, Path, _bsa._streamFactory.LastModifiedUtc);
         }
     }
 }

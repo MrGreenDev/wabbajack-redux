@@ -13,12 +13,13 @@ namespace Wabbajack.Networking.NexusApi
     public class NexusApi
     {
         private readonly ApiKey _apiKey;
-        private readonly ILogger<NexusApi> _logger;
+        private readonly ApplicationInfo _appInfo;
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _jsonOptions;
-        private readonly ApplicationInfo _appInfo;
+        private readonly ILogger<NexusApi> _logger;
 
-        public NexusApi(ApiKey apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo, JsonSerializerOptions jsonOptions)
+        public NexusApi(ApiKey apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo,
+            JsonSerializerOptions jsonOptions)
         {
             _apiKey = apiKey;
             _logger = logger;
@@ -27,37 +28,43 @@ namespace Wabbajack.Networking.NexusApi
             _jsonOptions = jsonOptions;
         }
 
-        public virtual async Task<(ValidateInfo info, ResponseMetadata header)> Validate(CancellationToken token = default)
+        public virtual async Task<(ValidateInfo info, ResponseMetadata header)> Validate(
+            CancellationToken token = default)
         {
             var msg = await GenerateMessage(HttpMethod.Get, Endpoints.Validate);
             return await Send<ValidateInfo>(msg, token);
         }
-        
-        public virtual async Task<(ModInfo info, ResponseMetadata header)> ModInfo(string nexusGameName, long modId, CancellationToken token = default)
+
+        public virtual async Task<(ModInfo info, ResponseMetadata header)> ModInfo(string nexusGameName, long modId,
+            CancellationToken token = default)
         {
             var msg = await GenerateMessage(HttpMethod.Get, Endpoints.ModInfo, nexusGameName, modId);
             return await Send<ModInfo>(msg, token);
         }
-        
-        public virtual async Task<(ModFiles info, ResponseMetadata header)> ModFiles(string nexusGameName, long modId, CancellationToken token = default)
+
+        public virtual async Task<(ModFiles info, ResponseMetadata header)> ModFiles(string nexusGameName, long modId,
+            CancellationToken token = default)
         {
             var msg = await GenerateMessage(HttpMethod.Get, Endpoints.ModFiles, nexusGameName, modId);
             return await Send<ModFiles>(msg, token);
         }
-        
-        public virtual async Task<(ModFile info, ResponseMetadata header)> FileInfo(string nexusGameName, long modId, long fileId, CancellationToken token = default)
+
+        public virtual async Task<(ModFile info, ResponseMetadata header)> FileInfo(string nexusGameName, long modId,
+            long fileId, CancellationToken token = default)
         {
             var msg = await GenerateMessage(HttpMethod.Get, Endpoints.ModFile, nexusGameName, modId, fileId);
             return await Send<ModFile>(msg, token);
         }
-        
-        public virtual async Task<(DownloadLink[] info, ResponseMetadata header)> DownloadLink(string nexusGameName, long modId, long fileId, CancellationToken token = default)
+
+        public virtual async Task<(DownloadLink[] info, ResponseMetadata header)> DownloadLink(string nexusGameName,
+            long modId, long fileId, CancellationToken token = default)
         {
             var msg = await GenerateMessage(HttpMethod.Get, Endpoints.DownloadLink, nexusGameName, modId, fileId);
             return await Send<DownloadLink[]>(msg, token);
         }
 
-        protected virtual async Task<(T data, ResponseMetadata header)> Send<T>(HttpRequestMessage msg, CancellationToken token = default)
+        protected virtual async Task<(T data, ResponseMetadata header)> Send<T>(HttpRequestMessage msg,
+            CancellationToken token = default)
         {
             _logger.LogInformation("Nexus Call: {Url}", msg.RequestUri);
             using var result = await _client.SendAsync(msg, token);
@@ -83,13 +90,13 @@ namespace Wabbajack.Networking.NexusApi
                     if (int.TryParse(limits.First(), out var limit))
                         metaData.DailyRemaining = limit;
             }
-            
+
             {
                 if (result.Headers.TryGetValues("x-rl-daily-reset", out var resets))
                     if (DateTime.TryParse(resets.First(), out var reset))
                         metaData.DailyReset = reset;
             }
-            
+
             {
                 if (result.Headers.TryGetValues("x-rl-hourly-limit", out var limits))
                     if (int.TryParse(limits.First(), out var limit))
@@ -101,26 +108,28 @@ namespace Wabbajack.Networking.NexusApi
                     if (int.TryParse(limits.First(), out var limit))
                         metaData.HourlyRemaining = limit;
             }
-            
+
             {
                 if (result.Headers.TryGetValues("x-rl-hourly-reset", out var resets))
                     if (DateTime.TryParse(resets.First(), out var reset))
                         metaData.HourlyReset = reset;
             }
-            
-                        
+
+
             {
                 if (result.Headers.TryGetValues("x-runtime", out var runtimes))
                     if (double.TryParse(runtimes.First(), out var reset))
                         metaData.Runtime = reset;
             }
-            
-            _logger.LogInformation("Nexus API call finished: {Runtime} - Remaining Limit: {RemainingLimit}", metaData.Runtime, Math.Max(metaData.DailyRemaining, metaData.HourlyRemaining));
+
+            _logger.LogInformation("Nexus API call finished: {Runtime} - Remaining Limit: {RemainingLimit}",
+                metaData.Runtime, Math.Max(metaData.DailyRemaining, metaData.HourlyRemaining));
 
             return metaData;
         }
 
-        protected virtual async ValueTask<HttpRequestMessage> GenerateMessage(HttpMethod method, string uri, params object?[] parameters)
+        protected virtual async ValueTask<HttpRequestMessage> GenerateMessage(HttpMethod method, string uri,
+            params object?[] parameters)
         {
             var msg = new HttpRequestMessage();
             msg.Method = method;

@@ -1,5 +1,3 @@
-using Wabbajack.DTOs.JsonConverters;
-
 namespace Wabbajack.DTOs.BSA.FileStates
 {
     public class BA2Chunk

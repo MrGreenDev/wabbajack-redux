@@ -16,18 +16,19 @@ namespace Wabbajack.Networking.NexusApi.Test
             service.AddNexusApi();
             service.AddSingleton<ApiKey, StaticApiKey>();
             service.AddSingleton<HttpClient, HttpClient>();
-            service.AddSingleton(new ApplicationInfo()
+            service.AddSingleton(new ApplicationInfo
             {
                 AppName = "Wabbajack.Networking.NexusApi.Test",
                 AppVersion = new Version(1, 0)
             });
             service.AddSingleton(new JsonSerializerOptions());
-            service.AddSingleton<ApiKey, StaticApiKey>(p => new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
+            service.AddSingleton<ApiKey, StaticApiKey>(p =>
+                new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
         }
-        
-        public void Configure(ILoggerFactory loggerFactory, ITestOutputHelperAccessor accessor) =>
-            loggerFactory.AddProvider(new XunitTestOutputLoggerProvider(accessor, delegate { return true; }));
-        
 
+        public void Configure(ILoggerFactory loggerFactory, ITestOutputHelperAccessor accessor)
+        {
+            loggerFactory.AddProvider(new XunitTestOutputLoggerProvider(accessor, delegate { return true; }));
+        }
     }
 }

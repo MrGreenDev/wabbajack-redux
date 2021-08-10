@@ -5,45 +5,16 @@ using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 using Wabbajack.Common;
 using Wabbajack.DTOs.BSA.FileStates;
-using Wabbajack.TaskTracking.Interfaces;
 
 namespace Wabbajack.Compression.BSA.FO4Archive
 {
     public class FileEntryBuilder : IFileBuilder
     {
+        private Stream _dataSrc;
+        private long _offsetOffset;
         private int _rawSize;
         private int _size;
         private BA2File _state;
-        private long _offsetOffset;
-        private Stream _dataSrc;
-
-        public static async ValueTask<FileEntryBuilder> Create(BA2File state, Stream src, DiskSlabAllocator slab, CancellationToken token)
-        {
-            var builder = new FileEntryBuilder
-            {
-                _state = state, 
-                _rawSize = (int)src.Length,
-                _dataSrc = src
-            };
-            
-            if (!state.Compressed)
-                return builder;
-
-            await using var ms = new MemoryStream();
-            await using (var ds = new DeflaterOutputStream(ms))
-            {
-                ds.IsStreamOwner = false;
-                await builder._dataSrc.CopyToAsync(ds, token);
-            }
-
-            await builder._dataSrc.DisposeAsync();
-            builder._dataSrc = slab.Allocate(ms.Length);
-            ms.Position = 0;
-            await ms.CopyToAsync(builder._dataSrc, token);
-            builder._dataSrc.Position = 0;
-            builder._size = (int)ms.Length;
-            return builder;
-        }
 
         public uint FileHash => _state.NameHash;
         public uint DirHash => _state.DirHash;
@@ -72,6 +43,35 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             _dataSrc.Position = 0;
             await _dataSrc.CopyToLimitAsync(wtr.BaseStream, (int)_dataSrc.Length, token);
             await _dataSrc.DisposeAsync();
+        }
+
+        public static async ValueTask<FileEntryBuilder> Create(BA2File state, Stream src, DiskSlabAllocator slab,
+            CancellationToken token)
+        {
+            var builder = new FileEntryBuilder
+            {
+                _state = state,
+                _rawSize = (int)src.Length,
+                _dataSrc = src
+            };
+
+            if (!state.Compressed)
+                return builder;
+
+            await using var ms = new MemoryStream();
+            await using (var ds = new DeflaterOutputStream(ms))
+            {
+                ds.IsStreamOwner = false;
+                await builder._dataSrc.CopyToAsync(ds, token);
+            }
+
+            await builder._dataSrc.DisposeAsync();
+            builder._dataSrc = slab.Allocate(ms.Length);
+            ms.Position = 0;
+            await ms.CopyToAsync(builder._dataSrc, token);
+            builder._dataSrc.Position = 0;
+            builder._size = (int)ms.Length;
+            return builder;
         }
     }
 }

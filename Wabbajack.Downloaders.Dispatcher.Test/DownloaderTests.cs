@@ -1,10 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Wabbajack.Downloaders.GoogleDrive;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
+using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths.IO;
 using Xunit;
@@ -20,9 +19,53 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
         {
             _temp = temp;
             _dispatcher = dispatcher;
-
         }
-        
+
+        /// <summary>
+        ///     Pairs of archives for each downloader. The first archive is considered valid,
+        ///     the second should be invalid.
+        /// </summary>
+        public static IEnumerable<object[]> TestStates =>
+            new List<object[]>
+            {
+                // Nexus Data
+                new object[]
+                {
+                    new Archive
+                    {
+                        Hash = Hash.FromBase64("U9NkoW0w21k="),
+                        State = new Nexus
+                        {
+                            Game = Game.SkyrimSpecialEdition,
+                            ModID = 51939,
+                            FileID = 212497
+                        }
+                    },
+                    new Archive
+                    {
+                        State = new Nexus
+                        {
+                            Game = Game.SkyrimSpecialEdition,
+                            ModID = 51939,
+                            FileID = 212497 + 1
+                        }
+                    }
+                },
+                // Google Drive Data
+                new object[]
+                {
+                    new Archive
+                    {
+                        Hash = Hash.FromBase64("eSIyd+KOG3s="),
+                        State = new DTOs.DownloadStates.GoogleDrive { Id = "1grLRTrpHxlg7VPxATTFNfq2OkU_Plvh_" }
+                    },
+                    new Archive
+                    {
+                        State = new DTOs.DownloadStates.GoogleDrive { Id = "2grLRTrpHxlg7VPxATTFNfq2OkU_Plvh_" }
+                    }
+                }
+            };
+
         [Theory]
         [MemberData(nameof(TestStates))]
         public async Task TestDownloadingFile(Archive archive, Archive badArchive)
@@ -52,55 +95,9 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
 
             var parsed = urlDownloader.Parse(unparsed);
             Assert.NotNull(parsed);
-            
+
             Assert.Equal(goodArchive.State.GetType(), parsed.GetType());
             Assert.True(await _dispatcher.Verify(new Archive { State = parsed }, CancellationToken.None));
         }
-        
-        /// <summary>
-        /// Pairs of archives for each downloader. The first archive is considered valid,
-        /// the second should be invalid.
-        /// </summary>
-        public static IEnumerable<object[]> TestStates => 
-            new List<object[]>
-            {
-                // Nexus Data
-                new object[]
-                {
-                    new Archive
-                    {
-                        Hash = Hash.FromBase64("U9NkoW0w21k="),
-                        State = new DTOs.DownloadStates.Nexus
-                        {
-                            Game = Game.SkyrimSpecialEdition,
-                            ModID = 51939,
-                            FileID = 212497
-                        }
-                    },
-                    new Archive
-                    {
-                        State = new DTOs.DownloadStates.Nexus
-                        {
-                            Game = Game.SkyrimSpecialEdition,
-                            ModID = 51939,
-                            FileID = 212497 + 1
-                        }
-                    }
-                },
-                // Google Drive Data
-                new object[]
-                {
-                    new Archive
-                    {
-                        Hash = Hash.FromBase64("eSIyd+KOG3s="),
-                        State = new DTOs.DownloadStates.GoogleDrive { Id = "1grLRTrpHxlg7VPxATTFNfq2OkU_Plvh_" }
-                    },
-                    new Archive
-                    {
-                        State = new DTOs.DownloadStates.GoogleDrive { Id = "2grLRTrpHxlg7VPxATTFNfq2OkU_Plvh_" }
-                    },
-                }
-            };
-        
     }
 }

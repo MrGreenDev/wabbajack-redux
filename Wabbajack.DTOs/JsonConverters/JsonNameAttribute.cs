@@ -2,13 +2,14 @@ using System;
 
 namespace Wabbajack.DTOs.JsonConverters
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public class JsonNameAttribute : Attribute
     {
-        public string Name { get; }
         public JsonNameAttribute(string name)
         {
             Name = name;
         }
+
+        public string Name { get; }
     }
 }

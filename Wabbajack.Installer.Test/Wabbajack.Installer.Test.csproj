@@ -7,9 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.10.0" />
-        <PackageReference Include="xunit" Version="2.4.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.10.0"/>
+        <PackageReference Include="xunit" Version="2.4.1"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
@@ -21,17 +21,17 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="TestData\MO2AndSKSETest.wabbajack">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <None Update="TestData\MO2AndSKSETest.wabbajack">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Wabbajack.Common\Wabbajack.Common.csproj" />
-      <ProjectReference Include="..\Wabbajack.FileExtractor\Wabbajack.FileExtractor.csproj" />
-      <ProjectReference Include="..\Wabbajack.Installer\Wabbajack.Installer.csproj" />
-      <ProjectReference Include="..\Wabbajack.Networking.NexusApi.Test\Wabbajack.Networking.NexusApi.Test.csproj" />
-      <ProjectReference Include="..\Wabbajack.Paths.IO\Wabbajack.Paths.IO.csproj" />
+        <ProjectReference Include="..\Wabbajack.Common\Wabbajack.Common.csproj"/>
+        <ProjectReference Include="..\Wabbajack.FileExtractor\Wabbajack.FileExtractor.csproj"/>
+        <ProjectReference Include="..\Wabbajack.Installer\Wabbajack.Installer.csproj"/>
+        <ProjectReference Include="..\Wabbajack.Networking.NexusApi.Test\Wabbajack.Networking.NexusApi.Test.csproj"/>
+        <ProjectReference Include="..\Wabbajack.Paths.IO\Wabbajack.Paths.IO.csproj"/>
     </ItemGroup>
 
 </Project>

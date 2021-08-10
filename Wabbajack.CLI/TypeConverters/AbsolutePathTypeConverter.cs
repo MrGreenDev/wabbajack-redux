@@ -12,15 +12,15 @@ namespace Wabbajack.CLI.TypeConverters
             return sourceType == typeof(string);
         }
 
-        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value,
+            Type destinationType)
         {
-
-            return (AbsolutePath) (string) value;
+            return (AbsolutePath)(string)value;
         }
 
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
-            return (AbsolutePath) (string) value;
+            return (AbsolutePath)(string)value;
         }
     }
 }

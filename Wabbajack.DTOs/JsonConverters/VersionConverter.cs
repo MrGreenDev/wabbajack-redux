@@ -8,7 +8,7 @@ namespace Wabbajack.DTOs.JsonConverters
     {
         public override Version? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return new(reader.GetString()!);
+            return new Version(reader.GetString()!);
         }
 
         public override void Write(Utf8JsonWriter writer, Version value, JsonSerializerOptions options)

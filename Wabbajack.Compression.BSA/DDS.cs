@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.IO;
+using System.Runtime.InteropServices;
 using Wabbajack.DTOs.Texture;
 
 namespace Compression.BSA
@@ -18,6 +19,23 @@ namespace Compression.BSA
 
     public class DDS
     {
+        public const int DDS_MAGIC = 0x20534444; // "DDS "
+
+        public const int DDS_FOURCC = 0x00000004; // DDPF_FOURCC
+        public const int DDS_RGB = 0x00000040; // DDPF_RGB
+        public const int DDS_RGBA = 0x00000041; // DDPF_RGB | DDPF_ALPHAPIXELS
+
+        public const int
+            DDS_HEADER_FLAGS_TEXTURE = 0x00001007; // DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT
+
+        public const int DDS_HEADER_FLAGS_MIPMAP = 0x00020000; // DDSD_MIPMAPCOUNT
+        public const int DDS_HEADER_FLAGS_LINEARSIZE = 0x00080000; // DDSD_LINEARSIZE
+
+        public const int DDS_SURFACE_FLAGS_TEXTURE = 0x00001000; // DDSCAPS_TEXTURE
+        public const int DDS_SURFACE_FLAGS_MIPMAP = 0x00400008; // DDSCAPS_COMPLEX | DDSCAPS_MIPMAP
+
+        public const int DDS_ALPHA_MODE_UNKNOWN = 0x0;
+
         public static uint HeaderSizeForFormat(DXGI_FORMAT fmt)
         {
             switch (fmt)
@@ -35,32 +53,18 @@ namespace Compression.BSA
             }
         }
 
-        public const int DDS_MAGIC = 0x20534444; // "DDS "
-
         public static uint MAKEFOURCC(char ch0, char ch1, char ch2, char ch3)
         {
             // This is alien to me...
-            return ((uint)(byte)(ch0) | ((uint)(byte)(ch1) << 8) | ((uint)(byte)(ch2) << 16 | ((uint)(byte)(ch3) << 24)));
+            return (byte)ch0 | ((uint)(byte)ch1 << 8) | ((uint)(byte)ch2 << 16) | ((uint)(byte)ch3 << 24);
         }
-
-        public const int DDS_FOURCC = 0x00000004; // DDPF_FOURCC
-        public const int DDS_RGB = 0x00000040; // DDPF_RGB
-        public const int DDS_RGBA = 0x00000041; // DDPF_RGB | DDPF_ALPHAPIXELS
-
-        public const int DDS_HEADER_FLAGS_TEXTURE = 0x00001007; // DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT
-        public const int DDS_HEADER_FLAGS_MIPMAP = 0x00020000; // DDSD_MIPMAPCOUNT
-        public const int DDS_HEADER_FLAGS_LINEARSIZE = 0x00080000; // DDSD_LINEARSIZE
-
-        public const int DDS_SURFACE_FLAGS_TEXTURE = 0x00001000; // DDSCAPS_TEXTURE
-        public const int DDS_SURFACE_FLAGS_MIPMAP = 0x00400008; // DDSCAPS_COMPLEX | DDSCAPS_MIPMAP
-
-        public const int DDS_ALPHA_MODE_UNKNOWN = 0x0;
     }
+
     public enum DXT10_RESOURCE_DIMENSION
     {
         DIMENSION_TEXTURE1D = 2,
         DIMENSION_TEXTURE2D = 3,
-        DIMENSION_TEXTURE3D = 4,
+        DIMENSION_TEXTURE3D = 4
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -83,10 +87,10 @@ namespace Compression.BSA
         {
             // 9 uint + DDS_PIXELFORMAT uints + 2 uint arrays with 14 uints total
             // each uint 4 bytes each
-            return (9 * 4) + PixelFormat.GetSize() + (14 * 4);
+            return 9 * 4 + PixelFormat.GetSize() + 14 * 4;
         }
 
-        public void Write(System.IO.BinaryWriter bw)
+        public void Write(BinaryWriter bw)
         {
             bw.Write(dwSize);
             bw.Write(dwHeaderFlags);
@@ -124,8 +128,10 @@ namespace Compression.BSA
             {
                 unsafe
                 {
-                    return (uint)(sizeof(DDS_HEADER) + (sizeof(int) * 10) + (sizeof(int) * 2));
-                };
+                    return (uint)(sizeof(DDS_HEADER) + sizeof(int) * 10 + sizeof(int) * 2);
+                }
+
+                ;
             }
         }
     }
@@ -139,7 +145,7 @@ namespace Compression.BSA
         public uint arraySize;
         public uint miscFlags2;
 
-        public void Write(System.IO.BinaryWriter bw)
+        public void Write(BinaryWriter bw)
         {
             bw.Write(dxgiFormat);
             bw.Write(resourceDimension);
@@ -155,13 +161,15 @@ namespace Compression.BSA
                 unsafe
                 {
                     return (uint)sizeof(DDS_HEADER_DXT10);
-                };
+                }
+
+                ;
             }
         }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public unsafe struct DDS_PIXELFORMAT
+    public struct DDS_PIXELFORMAT
     {
         public uint dwSize;
         public uint dwFlags;
@@ -172,7 +180,8 @@ namespace Compression.BSA
         public uint dwBBitMask;
         public uint dwABitMask;
 
-        public DDS_PIXELFORMAT(uint size, uint flags, uint fourCC, uint rgbBitCount, uint rBitMask, uint gBitMask, uint bBitMask, uint aBitMask)
+        public DDS_PIXELFORMAT(uint size, uint flags, uint fourCC, uint rgbBitCount, uint rBitMask, uint gBitMask,
+            uint bBitMask, uint aBitMask)
         {
             dwSize = size;
             dwFlags = flags;

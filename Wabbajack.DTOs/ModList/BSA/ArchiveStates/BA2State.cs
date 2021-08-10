@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Wabbajack.DTOs.JsonConverters;
 
 namespace Wabbajack.DTOs.BSA.ArchiveStates
@@ -9,7 +8,7 @@ namespace Wabbajack.DTOs.BSA.ArchiveStates
         DX10,
         GNMF
     }
-    
+
     [JsonName("BA2State")]
     public class BA2State : IArchive
     {

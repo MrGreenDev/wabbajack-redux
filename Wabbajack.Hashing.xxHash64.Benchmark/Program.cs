@@ -14,7 +14,7 @@ namespace Wabbajack.Hashing.xxHash64.Benchmark
     }
 
     [MemoryDiagnoser]
-    [DisassemblyDiagnoser(maxDepth:3)]
+    [DisassemblyDiagnoser(3)]
     public class xxHashBenchmark
     {
         private readonly byte[] _data;
@@ -34,13 +34,13 @@ namespace Wabbajack.Hashing.xxHash64.Benchmark
         [Benchmark]
         public void OldCode()
         {
-            var config = new xxHashConfig {HashSizeInBits = 64};
+            var config = new xxHashConfig { HashSizeInBits = 64 };
             BitConverter.ToUInt64(xxHashFactory.Instance.Create(config).ComputeHash(_data).Hash);
         }
     }
-    
+
     [MemoryDiagnoser]
-    [DisassemblyDiagnoser(maxDepth:3)]
+    [DisassemblyDiagnoser(3)]
     public class Base64EncoderBenchmark
     {
         private readonly Hash _data;

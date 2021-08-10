@@ -18,8 +18,10 @@ namespace Wabbajack.FileExtractor.Test
             service.AddSingleton<FileExtractor>();
             service.AddSingleton(new JsonSerializerOptions());
         }
-        
-        public void Configure(ILoggerFactory loggerFactory, ITestOutputHelperAccessor accessor) =>
+
+        public void Configure(ILoggerFactory loggerFactory, ITestOutputHelperAccessor accessor)
+        {
             loggerFactory.AddProvider(new XunitTestOutputLoggerProvider(accessor, delegate { return true; }));
+        }
     }
 }

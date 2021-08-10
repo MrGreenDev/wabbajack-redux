@@ -6,8 +6,8 @@ namespace Wabbajack.Paths.Test
     public class FullPathTests
     {
         public static FullPath Foo = new(@"c:\foo.zip".ToAbsolutePath(), Array.Empty<RelativePath>());
-        public static FullPath FooBar = new(@"c:\foo.zip".ToAbsolutePath(), new[] {"Bar.7z".ToRelativePath()});
-        public static FullPath Foobar = new(@"c:\foo.zip".ToAbsolutePath(), new[] {"bar.7z".ToRelativePath()});
+        public static FullPath FooBar = new(@"c:\foo.zip".ToAbsolutePath(), "Bar.7z".ToRelativePath());
+        public static FullPath Foobar = new(@"c:\foo.zip".ToAbsolutePath(), "bar.7z".ToRelativePath());
 
         [Fact]
         public void CanGetExtensions()
@@ -15,7 +15,7 @@ namespace Wabbajack.Paths.Test
             Assert.Equal(new Extension(".7z"), FooBar.Extension);
             Assert.Equal(new Extension(".zip"), Foo.Extension);
         }
-        
+
         [Fact]
         public void CanGetFileName()
         {
@@ -50,10 +50,9 @@ namespace Wabbajack.Paths.Test
             Assert.NotEqual(new FullPath(@"z:\arr".ToAbsolutePath()), Foo);
             Assert.NotEqual(Foo, Foobar);
             Assert.NotEqual(Foo, (object)42);
-            
+
             Assert.True(FooBar == Foobar);
             Assert.True(FooBar != Foo);
-
         }
     }
 }

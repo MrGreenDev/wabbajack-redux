@@ -10,9 +10,9 @@ namespace Wabbajack.Installer
 {
     public class GameLocator : IGameLocator
     {
+        private readonly Dictionary<Game, AbsolutePath> _locationCache;
         private readonly ILogger<GameLocator> _logger;
         private readonly SteamHandler _steam;
-        private readonly Dictionary<Game,AbsolutePath> _locationCache;
 
         public GameLocator(ILogger<GameLocator> logger)
         {
@@ -21,32 +21,13 @@ namespace Wabbajack.Installer
             _locationCache = new Dictionary<Game, AbsolutePath>();
         }
 
-        private bool TryFindLocationInner(Game game, out AbsolutePath path)
-        {
-            var metaData = game.MetaData();
-            if (_steam.FindAllGames())
-            {
-                foreach (var steamGame in _steam.Games)
-                {
-                    if (metaData.SteamIDs.Contains(steamGame.ID))
-                    {
-                        path = steamGame!.Path.ToAbsolutePath();
-                        return true;
-                    }
-                }
-            }
-
-            path = default;
-            return false;
-        }
-
         public AbsolutePath GameLocation(Game game)
         {
             if (TryFindLocation(game, out var path))
                 return path;
             throw new Exception($"Can't find game {game}");
         }
-        
+
         public bool IsInstalled(Game game)
         {
             return TryFindLocation(game, out _);
@@ -66,6 +47,21 @@ namespace Wabbajack.Installer
                 }
             }
 
+            return false;
+        }
+
+        private bool TryFindLocationInner(Game game, out AbsolutePath path)
+        {
+            var metaData = game.MetaData();
+            if (_steam.FindAllGames())
+                foreach (var steamGame in _steam.Games)
+                    if (metaData.SteamIDs.Contains(steamGame.ID))
+                    {
+                        path = steamGame!.Path.ToAbsolutePath();
+                        return true;
+                    }
+
+            path = default;
             return false;
         }
     }

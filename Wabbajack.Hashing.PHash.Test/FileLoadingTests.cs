@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Shipwreck.Phash;
 using Wabbajack.Paths;
@@ -16,13 +15,15 @@ namespace Wabbajack.Hashing.PHash.Test
         [InlineData("test-dxt5-small-bc7-vflip.dds", 0.189f)]
         public async Task LoadAllFiles(string file, float difference)
         {
-            var baseState = await ImageLoader.Load("TestData/test-dxt5.dds".ToRelativePath().RelativeTo(KnownFolders.EntryPoint));
-            var state = await ImageLoader.Load("TestData".ToRelativePath().Combine(file).RelativeTo(KnownFolders.EntryPoint));
-            
-            Assert.Equal(difference, 
+            var baseState =
+                await ImageLoader.Load("TestData/test-dxt5.dds".ToRelativePath().RelativeTo(KnownFolders.EntryPoint));
+            var state = await ImageLoader.Load("TestData".ToRelativePath().Combine(file)
+                .RelativeTo(KnownFolders.EntryPoint));
+
+            Assert.Equal(difference,
                 ImagePhash.GetCrossCorrelation(
-                    new Digest {Coefficients = baseState.PerceptualHash.Data}, 
-                    new Digest {Coefficients = state.PerceptualHash.Data}), 
+                    new Digest { Coefficients = baseState.PerceptualHash.Data },
+                    new Digest { Coefficients = state.PerceptualHash.Data }),
                 1);
         }
     }

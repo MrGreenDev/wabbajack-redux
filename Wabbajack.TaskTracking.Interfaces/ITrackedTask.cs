@@ -4,8 +4,7 @@ namespace Wabbajack.TaskTracking.Interfaces
 {
     public interface ITrackedTask
     {
-        public ValueTask ReportProgress(Percent percent, long bytesProcessed);
-
         public static ITrackedTask None = new NullTrackedTask();
+        public ValueTask ReportProgress(Percent percent, long bytesProcessed);
     }
 }

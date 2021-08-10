@@ -6,8 +6,6 @@ namespace Wabbajack.Paths
     {
         public PathException(string ex) : base(ex)
         {
-            
         }
-        
     }
 }

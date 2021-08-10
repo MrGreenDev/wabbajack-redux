@@ -10,6 +10,5 @@ namespace Wabbajack.Installer
             services.AddScoped<InstallerConfiguration>();
             services.AddScoped<StandardInstaller>();
         }
-        
     }
 }

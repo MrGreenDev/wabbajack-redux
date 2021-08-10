@@ -5,12 +5,12 @@ namespace Wabbajack.Hashing.xxHash64.Test
 {
     public class HashRelativePathTests
     {
-        public HashRelativePath Path1 = new(Hash.FromLong(1), new[] {@"foo\bar.zip".ToRelativePath()});
+        public HashRelativePath Path1 = new(Hash.FromLong(1), @"foo\bar.zip".ToRelativePath());
 
-        public HashRelativePath Path1a = new(Hash.FromLong(1), new[] {@"foo\bar.zip".ToRelativePath()});
-        public HashRelativePath Path2 = new(Hash.FromLong(2), new[] {@"foo\bar.zip".ToRelativePath()});
-        public HashRelativePath Path1baz = new(Hash.FromLong(2), new[] {@"foo\baz.zip".ToRelativePath()});
+        public HashRelativePath Path1a = new(Hash.FromLong(1), @"foo\bar.zip".ToRelativePath());
         public HashRelativePath Path1Base = new(Hash.FromLong(1));
+        public HashRelativePath Path1baz = new(Hash.FromLong(2), @"foo\baz.zip".ToRelativePath());
+        public HashRelativePath Path2 = new(Hash.FromLong(2), @"foo\bar.zip".ToRelativePath());
 
         [Fact]
         public void SupportEquality()
@@ -48,5 +48,4 @@ namespace Wabbajack.Hashing.xxHash64.Test
             Assert.Equal(1, Path2.CompareTo(Path1a));
         }
     }
-    
 }

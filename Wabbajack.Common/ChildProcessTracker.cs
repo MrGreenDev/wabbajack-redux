@@ -5,8 +5,10 @@ using System.Runtime.InteropServices;
 
 namespace Wabbajack.Common
 {
-    #if _WINDOWS
+#if _WINDOWS
+
     #region Windows
+
     /// <summary>
     ///     Allows processes to be automatically killed if this parent process unexpectedly quits.
     ///     This feature requires Windows 8 or greater. On Windows 7, nothing is done.
@@ -56,7 +58,7 @@ namespace Wabbajack.Common
                 Marshal.StructureToPtr(extendedInfo, extendedInfoPtr, false);
 
                 if (!SetInformationJobObject(s_jobHandle, JobObjectInfoType.ExtendedLimitInformation,
-                    extendedInfoPtr, (uint) length))
+                    extendedInfoPtr, (uint)length))
                     throw new Win32Exception();
             }
             finally
@@ -144,8 +146,10 @@ namespace Wabbajack.Common
         public UIntPtr PeakProcessMemoryUsed;
         public UIntPtr PeakJobMemoryUsed;
     }
+
     #endregion
-    #else 
+
+#else
     public static class ChildProcessTracker
     {
         public static void AddProcess(Process process)
@@ -153,7 +157,5 @@ namespace Wabbajack.Common
             
         }
     }
-    #endif
-
-
+#endif
 }

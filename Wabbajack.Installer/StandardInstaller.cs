@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -8,11 +7,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using IniParser;
-using IniParser.Model;
 using IniParser.Model.Configuration;
 using IniParser.Parser;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.Common;
 using Wabbajack.Compression.BSA;
 using Wabbajack.Downloaders;
@@ -20,7 +17,6 @@ using Wabbajack.DTOs;
 using Wabbajack.DTOs.Directives;
 using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.JsonConverters;
-using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Installer.Utilities;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
@@ -31,16 +27,18 @@ namespace Wabbajack.Installer
 {
     public class StandardInstaller : AInstaller<StandardInstaller>
     {
-        public StandardInstaller(ILogger<StandardInstaller> logger, 
-            InstallerConfiguration config, 
-            IGameLocator gameLocator, FileExtractor.FileExtractor extractor, 
-            DTOSerializer jsonSerializer, Context vfs, FileHashCache fileHashCache, 
-            DownloadDispatcher downloadDispatcher, IRateLimiter limiter, Client wjClient) :
-            base(logger, config, gameLocator, extractor, jsonSerializer, vfs, fileHashCache, downloadDispatcher, limiter, wjClient)
-        {
+        public static RelativePath BSACreationDir = "TEMP_BSA_FILES".ToRelativePath();
 
+        public StandardInstaller(ILogger<StandardInstaller> logger,
+            InstallerConfiguration config,
+            IGameLocator gameLocator, FileExtractor.FileExtractor extractor,
+            DTOSerializer jsonSerializer, Context vfs, FileHashCache fileHashCache,
+            DownloadDispatcher downloadDispatcher, IRateLimiter limiter, Client wjClient) :
+            base(logger, config, gameLocator, extractor, jsonSerializer, vfs, fileHashCache, downloadDispatcher,
+                limiter, wjClient)
+        {
         }
-        
+
         public override async Task<bool> Begin(CancellationToken token)
         {
             if (token.IsCancellationRequested) return false;
@@ -48,60 +46,56 @@ namespace Wabbajack.Installer
             _logger.LogInformation("Configuring Processor");
 
             if (_configuration.GameFolder == default)
-            {
                 _configuration.GameFolder = _gameLocator.GameLocation(_configuration.Game);
-            }
-            
+
             if (_configuration.GameFolder == default)
             {
-                var otherGame = _configuration.Game.MetaData().CommonlyConfusedWith.Where(g => _gameLocator.IsInstalled(g)).Select(g => g.MetaData()).FirstOrDefault();
+                var otherGame = _configuration.Game.MetaData().CommonlyConfusedWith
+                    .Where(g => _gameLocator.IsInstalled(g)).Select(g => g.MetaData()).FirstOrDefault();
                 if (otherGame != null)
-                {
                     _logger.LogError(
                         "In order to do a proper install Wabbajack needs to know where your {lookingFor} folder resides. However this game doesn't seem to be installed, we did however find an installed " +
                         "copy of {otherGame}, did you install the wrong game?",
                         _configuration.Game.MetaData().HumanFriendlyGameName, otherGame.HumanFriendlyGameName);
-                }
                 else
-                {
                     _logger.LogError(
                         "In order to do a proper install Wabbajack needs to know where your {lookingFor} folder resides. However this game doesn't seem to be installed.",
                         _configuration.Game.MetaData().HumanFriendlyGameName);
-                }
 
                 return false;
             }
 
             if (!_configuration.GameFolder.DirectoryExists())
             {
-                _logger.LogError("Located game {game} at \"{gameFolder}\" but the folder does not exist!", _configuration.Game, _configuration.GameFolder);
+                _logger.LogError("Located game {game} at \"{gameFolder}\" but the folder does not exist!",
+                    _configuration.Game, _configuration.GameFolder);
                 return false;
             }
-            
 
 
             _logger.LogInformation("Install Folder: {installFolder}", _configuration.Install);
             _logger.LogInformation("Downloads Folder: {downloadFolder}", _configuration.Downloads);
             _logger.LogInformation("Game Folder: {gameFolder}", _configuration.GameFolder);
             _logger.LogInformation("Wabbajack Folder: {wabbajackFolder}", KnownFolders.EntryPoint);
-            
+
             _configuration.Install.CreateDirectory();
             _configuration.Downloads.CreateDirectory();
-            
+
             await OptimizeModlist(token);
 
 
             await HashArchives(token);
 
             await DownloadArchives(token);
-            
+
             await HashArchives(token);
 
             var missing = ModList.Archives.Where(a => !HashedArchives.ContainsKey(a.Hash)).ToList();
             if (missing.Count > 0)
             {
                 foreach (var a in missing)
-                    _logger.LogCritical("Unable to download {name} ({primaryKeyString})", a.Name, a.State.PrimaryKeyString);
+                    _logger.LogCritical("Unable to download {name} ({primaryKeyString})", a.Name,
+                        a.State.PrimaryKeyString);
                 _logger.LogCritical("Cannot continue, was unable to download one or more archives");
                 return false;
             }
@@ -111,11 +105,11 @@ namespace Wabbajack.Installer
             await PrimeVFS();
 
             BuildFolderStructure();
-            
+
             await InstallArchives(token);
-            
+
             await InstallIncludedFiles(token);
-            
+
             await InstallIncludedDownloadMetas(token);
 
             await BuildBSAs(token);
@@ -134,36 +128,37 @@ namespace Wabbajack.Installer
 
             return true;
         }
-        
+
         private void CreateOutputMods()
         {
             _configuration.Install.Combine("profiles")
                 .EnumerateFiles()
                 .Where(f => f.FileName == Consts.SettingsIni)
                 .Do(f =>
-            {
-                if (!f.FileExists())
                 {
-                    _logger.LogInformation("settings.ini is null for {profile}, skipping", f);
-                    return;
-                }
-                var ini = f.LoadIniFile();
+                    if (!f.FileExists())
+                    {
+                        _logger.LogInformation("settings.ini is null for {profile}, skipping", f);
+                        return;
+                    }
 
-                var overwrites = ini["custom_overrides"];
-                if (overwrites == null)
-                {
-                    _logger.LogInformation("No custom overwrites found, skipping");
-                    return;
-                }
-                
-                overwrites!.Do(keyData =>
-                {
-                    var v = keyData.Value;
-                    var mod = _configuration.Install.Combine(Consts.MO2ModFolderName, (RelativePath)v);
+                    var ini = f.LoadIniFile();
 
-                    mod.CreateDirectory();
+                    var overwrites = ini["custom_overrides"];
+                    if (overwrites == null)
+                    {
+                        _logger.LogInformation("No custom overwrites found, skipping");
+                        return;
+                    }
+
+                    overwrites!.Do(keyData =>
+                    {
+                        var v = keyData.Value;
+                        var mod = _configuration.Install.Combine(Consts.MO2ModFolderName, (RelativePath)v);
+
+                        mod.CreateDirectory();
+                    });
                 });
-            });
         }
 
         private async Task ForcePortable()
@@ -177,25 +172,26 @@ namespace Wabbajack.Installer
             }
             catch (Exception e)
             {
-                _logger.LogCritical(e, "Could not create portable.txt in {_configuration.Install}", _configuration.Install);
+                _logger.LogCritical(e, "Could not create portable.txt in {_configuration.Install}",
+                    _configuration.Install);
             }
         }
 
         private async Task InstallIncludedDownloadMetas(CancellationToken token)
         {
             await ModList.Archives
-                   .PDo(_limiter, async archive =>
-                   {
-                       if (HashedArchives.TryGetValue(archive.Hash, out var paths))
-                       {
-                           var metaPath = paths.WithExtension(Ext.Meta);
-                           if (!metaPath.FileExists() && archive.State is not GameFileSource)
-                           {
-                               var meta = AddInstalled(_downloadDispatcher.MetaIni(archive));
-                               await metaPath.WriteAllLinesAsync(meta, token);
-                           }
-                       }
-                   });
+                .PDo(_limiter, async archive =>
+                {
+                    if (HashedArchives.TryGetValue(archive.Hash, out var paths))
+                    {
+                        var metaPath = paths.WithExtension(Ext.Meta);
+                        if (!metaPath.FileExists() && archive.State is not GameFileSource)
+                        {
+                            var meta = AddInstalled(_downloadDispatcher.MetaIni(archive));
+                            await metaPath.WriteAllLinesAsync(meta, token);
+                        }
+                    }
+                });
         }
 
         private IEnumerable<string> AddInstalled(IEnumerable<string> getMetaIni)
@@ -203,15 +199,10 @@ namespace Wabbajack.Installer
             foreach (var f in getMetaIni)
             {
                 yield return f;
-                if (f == "[General]")
-                {
-                    yield return "installed=true";
-                }
+                if (f == "[General]") yield return "installed=true";
             }
         }
-        
-        
-        public static RelativePath BSACreationDir = "TEMP_BSA_FILES".ToRelativePath();
+
         private async Task BuildBSAs(CancellationToken token)
         {
             var bsas = ModList.Directives.OfType<CreateBSA>().ToList();
@@ -221,7 +212,7 @@ namespace Wabbajack.Installer
             {
                 _logger.LogInformation("Building {bsaTo}", bsa.To.FileName);
                 var sourceDir = _configuration.Downloads.Combine(BSACreationDir, bsa.TempID);
-                
+
                 var a = BSADispatch.CreateBuilder(bsa.State, _manager);
                 var streams = await bsa.FileStates.PMap(_limiter, async state =>
                 {
@@ -268,27 +259,22 @@ namespace Wabbajack.Installer
                     }
                 });
         }
-        
+
         private void SetScreenSizeInPrefs()
         {
             if (_configuration.SystemParameters == null)
-            {
                 throw new ArgumentNullException("System Parameters was null.  Cannot set screen size prefs");
-            }
-            
-            var config = new IniParserConfiguration {AllowDuplicateKeys = true, AllowDuplicateSections = true};
+
+            var config = new IniParserConfiguration { AllowDuplicateKeys = true, AllowDuplicateSections = true };
             var oblivionPath = (RelativePath)"Oblivion.ini";
             foreach (var file in _configuration.Install.Combine("profiles").EnumerateFiles()
                 .Where(f => ((string)f.FileName).EndsWith("refs.ini") || f.FileName == oblivionPath))
-            {
                 try
                 {
                     var parser = new FileIniDataParser(new IniDataParser(config));
                     var data = parser.ReadFile(file.ToString());
-                    bool modified = false;
+                    var modified = false;
                     if (data.Sections["Display"] != null)
-                    {
-
                         if (data.Sections["Display"]["iSize W"] != null && data.Sections["Display"]["iSize H"] != null)
                         {
                             data.Sections["Display"]["iSize W"] =
@@ -298,38 +284,31 @@ namespace Wabbajack.Installer
                             modified = true;
                         }
 
-                    }
                     if (data.Sections["MEMORY"] != null)
-                    {
                         if (data.Sections["MEMORY"]["VideoMemorySizeMb"] != null)
                         {
                             data.Sections["MEMORY"]["VideoMemorySizeMb"] =
                                 _configuration.SystemParameters.EnbLEVRAMSize.ToString(CultureInfo.CurrentCulture);
                             modified = true;
                         }
-                    }
 
-                    if (modified) 
+                    if (modified)
                         parser.WriteFile(file.ToString(), data);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogCritical(ex, "Skipping screen size remap for {file} due to parse error.", file);
                 }
-            }
-            
+
             var tweaksPath = (RelativePath)"SSEDisplayTweaks.ini";
             foreach (var file in _configuration.Install.EnumerateFiles()
                 .Where(f => f.FileName == tweaksPath))
-            {
                 try
                 {
                     var parser = new FileIniDataParser(new IniDataParser(config));
                     var data = parser.ReadFile(file.ToString());
-                    bool modified = false;
+                    var modified = false;
                     if (data.Sections["Render"] != null)
-                    {
-
                         if (data.Sections["Render"]["Resolution"] != null)
                         {
                             data.Sections["Render"]["Resolution"] =
@@ -337,16 +316,13 @@ namespace Wabbajack.Installer
                             modified = true;
                         }
 
-                    }
-                    
-                    if (modified) 
+                    if (modified)
                         parser.WriteFile(file.ToString(), data);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogCritical(ex, "Skipping screen size remap for {file} due to parse error.", file);
                 }
-            }
         }
 
         private async Task WriteRemappedFile(RemappedInlineFile directive)
@@ -360,16 +336,19 @@ namespace Wabbajack.Installer
             data = data.Replace(Consts.GAME_PATH_MAGIC_FORWARD, gameFolder.Replace("\\", "/"));
 
             data = data.Replace(Consts.MO2_PATH_MAGIC_BACK, _configuration.Install.ToString());
-            data = data.Replace(Consts.MO2_PATH_MAGIC_DOUBLE_BACK, (_configuration.Install.ToString()).Replace("\\", "\\\\"));
-            data = data.Replace(Consts.MO2_PATH_MAGIC_FORWARD, (_configuration.Install.ToString()).Replace("\\", "/"));
+            data = data.Replace(Consts.MO2_PATH_MAGIC_DOUBLE_BACK,
+                _configuration.Install.ToString().Replace("\\", "\\\\"));
+            data = data.Replace(Consts.MO2_PATH_MAGIC_FORWARD, _configuration.Install.ToString().Replace("\\", "/"));
 
             data = data.Replace(Consts.DOWNLOAD_PATH_MAGIC_BACK, _configuration.Downloads.ToString());
-            data = data.Replace(Consts.DOWNLOAD_PATH_MAGIC_DOUBLE_BACK, (_configuration.Downloads.ToString()).Replace("\\", "\\\\"));
-            data = data.Replace(Consts.DOWNLOAD_PATH_MAGIC_FORWARD, (_configuration.Downloads.ToString()).Replace("\\", "/"));
+            data = data.Replace(Consts.DOWNLOAD_PATH_MAGIC_DOUBLE_BACK,
+                _configuration.Downloads.ToString().Replace("\\", "\\\\"));
+            data = data.Replace(Consts.DOWNLOAD_PATH_MAGIC_FORWARD,
+                _configuration.Downloads.ToString().Replace("\\", "/"));
 
             await _configuration.Install.Combine(directive.To).WriteAllTextAsync(data);
         }
-        
+
         public async Task GenerateZEditMerges(CancellationToken token)
         {
             await _configuration.ModList
@@ -379,12 +358,14 @@ namespace Wabbajack.Installer
                 {
                     _logger.LogInformation("Generating zEdit merge: {to}}", m.To);
 
-                    var srcData = (await Task.WhenAll(m.Sources.Select(async s => await _configuration.Install.Combine(s.RelativePath).ReadAllBytesAsync(token))))
+                    var srcData = (await Task.WhenAll(m.Sources.Select(async s =>
+                            await _configuration.Install.Combine(s.RelativePath).ReadAllBytesAsync(token))))
                         .ConcatArrays();
 
                     var patchData = await LoadBytesFromPath(m.PatchID);
 
-                    await using var fs = _configuration.Install.Combine(m.To).Open(FileMode.Create, FileAccess.Write, FileShare.None);
+                    await using var fs = _configuration.Install.Combine(m.To)
+                        .Open(FileMode.Create, FileAccess.Write, FileShare.None);
                     await BinaryPatching.ApplyPatch(new MemoryStream(srcData), new MemoryStream(patchData), fs);
                 });
         }

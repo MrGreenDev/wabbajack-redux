@@ -5,14 +5,13 @@ namespace Wabbajack.Paths
     public static class ArrayExtensions
     {
         public static bool AreEqual<T>(T[] a, int startA, T[] b, int startB, int length)
-        { 
+        {
             if (startA + length > a.Length) return false;
             if (startB + length > b.Length) return false;
 
             for (var i = 0; i < length; i++)
-            {
-                if (!a[startA + i]!.Equals(b[startB + i])) return false;
-            }
+                if (!a[startA + i]!.Equals(b[startB + i]))
+                    return false;
             return true;
         }
 
@@ -31,7 +30,7 @@ namespace Wabbajack.Paths
                 idx++;
             }
         }
-        
+
         public static int CompareString(string[] a, string[] b)
         {
             var idx = 0;
@@ -46,7 +45,7 @@ namespace Wabbajack.Paths
                 idx++;
             }
         }
-        
+
         public static T[] Add<T>(this T[] arr, T itm)
         {
             var newArr = new T[arr.Length + 1];
@@ -54,6 +53,5 @@ namespace Wabbajack.Paths
             newArr[arr.Length] = itm;
             return newArr;
         }
-        
     }
 }

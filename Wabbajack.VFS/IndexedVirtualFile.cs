@@ -12,7 +12,7 @@ namespace Wabbajack.VFS
     {
         public IPath Name { get; set; }
         public Hash Hash { get; set; }
-        
+
         public ImageState? ImageState { get; set; }
         public long Size { get; set; }
         public List<IndexedVirtualFile> Children { get; set; } = new();
@@ -21,9 +21,11 @@ namespace Wabbajack.VFS
         {
             bw.Write(Name.ToString()!);
             bw.Write((ulong)Hash);
-            
+
             if (ImageState == null)
+            {
                 bw.Write(false);
+            }
             else
             {
                 bw.Write(true);
@@ -43,10 +45,10 @@ namespace Wabbajack.VFS
             bw.Write((byte)state.Format);
             state.PerceptualHash.Write(bw);
         }
-        
+
         public static ImageState ReadImageState(BinaryReader br)
         {
-            return new()
+            return new ImageState
             {
                 Width = br.ReadUInt16(),
                 Height = br.ReadUInt16(),
@@ -55,10 +57,10 @@ namespace Wabbajack.VFS
             };
         }
 
-        
+
         public void Write(Stream s)
         {
-            using var cs = new GZipStream(s, CompressionLevel.Optimal , true);
+            using var cs = new GZipStream(s, CompressionLevel.Optimal, true);
             using var bw = new BinaryWriter(cs, Encoding.UTF8, true);
             Write(bw);
         }
@@ -68,21 +70,18 @@ namespace Wabbajack.VFS
             var ivf = new IndexedVirtualFile
             {
                 Name = (RelativePath)br.ReadString(),
-                Hash = Hash.FromULong(br.ReadUInt64()),
+                Hash = Hash.FromULong(br.ReadUInt64())
             };
 
-            if (br.ReadBoolean()) 
+            if (br.ReadBoolean())
                 ivf.ImageState = ReadImageState(br);
-            
+
             ivf.Size = br.ReadInt64();
-            
+
             var lst = new List<IndexedVirtualFile>();
             ivf.Children = lst;
             var count = br.ReadInt32();
-            for (int x = 0; x < count; x++)
-            {
-                lst.Add(Read(br));
-            }
+            for (var x = 0; x < count; x++) lst.Add(Read(br));
 
             return ivf;
         }

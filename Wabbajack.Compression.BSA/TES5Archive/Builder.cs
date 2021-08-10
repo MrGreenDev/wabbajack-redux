@@ -15,19 +15,85 @@ using Wabbajack.DTOs.BSA.ArchiveStates;
 using Wabbajack.DTOs.BSA.FileStates;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
-using Wabbajack.TaskTracking.Interfaces;
 
 namespace Wabbajack.Compression.BSA.TES5Archive
 {
     public class Builder : IBuilder
-    {   
+    {
         internal byte[] _fileId;
 
         private List<FileEntry> _files = new();
         internal List<FolderRecordBuilder> _folders = new();
         internal uint _offset;
-        internal uint _totalFileNameLength;
         internal DiskSlabAllocator _slab;
+        internal uint _totalFileNameLength;
+
+        public IEnumerable<FileEntry> Files => _files;
+
+        public ArchiveFlags ArchiveFlags { get; set; }
+
+        public FileFlags FileFlags { get; set; }
+
+        public VersionType HeaderType { get; set; }
+
+        public IEnumerable<RelativePath> FolderNames
+        {
+            get { return _files.Select(f => f.Path.Parent).Distinct(); }
+        }
+
+        public bool HasFolderNames => ArchiveFlags.HasFlag(ArchiveFlags.HasFileNames);
+
+        public bool HasFileNames => ArchiveFlags.HasFlag(ArchiveFlags.HasFileNames);
+
+        public bool CompressedByDefault => ArchiveFlags.HasFlag(ArchiveFlags.Compressed);
+
+        public bool HasNameBlobs => ArchiveFlags.HasFlag(ArchiveFlags.HasFileNameBlobs);
+
+        public async ValueTask AddFile(AFile state, Stream src, CancellationToken token)
+        {
+            var bsaState = (BSAFile)state;
+
+            var r = await FileEntry.Create(this, bsaState.Path, src, bsaState.FlipCompression, token);
+
+            lock (this)
+            {
+                _files.Add(r);
+            }
+        }
+
+        public async ValueTask Build(Stream fs, CancellationToken token)
+        {
+            RegenFolderRecords();
+            await using var wtr = new BinaryWriter(fs, Encoding.Default, true);
+
+            wtr.Write(_fileId);
+            wtr.Write((uint)HeaderType);
+            wtr.Write(_offset);
+            wtr.Write((uint)ArchiveFlags);
+            var folders = FolderNames.ToList();
+            wtr.Write((uint)folders.Count);
+            wtr.Write((uint)_files.Count);
+            wtr.Write((uint)_folders.Select(f => f._nameBytes.Length - 1).Sum()); // totalFolderNameLength
+            var s = _files.Select(f => f._pathBytes.Length).Sum();
+            _totalFileNameLength = (uint)_files.Select(f => f._nameBytes.Length).Sum();
+            wtr.Write(_totalFileNameLength); // totalFileNameLength
+            wtr.Write((uint)FileFlags);
+
+            foreach (var folder in _folders) folder.WriteFolderRecord(wtr);
+
+            foreach (var folder in _folders)
+            {
+                if (HasFolderNames)
+                    wtr.Write(folder._nameBytes);
+                foreach (var file in folder._files) file.WriteFileRecord(wtr);
+            }
+
+            foreach (var file in _files)
+                await wtr.BaseStream.WriteAsync(file._nameBytes, token);
+
+            foreach (var file in _files)
+                await file.WriteData(wtr, token);
+        }
 
         public static Builder Create(TemporaryFileManager tempGenerator)
         {
@@ -49,78 +115,9 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             return self;
         }
 
-        public IEnumerable<FileEntry> Files => _files;
-
-        public ArchiveFlags ArchiveFlags { get; set; }
-
-        public FileFlags FileFlags { get; set; }
-
-        public VersionType HeaderType { get; set; }
-
-        public IEnumerable<RelativePath> FolderNames
-        {
-            get
-            {
-                return _files.Select(f => f.Path.Parent).Distinct();
-            }
-        }
-
-        public bool HasFolderNames => ArchiveFlags.HasFlag(ArchiveFlags.HasFileNames);
-
-        public bool HasFileNames => ArchiveFlags.HasFlag(ArchiveFlags.HasFileNames);
-
-        public bool CompressedByDefault => ArchiveFlags.HasFlag(ArchiveFlags.Compressed);
-
-        public bool HasNameBlobs => ArchiveFlags.HasFlag(ArchiveFlags.HasFileNameBlobs);
-
         public async ValueTask DisposeAsync()
         {
             await _slab.DisposeAsync();
-        }
-        public async ValueTask AddFile(AFile state, Stream src, CancellationToken token)
-        {
-            var bsaState = (BSAFile) state;
-
-            var r = await FileEntry.Create(this, bsaState.Path, src, bsaState.FlipCompression, token);
-
-            lock (this)
-            {
-                _files.Add(r);
-            }
-        }
-
-        public async ValueTask Build(Stream fs, CancellationToken token)
-        {
-            RegenFolderRecords();
-            await using var wtr = new BinaryWriter(fs, Encoding.Default, true);
-            
-            wtr.Write(_fileId);
-            wtr.Write((uint)HeaderType);
-            wtr.Write(_offset);
-            wtr.Write((uint)ArchiveFlags);
-            var folders = FolderNames.ToList();
-            wtr.Write((uint) folders.Count);
-            wtr.Write((uint) _files.Count);
-            wtr.Write((uint) _folders.Select(f => f._nameBytes.Length - 1).Sum()); // totalFolderNameLength
-            var s = _files.Select(f => f._pathBytes.Length).Sum();
-            _totalFileNameLength = (uint) _files.Select(f => f._nameBytes.Length).Sum();
-            wtr.Write(_totalFileNameLength); // totalFileNameLength
-            wtr.Write((uint)FileFlags);
-
-            foreach (var folder in _folders) folder.WriteFolderRecord(wtr);
-
-            foreach (var folder in _folders)
-            {
-                if (HasFolderNames)
-                    wtr.Write(folder._nameBytes);
-                foreach (var file in folder._files) file.WriteFileRecord(wtr);
-            }
-
-            foreach (var file in _files) 
-                await wtr.BaseStream.WriteAsync(file._nameBytes, token);
-
-            foreach (var file in _files)
-                await file.WriteData(wtr, token);
         }
 
         public void RegenFolderRecords()
@@ -158,7 +155,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             _bsa = bsa;
             // Folders don't have extensions, so let's make sure we cut it out
             _hash = Name.GetFolderBSAHash();
-            _fileCount = (uint) files.Count();
+            _fileCount = (uint)files.Count();
             _nameBytes = folderName.ToBZString(_bsa.HeaderType);
             _recordSize = sizeof(ulong) + sizeof(uint) + sizeof(uint);
         }
@@ -183,8 +180,8 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             {
                 ulong size = 0;
                 if (_bsa.HasFolderNames)
-                    size += (ulong) _nameBytes.Length;
-                size += (ulong) _files.Select(f => sizeof(ulong) + sizeof(uint) + sizeof(uint)).Sum();
+                    size += (ulong)_nameBytes.Length;
+                size += (ulong)_files.Select(f => sizeof(ulong) + sizeof(uint) + sizeof(uint)).Sum();
                 return size;
             }
         }
@@ -192,22 +189,22 @@ namespace Wabbajack.Compression.BSA.TES5Archive
         public void WriteFolderRecord(BinaryWriter wtr)
         {
             var idx = _bsa._folders.IndexOf(this);
-            _offset = (ulong) wtr.BaseStream.Position;
-            _offset += (ulong) _bsa._folders.Skip(idx).Select(f => (long) f.SelfSize).Sum();
+            _offset = (ulong)wtr.BaseStream.Position;
+            _offset += (ulong)_bsa._folders.Skip(idx).Select(f => (long)f.SelfSize).Sum();
             _offset += _bsa._totalFileNameLength;
-            _offset += (ulong) _bsa._folders.Take(idx).Select(f => (long) f.FileRecordSize).Sum();
+            _offset += (ulong)_bsa._folders.Take(idx).Select(f => (long)f.FileRecordSize).Sum();
 
             var sp = wtr.BaseStream.Position;
             wtr.Write(_hash);
             wtr.Write(_fileCount);
             if (_bsa.HeaderType == VersionType.SSE)
             {
-                wtr.Write((uint) 0); // unk
+                wtr.Write((uint)0); // unk
                 wtr.Write(_offset); // offset
             }
             else if (_bsa.HeaderType is VersionType.FO3 or VersionType.TES4)
             {
-                wtr.Write((uint) _offset);
+                wtr.Write((uint)_offset);
             }
             else
             {
@@ -232,7 +229,26 @@ namespace Wabbajack.Compression.BSA.TES5Archive
         internal byte[] _pathBytes;
         private Stream _srcData;
 
-        public static async Task<FileEntry> Create(Builder bsa, RelativePath path, Stream src, bool flipCompression, CancellationToken token)
+        public bool Compressed
+        {
+            get
+            {
+                if (_flipCompression)
+                    return !_bsa.CompressedByDefault;
+                return _bsa.CompressedByDefault;
+            }
+        }
+
+        public RelativePath Path => _path;
+
+        public bool FlipCompression => _flipCompression;
+
+        public ulong Hash => _hash;
+
+        public FolderRecordBuilder Folder => _folder;
+
+        public static async Task<FileEntry> Create(Builder bsa, RelativePath path, Stream src, bool flipCompression,
+            CancellationToken token)
         {
             var entry = new FileEntry();
             entry._bsa = bsa;
@@ -252,24 +268,6 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             return entry;
         }
 
-        public bool Compressed
-        {
-            get
-            {
-                if (_flipCompression)
-                    return !_bsa.CompressedByDefault;
-                return _bsa.CompressedByDefault;
-            }
-        }
-
-        public RelativePath Path => _path;
-
-        public bool FlipCompression => _flipCompression;
-
-        public ulong Hash => _hash;
-
-        public FolderRecordBuilder Folder => _folder;
-
         private async Task CompressData(CancellationToken token)
         {
             switch (_bsa.HeaderType)
@@ -277,7 +275,8 @@ namespace Wabbajack.Compression.BSA.TES5Archive
                 case VersionType.SSE:
                 {
                     var r = new MemoryStream();
-                    await using (var w = LZ4Stream.Encode(r, new LZ4EncoderSettings {CompressionLevel = LZ4Level.L12_MAX}, true))
+                    await using (var w = LZ4Stream.Encode(r,
+                        new LZ4EncoderSettings { CompressionLevel = LZ4Level.L12_MAX }, true))
                     {
                         await _srcData.CopyToWithStatusAsync(_srcData.Length, w, token);
                     }
@@ -319,9 +318,9 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             if (_bsa.HasNameBlobs) size += _pathBSBytes.Length;
             if (Compressed) size += 4;
             if (_flipCompression)
-                wtr.Write((uint) size | (0x1 << 30));
+                wtr.Write((uint)size | (0x1 << 30));
             else
-                wtr.Write((uint) size);
+                wtr.Write((uint)size);
 
             _offsetOffset = wtr.BaseStream.Position;
             wtr.Write(0xDEADBEEF);
@@ -329,7 +328,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
 
         internal async Task WriteData(BinaryWriter wtr, CancellationToken token)
         {
-            var offset = (uint) wtr.BaseStream.Position;
+            var offset = (uint)wtr.BaseStream.Position;
             wtr.BaseStream.Position = _offsetOffset;
             wtr.Write(offset);
             wtr.BaseStream.Position = offset;
@@ -338,7 +337,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
 
             if (Compressed)
             {
-                wtr.Write((uint) _originalSize);
+                wtr.Write((uint)_originalSize);
                 _srcData.Position = 0;
                 await _srcData.CopyToLimitAsync(wtr.BaseStream, (int)_srcData.Length, token);
                 await _srcData.DisposeAsync();

@@ -4,14 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
-using Xunit.Sdk;
 
 namespace Wabbajack.Downloaders
 {
@@ -21,7 +19,8 @@ namespace Wabbajack.Downloaders
         private readonly ILogger<DownloadDispatcher> _logger;
         private readonly Client _wjClient;
 
-        public DownloadDispatcher(ILogger<DownloadDispatcher> logger, IEnumerable<IDownloader> downloaders, Client wjClient)
+        public DownloadDispatcher(ILogger<DownloadDispatcher> logger, IEnumerable<IDownloader> downloaders,
+            Client wjClient)
         {
             _downloaders = downloaders;
             _logger = logger;
@@ -36,29 +35,25 @@ namespace Wabbajack.Downloaders
             _logger.BeginScope("Completed {hash}", hash);
             return hash;
         }
-        
+
         public async Task<bool> Verify(Archive a, CancellationToken token)
         {
             foreach (var downloader in _downloaders)
-            {
                 if (downloader.CanDownload(a))
                     return await downloader.Verify(a, token);
-            }
 
             throw new NotImplementedException();
         }
-        
-        public async Task<(DownloadResult, Hash)> DownloadWithPossibleUpgrade(Archive archive, AbsolutePath destination, CancellationToken token)
+
+        public async Task<(DownloadResult, Hash)> DownloadWithPossibleUpgrade(Archive archive, AbsolutePath destination,
+            CancellationToken token)
         {
             var downloadedHash = await Download(archive, destination, token);
-            if (downloadedHash != default && (downloadedHash == archive.Hash || archive.Hash == default)) 
+            if (downloadedHash != default && (downloadedHash == archive.Hash || archive.Hash == default))
                 return (DownloadResult.Success, downloadedHash);
 
             downloadedHash = await DownloadFromMirror(archive, destination, token);
-            if (downloadedHash != default)
-            {
-                return (DownloadResult.Mirror, downloadedHash);
-            }
+            if (downloadedHash != default) return (DownloadResult.Mirror, downloadedHash);
 
             return (DownloadResult.Failure, downloadedHash);
 
@@ -119,23 +114,23 @@ namespace Wabbajack.Downloaders
             return DownloadResult.Update;
             */
         }
-        
+
         private async Task<Hash> DownloadFromMirror(Archive archive, AbsolutePath destination, CancellationToken token)
         {
             try
             {
                 var url = await _wjClient.GetMirrorUrl(archive.Hash);
                 if (url == null) return default;
-                
+
                 var newArchive =
                     new Archive
                     {
-                        Hash = archive.Hash, 
-                        Size = archive.Size, 
-                        Name = archive.Name, 
-                        State = new WabbajackCDN {Url = url}
+                        Hash = archive.Hash,
+                        Size = archive.Size,
+                        Name = archive.Name,
+                        State = new WabbajackCDN { Url = url }
                     };
-                
+
                 return await Download(newArchive, destination, token);
             }
             catch (Exception ex)
@@ -144,14 +139,13 @@ namespace Wabbajack.Downloaders
                 return default;
             }
         }
-        
+
         public IDownloader Downloader(Archive archive)
         {
-            var result =  _downloaders.FirstOrDefault(d => d.CanDownload(archive));
+            var result = _downloaders.FirstOrDefault(d => d.CanDownload(archive));
             if (result != null) return result!;
             _logger.LogError("No downloader found for {type}", archive.State.GetType());
             throw new NotImplementedException($"No downloader for {archive.State.GetType()}");
-
         }
 
         public IDownloadState? Parse(Uri url)

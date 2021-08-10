@@ -1,6 +1,5 @@
 using System.Data;
 using System.IO;
-using System.Text.Json.Serialization;
 using Wabbajack.Hashing.xxHash64;
 
 namespace Wabbajack.DTOs.Texture
@@ -17,7 +16,7 @@ namespace Wabbajack.DTOs.Texture
             Data = data;
             if (Data.Length != SIZE)
                 throw new DataException();
-            
+
             long h = 0;
             h |= Data[0];
             h <<= 8;
@@ -37,17 +36,17 @@ namespace Wabbajack.DTOs.Texture
                 throw new DataException();
             return new PHash(data);
         }
-        
+
         public static PHash Read(BinaryReader br)
         {
-            return new (br.ReadBytes(SIZE));
+            return new PHash(br.ReadBytes(SIZE));
         }
 
         public void Write(BinaryWriter br)
         {
             if (_hash == 0)
                 br.Write(new byte[SIZE]);
-            else 
+            else
                 br.Write(Data);
         }
 

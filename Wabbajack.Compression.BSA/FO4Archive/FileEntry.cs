@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -7,25 +8,22 @@ using Wabbajack.Common;
 using Wabbajack.DTOs.BSA.FileStates;
 using Wabbajack.DTOs.Streams;
 using Wabbajack.Paths;
-using System;
 
 namespace Wabbajack.Compression.BSA.FO4Archive
 {
     public class FileEntry : IBA2FileEntry
     {
-        internal uint _nameHash;
-        internal string _extension;
-        internal uint _dirHash;
-        internal uint _flags;
-        internal ulong _offset;
-        internal uint _size;
-        internal uint _realSize;
         internal uint _align;
         internal Reader _bsa;
+        internal uint _dirHash;
+        internal string _extension;
+        internal uint _flags;
         internal int _index;
+        internal uint _nameHash;
+        internal ulong _offset;
+        internal uint _realSize;
+        internal uint _size;
 
-        public bool Compressed => _size != 0;
-        
         public FileEntry(Reader ba2Reader, int index)
         {
             _index = index;
@@ -41,14 +39,16 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             _realSize = _rdr.ReadUInt32();
             _align = _rdr.ReadUInt32();
         }
-        
-        
+
+        public bool Compressed => _size != 0;
+
 
         public string FullPath { get; set; }
 
         public RelativePath Path => FullPath.ToRelativePath();
-        
+
         public uint Size => _realSize;
+
         public AFile State => new BA2File
         {
             NameHash = _nameHash,
@@ -58,17 +58,17 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             Compressed = Compressed,
             Path = Path,
             Extension = _extension,
-            Index = _index,
+            Index = _index
         };
 
         public async ValueTask CopyDataTo(Stream output, CancellationToken token)
         {
             await using var fs = await _bsa._streamFactory.GetStream();
-            fs.Seek((long) _offset, SeekOrigin.Begin);
+            fs.Seek((long)_offset, SeekOrigin.Begin);
             var len = Compressed ? _size : _realSize;
 
             var bytes = new byte[len];
-            await fs.ReadAsync(bytes.AsMemory(0, (int) len), token);
+            await fs.ReadAsync(bytes.AsMemory(0, (int)len), token);
 
             if (!Compressed)
             {
@@ -81,11 +81,11 @@ namespace Wabbajack.Compression.BSA.FO4Archive
                 inflater.SetInput(bytes);
                 inflater.Inflate(uncompressed);
                 await output.WriteAsync(uncompressed, token);
-
             }
+
             await output.FlushAsync(token);
         }
-        
+
         public async ValueTask<IStreamFactory> GetStreamFactory(CancellationToken token)
         {
             var ms = new MemoryStream();

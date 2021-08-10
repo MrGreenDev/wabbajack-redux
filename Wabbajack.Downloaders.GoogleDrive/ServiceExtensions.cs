@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wabbajack.Downloaders.GoogleDrive;
 using Wabbajack.Downloaders.Interfaces;
-using Wabbajack.DTOs.DownloadStates;
 
 namespace Wabbajack.Downloaders
 {

@@ -1,5 +1,4 @@
 using System;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 
@@ -21,12 +20,12 @@ namespace Wabbajack.Hashing.xxHash64
                 .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
                 .ToArray();
         }
-        
+
         public static string ToBase64(this byte[] data)
         {
             return Convert.ToBase64String(data);
         }
-        
+
         public static byte[] FromBase64(this string data)
         {
             return Convert.FromBase64String(data);

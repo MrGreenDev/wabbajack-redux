@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Wabbajack.Compression.BSA.FO4Archive
 {
-    interface IFileBuilder
+    internal interface IFileBuilder
     {
         uint FileHash { get; }
         uint DirHash { get; }
@@ -14,6 +14,5 @@ namespace Wabbajack.Compression.BSA.FO4Archive
 
         ValueTask WriteData(BinaryWriter wtr, CancellationToken token);
         void WriteHeader(BinaryWriter wtr, CancellationToken token);
-
     }
 }

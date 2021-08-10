@@ -1,5 +1,4 @@
 using Wabbajack.DTOs.DownloadStates;
-using Wabbajack.Paths;
 using Wabbajack.Hashing.xxHash64;
 
 namespace Wabbajack.DTOs

@@ -11,7 +11,7 @@ namespace Wabbajack.Networking.Http
         {
             if (!response.Headers.TryGetValues("set-cookie", out var values))
                 return Array.Empty<(string, string)>();
-            
+
             return values
                 .SelectMany(h => h.Split(";"))
                 .Select(h => h.Split("="))

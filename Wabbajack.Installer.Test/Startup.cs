@@ -28,7 +28,8 @@ namespace Wabbajack.Installer.Test
             service.AddSingleton<HttpClient>();
             service.AddHttpDownloader();
             service.AddNexusApi();
-            service.AddSingleton<ApiKey, StaticApiKey>(p => new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
+            service.AddSingleton<ApiKey, StaticApiKey>(p =>
+                new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
             service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(2));
             service.AddSingleton<FileExtractor.FileExtractor>();
             service.AddSingleton(new JsonSerializerOptions());
@@ -37,15 +38,17 @@ namespace Wabbajack.Installer.Test
             service.AddDownloadDispatcher();
             service.AddStandardInstaller();
             service.AddSingleton<Client>();
-            service.AddSingleton(new ApplicationInfo()
+            service.AddSingleton(new ApplicationInfo
             {
                 AppName = "Wabbajack.Networking.NexusApi.Test",
                 AppVersion = new Version(1, 0)
             });
             service.AddSingleton<Configuration>();
         }
-        
-        public void Configure(ILoggerFactory loggerFactory, ITestOutputHelperAccessor accessor) =>
+
+        public void Configure(ILoggerFactory loggerFactory, ITestOutputHelperAccessor accessor)
+        {
             loggerFactory.AddProvider(new XunitTestOutputLoggerProvider(accessor, delegate { return true; }));
+        }
     }
 }

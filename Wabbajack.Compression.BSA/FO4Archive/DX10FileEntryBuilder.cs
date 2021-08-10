@@ -11,24 +11,8 @@ namespace Wabbajack.Compression.BSA.FO4Archive
 {
     public class DX10FileEntryBuilder : IFileBuilder
     {
-        private BA2DX10File _state;
         private List<ChunkBuilder> _chunks;
-
-        public static async Task<DX10FileEntryBuilder> Create(BA2DX10File state, Stream src, DiskSlabAllocator slab, CancellationToken token)
-        {
-            var builder = new DX10FileEntryBuilder {_state = state};
-
-            var headerSize = DDS.HeaderSizeForFormat((DXGI_FORMAT) state.PixelFormat) + 4;
-            new BinaryReader(src).ReadBytes((int)headerSize);
-
-            // This can't be parallel because it all runs off the same base IO stream.
-            builder._chunks = new List<ChunkBuilder>();
-
-            foreach (var chunk in state.Chunks)
-                builder._chunks.Add(await ChunkBuilder.Create(state, chunk, src, slab, token));
-
-            return builder;
-        }
+        private BA2DX10File _state;
 
         public uint FileHash => _state.NameHash;
         public uint DirHash => _state.DirHash;
@@ -48,7 +32,7 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             bw.Write(_state.NumMips);
             bw.Write(_state.PixelFormat);
             bw.Write(_state.Unk16);
-            
+
             foreach (var chunk in _chunks)
                 chunk.WriteHeader(bw);
         }
@@ -57,6 +41,23 @@ namespace Wabbajack.Compression.BSA.FO4Archive
         {
             foreach (var chunk in _chunks)
                 await chunk.WriteData(wtr, token);
+        }
+
+        public static async Task<DX10FileEntryBuilder> Create(BA2DX10File state, Stream src, DiskSlabAllocator slab,
+            CancellationToken token)
+        {
+            var builder = new DX10FileEntryBuilder { _state = state };
+
+            var headerSize = DDS.HeaderSizeForFormat((DXGI_FORMAT)state.PixelFormat) + 4;
+            new BinaryReader(src).ReadBytes((int)headerSize);
+
+            // This can't be parallel because it all runs off the same base IO stream.
+            builder._chunks = new List<ChunkBuilder>();
+
+            foreach (var chunk in state.Chunks)
+                builder._chunks.Add(await ChunkBuilder.Create(state, chunk, src, slab, token));
+
+            return builder;
         }
     }
 }

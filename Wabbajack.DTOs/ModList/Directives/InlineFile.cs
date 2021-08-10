@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Paths;
 

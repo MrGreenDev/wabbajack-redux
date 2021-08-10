@@ -8,76 +8,66 @@ namespace Wabbajack.Common
     public struct ReadOnlyMemorySlice<T> : IEnumerable<T>
     {
         private T[] _arr;
-        private int _startPos;
-        private int _length;
-        public int Length => _length;
-        public int StartPosition => _startPos;
+        public int Length { get; private set; }
+
+        public int StartPosition { get; private set; }
 
         [DebuggerStepThrough]
         public ReadOnlyMemorySlice(T[] arr)
         {
-            this._arr = arr;
-            this._startPos = 0;
-            this._length = arr.Length;
+            _arr = arr;
+            StartPosition = 0;
+            Length = arr.Length;
         }
 
         [DebuggerStepThrough]
         public ReadOnlyMemorySlice(T[] arr, int startPos, int length)
         {
-            this._arr = arr;
-            this._startPos = startPos;
-            this._length = length;
+            _arr = arr;
+            StartPosition = startPos;
+            Length = length;
         }
 
-        public ReadOnlySpan<T> Span => _arr.AsSpan(start: _startPos, length: _length);
+        public ReadOnlySpan<T> Span => _arr.AsSpan(StartPosition, Length);
 
-        public T this[int index] => _arr[index + _startPos];
+        public T this[int index] => _arr[index + StartPosition];
 
         [DebuggerStepThrough]
         public ReadOnlyMemorySlice<T> Slice(int start)
         {
-            var startPos = _startPos + start;
-            if (startPos < 0)
-            {
-                throw new ArgumentOutOfRangeException();
-            }
-            return new ReadOnlyMemorySlice<T>()
+            var startPos = StartPosition + start;
+            if (startPos < 0) throw new ArgumentOutOfRangeException();
+            return new ReadOnlyMemorySlice<T>
             {
                 _arr = _arr,
-                _startPos = _startPos + start,
-                _length = _length - start
+                StartPosition = StartPosition + start,
+                Length = Length - start
             };
         }
 
         [DebuggerStepThrough]
         public ReadOnlyMemorySlice<T> Slice(int start, int length)
         {
-            var startPos = _startPos + start;
-            if (startPos < 0)
-            {
-                throw new ArgumentOutOfRangeException();
-            }
-            if (startPos + length > _arr.Length)
-            {
-                throw new ArgumentOutOfRangeException();
-            }
-            return new ReadOnlyMemorySlice<T>()
+            var startPos = StartPosition + start;
+            if (startPos < 0) throw new ArgumentOutOfRangeException();
+            if (startPos + length > _arr.Length) throw new ArgumentOutOfRangeException();
+            return new ReadOnlyMemorySlice<T>
             {
                 _arr = _arr,
-                _startPos = _startPos + start,
-                _length = length
+                StartPosition = StartPosition + start,
+                Length = length
             };
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            for (int i = 0; i < _length; i++)
-            {
-                yield return this._arr[i + _startPos];
-            }
+            for (var i = 0; i < Length; i++) yield return _arr[i + StartPosition];
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
 
         public static implicit operator ReadOnlySpan<T>(ReadOnlyMemorySlice<T> mem)
         {

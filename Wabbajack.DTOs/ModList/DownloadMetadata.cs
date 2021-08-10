@@ -1,4 +1,3 @@
-using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Hashing.xxHash64;
 
 namespace Wabbajack.DTOs

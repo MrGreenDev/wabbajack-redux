@@ -10,7 +10,7 @@ namespace Wabbajack.FileExtractor.ExtractedFiles
 {
     public class ExtractedMemoryFile : IExtractedFile
     {
-        private IStreamFactory _factory;
+        private readonly IStreamFactory _factory;
 
         public ExtractedMemoryFile(IStreamFactory factory)
         {
@@ -25,6 +25,7 @@ namespace Wabbajack.FileExtractor.ExtractedFiles
 
         public DateTime LastModifiedUtc => _factory.LastModifiedUtc;
         public IPath Name => _factory.Name;
+
         public async ValueTask Move(AbsolutePath newPath, CancellationToken token)
         {
             await using var stream = await _factory.GetStream();

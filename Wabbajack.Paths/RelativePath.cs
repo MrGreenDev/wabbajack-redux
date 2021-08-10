@@ -6,6 +6,7 @@ namespace Wabbajack.Paths
     public readonly struct RelativePath : IPath, IEquatable<RelativePath>, IComparable<RelativePath>
     {
         internal readonly string[] Parts;
+
         internal RelativePath(string[] parts)
         {
             Parts = parts;
@@ -16,16 +17,16 @@ namespace Wabbajack.Paths
             var splits = i.Split(AbsolutePath.StringSplits, StringSplitOptions.RemoveEmptyEntries);
             if (splits.Length >= 1 && splits[0].Contains(":"))
                 throw new PathException($"Tried to parse `{i} but `:` not valid in a path name");
-            return new(splits);
+            return new RelativePath(splits);
         }
-        
+
         public static explicit operator string(RelativePath i)
         {
             return i.ToString();
         }
 
         public Extension Extension => Extension.FromPath(Parts[^1]);
-        public RelativePath FileName => Parts.Length == 1 ? this : new RelativePath(new[] {Parts[^1]});
+        public RelativePath FileName => Parts.Length == 1 ? this : new RelativePath(new[] { Parts[^1] });
 
         public RelativePath ReplaceExtension(Extension newExtension)
         {
@@ -44,11 +45,11 @@ namespace Wabbajack.Paths
                 oldExtLength = 0;
             else
                 oldExtLength++;
-            
+
             var newName = oldName[..^oldExtLength] + newExtension;
             return newName;
         }
-        
+
         public RelativePath WithExtension(Extension? ext)
         {
             var parts = new string[Parts.Length];
@@ -69,23 +70,22 @@ namespace Wabbajack.Paths
         {
             return string.Join('\\', Parts);
         }
-        
+
         public override int GetHashCode()
         {
-            return Parts.Aggregate(0, (current, part) => current ^ part.GetHashCode(StringComparison.CurrentCultureIgnoreCase));
+            return Parts.Aggregate(0,
+                (current, part) => current ^ part.GetHashCode(StringComparison.CurrentCultureIgnoreCase));
         }
 
         public bool Equals(RelativePath other)
         {
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (other.Parts == default) return other.Parts == Parts;
-            
+
             if (other.Parts.Length != Parts.Length) return false;
             for (var idx = 0; idx < Parts.Length; idx++)
-            {
                 if (!Parts[idx].Equals(other.Parts[idx], StringComparison.InvariantCultureIgnoreCase))
                     return false;
-            }
             return true;
         }
 
@@ -93,7 +93,7 @@ namespace Wabbajack.Paths
         {
             return obj is RelativePath other && Equals(other);
         }
-        
+
         public static bool operator ==(RelativePath a, RelativePath b)
         {
             return a.Equals(b);
@@ -110,33 +110,34 @@ namespace Wabbajack.Paths
         }
 
         public int Depth => Parts.Length;
-        
+
         public RelativePath Combine(params object[] paths)
         {
             var converted = paths.Select(p =>
             {
                 return p switch
                 {
-                    string s => (RelativePath) s,
+                    string s => (RelativePath)s,
                     RelativePath path => path,
                     _ => throw new PathException($"Cannot cast {p} of type {p.GetType()} to Path")
                 };
             }).ToArray();
             return Combine(converted);
         }
-        
+
         public RelativePath Combine(params RelativePath[] paths)
         {
             var newLen = Parts.Length + paths.Sum(p => p.Parts.Length);
             var newParts = new string[newLen];
             Array.Copy(Parts, newParts, Parts.Length);
-            
+
             var toIdx = Parts.Length;
             foreach (var p in paths)
             {
                 Array.Copy(p.Parts, 0, newParts, toIdx, p.Parts.Length);
                 toIdx += p.Parts.Length;
             }
+
             return new RelativePath(newParts);
         }
 

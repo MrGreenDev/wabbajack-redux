@@ -5,7 +5,6 @@ using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
 using Wabbajack.DTOs.Streams;
 using Wabbajack.Hashing.xxHash64;
@@ -15,14 +14,14 @@ namespace Wabbajack.VFS
 {
     public class VFSCache
     {
-        private readonly AbsolutePath _path;
-        private readonly string _connectionString;
         private readonly SQLiteConnection _conn;
+        private readonly string _connectionString;
+        private readonly AbsolutePath _path;
 
         public VFSCache(AbsolutePath path)
         {
             _path = path;
-            _connectionString = String.Intern($"URI=file:{path};Pooling=True;Max Pool Size=100; Journal Mode=Memory;");
+            _connectionString = string.Intern($"URI=file:{path};Pooling=True;Max Pool Size=100; Journal Mode=Memory;");
             _conn = new SQLiteConnection(_connectionString);
             _conn.Open();
 
@@ -34,7 +33,8 @@ namespace Wabbajack.VFS
             cmd.ExecuteNonQuery();
         }
 
-        public bool TryGetFromCache(Context context, VirtualFile parent, IPath path, IStreamFactory extractedFile, Hash hash, out VirtualFile found)
+        public bool TryGetFromCache(Context context, VirtualFile parent, IPath path, IStreamFactory extractedFile,
+            Hash hash, out VirtualFile found)
         {
             using var cmd = new SQLiteCommand(_conn);
             cmd.CommandText = @"SELECT Contents FROM VFSCache WHERE Hash = @hash";
@@ -53,8 +53,9 @@ namespace Wabbajack.VFS
             found = default;
             return false;
         }
-        
-        private static VirtualFile ConvertFromIndexedFile(Context context, IndexedVirtualFile file, IPath path, VirtualFile vparent, IStreamFactory extractedFile)
+
+        private static VirtualFile ConvertFromIndexedFile(Context context, IndexedVirtualFile file, IPath path,
+            VirtualFile vparent, IStreamFactory extractedFile)
         {
             var vself = new VirtualFile
             {
@@ -67,10 +68,11 @@ namespace Wabbajack.VFS
                 Hash = file.Hash,
                 ImageState = file.ImageState
             };
-                        
+
             vself.FillFullPath();
 
-            vself.Children = file.Children.Select(f => ConvertFromIndexedFile(context, f, f.Name, vself, extractedFile)).ToImmutableList();
+            vself.Children = file.Children.Select(f => ConvertFromIndexedFile(context, f, f.Name, vself, extractedFile))
+                .ToImmutableList();
 
             return vself;
         }
@@ -92,7 +94,7 @@ namespace Wabbajack.VFS
             await using var cmd = new SQLiteCommand(_conn);
             cmd.CommandText = @"INSERT INTO VFSCache (Hash, Contents) VALUES (@hash, @contents)";
             cmd.Parameters.AddWithValue("@hash", (long)hash);
-            var val = new SQLiteParameter("@contents", DbType.Binary) {Value = data.ToArray()};
+            var val = new SQLiteParameter("@contents", DbType.Binary) { Value = data.ToArray() };
             cmd.Parameters.Add(val);
             try
             {
@@ -105,6 +107,7 @@ namespace Wabbajack.VFS
                 throw;
             }
         }
+
         public void VacuumDatabase()
         {
             using var cmd = new SQLiteCommand(_conn);
@@ -113,6 +116,5 @@ namespace Wabbajack.VFS
 
             cmd.ExecuteNonQuery();
         }
-
     }
 }

@@ -9,6 +9,5 @@ namespace Wabbajack.Common
         {
             foreach (var i in coll) f(i);
         }
-
     }
 }

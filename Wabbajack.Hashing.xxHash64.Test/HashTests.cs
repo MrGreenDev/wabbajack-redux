@@ -7,6 +7,10 @@ namespace Wabbajack.Hashing.xxHash64.Test
 {
     public class HashTests
     {
+        private static readonly Hash Hash1 = new(1);
+        private static readonly Hash Hash1a = new(1);
+        private static readonly Hash Hash2 = new(2);
+
         [Property(MaxTest = 1024)]
         public void CompareResults(byte[] data)
         {
@@ -16,13 +20,9 @@ namespace Wabbajack.Hashing.xxHash64.Test
 
         private ulong HashOld(byte[] data)
         {
-            var config = new xxHashConfig {HashSizeInBits = 64};
+            var config = new xxHashConfig { HashSizeInBits = 64 };
             return BitConverter.ToUInt64(xxHashFactory.Instance.Create(config).ComputeHash(data).Hash);
         }
-        
-        private static readonly Hash Hash1 = new Hash(1);
-        private static readonly Hash Hash1a = new Hash(1);
-        private static readonly Hash Hash2 = new Hash(2);
 
         [Fact]
         public void HashesAreEquatable()
@@ -47,7 +47,7 @@ namespace Wabbajack.Hashing.xxHash64.Test
             Assert.Equal("AQAAAAAAAAA=", Hash1.ToString());
             Assert.Equal(Hash1, Hash.Interpret(Hash1.ToBase64()));
         }
-        
+
         [Fact]
         public void HashesConvertToHex()
         {
@@ -71,7 +71,7 @@ namespace Wabbajack.Hashing.xxHash64.Test
             Assert.True(Hash1.Equals((object)Hash1a));
             Assert.NotEqual(Hash1, (object)4);
             Assert.Equal(Hash1, Hash.FromULong(1));
-            Assert.Equal(new byte[]{1, 0, 0, 0, 0, 0, 0, 0}, Hash1.ToArray());
+            Assert.Equal(new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 }, Hash1.ToArray());
         }
     }
 }

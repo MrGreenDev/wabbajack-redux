@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Wabbajack.TaskTracking.Interfaces;
 
 namespace Wabbajack.Common
 {
@@ -23,13 +22,14 @@ namespace Wabbajack.Common
 
             await tw.FlushAsync(token);
         }
-        
-        public static async Task CopyToWithStatusAsync(this Stream input, long maxSize, Stream output, CancellationToken token)
+
+        public static async Task CopyToWithStatusAsync(this Stream input, long maxSize, Stream output,
+            CancellationToken token)
         {
             var buffer = new byte[1024 * 1024];
             if (maxSize == 0) maxSize = 1;
             long totalRead = 0;
-            var remain = maxSize; 
+            var remain = maxSize;
             while (true)
             {
                 var toRead = Math.Min(buffer.Length, remain);
@@ -42,6 +42,5 @@ namespace Wabbajack.Common
 
             await output.FlushAsync(token);
         }
-        
     }
 }

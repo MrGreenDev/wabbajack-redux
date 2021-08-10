@@ -19,24 +19,13 @@ namespace Wabbajack.Compression.BSA.TES5Archive
 
         private readonly ReadOnlyMemorySlice<byte> _headerData;
         internal readonly int _index;
-        internal readonly int _overallIndex;
-        internal readonly FileNameBlock _nameBlock;
         internal readonly Lazy<string> _name;
+        internal readonly FileNameBlock _nameBlock;
+        internal readonly int _overallIndex;
         internal Lazy<(uint Size, uint OnDisk, uint Original)> _size;
 
-        public ulong Hash => BinaryPrimitives.ReadUInt64LittleEndian(_headerData);
-        protected uint RawSize => BinaryPrimitives.ReadUInt32LittleEndian(_headerData.Slice(0x8));
-        public uint Offset => BinaryPrimitives.ReadUInt32LittleEndian(_headerData.Slice(0xC));
-        public string Name => _name.Value;
-        public uint Size => _size.Value.Size;
-
-        public bool FlipCompression => (RawSize & (0x1 << 30)) > 0;
-
-        internal FolderRecord Folder { get; }
-        internal Reader BSA => Folder.BSA;
-
         internal FileRecord(
-            FolderRecord folderRecord, 
+            FolderRecord folderRecord,
             ReadOnlyMemorySlice<byte> data,
             int index,
             int overallIndex,
@@ -47,11 +36,11 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             _headerData = data;
             _nameBlock = nameBlock;
             Folder = folderRecord;
-            _name = new Lazy<string>(GetName, System.Threading.LazyThreadSafetyMode.PublicationOnly);
+            _name = new Lazy<string>(GetName, LazyThreadSafetyMode.PublicationOnly);
 
             // Will be replaced if CopyDataTo is called before value is created
             _size = new Lazy<(uint Size, uint OnDisk, uint Original)>(
-                mode: System.Threading.LazyThreadSafetyMode.ExecutionAndPublication,
+                mode: LazyThreadSafetyMode.ExecutionAndPublication,
                 valueFactory: () =>
                 {
                     using var rdr = BSA.GetStream();
@@ -60,7 +49,15 @@ namespace Wabbajack.Compression.BSA.TES5Archive
                 });
         }
 
-        public RelativePath Path => (string.IsNullOrEmpty(Folder.Name) ? Name : Folder.Name + "\\" + Name).ToRelativePath();
+        public ulong Hash => BinaryPrimitives.ReadUInt64LittleEndian(_headerData);
+        protected uint RawSize => BinaryPrimitives.ReadUInt32LittleEndian(_headerData.Slice(0x8));
+        public uint Offset => BinaryPrimitives.ReadUInt32LittleEndian(_headerData.Slice(0xC));
+        public string Name => _name.Value;
+
+        public bool FlipCompression => (RawSize & (0x1 << 30)) > 0;
+
+        internal FolderRecord Folder { get; }
+        internal Reader BSA => Folder.BSA;
 
         public bool Compressed
         {
@@ -70,6 +67,11 @@ namespace Wabbajack.Compression.BSA.TES5Archive
                 return BSA.CompressedByDefault;
             }
         }
+
+        public uint Size => _size.Value.Size;
+
+        public RelativePath Path =>
+            (string.IsNullOrEmpty(Folder.Name) ? Name : Folder.Name + "\\" + Name).ToRelativePath();
 
         public AFile State => new BSAFile
         {
@@ -84,11 +86,8 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             using var rdr = new BinaryReader(in_file);
             rdr.BaseStream.Position = Offset;
 
-            (uint Size, uint OnDisk, uint Original) size = ReadSize(rdr);
-            if (!_size.IsValueCreated)
-            {
-                _size = new Lazy<(uint Size, uint OnDisk, uint Original)>(value: size);
-            }
+            var size = ReadSize(rdr);
+            if (!_size.IsValueCreated) _size = new Lazy<(uint Size, uint OnDisk, uint Original)>(size);
 
             if (BSA.HeaderType == VersionType.SSE)
             {
@@ -110,8 +109,18 @@ namespace Wabbajack.Compression.BSA.TES5Archive
                     await z.CopyToLimitAsync(output, (int)size.Original, token).ConfigureAwait(false);
                 }
                 else
+                {
                     await rdr.BaseStream.CopyToLimitAsync(output, (int)size.OnDisk, token).ConfigureAwait(false);
+                }
             }
+        }
+
+        public async ValueTask<IStreamFactory> GetStreamFactory(CancellationToken token)
+        {
+            var ms = new MemoryStream();
+            await CopyDataTo(ms, token);
+            ms.Position = 0;
+            return new MemoryStreamFactory(ms, Path, BSA._streamFactory.LastModifiedUtc);
         }
 
         private string GetName()
@@ -122,7 +131,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
 
         private (uint Size, uint OnDisk, uint Original) ReadSize(BinaryReader rdr)
         {
-            uint size = RawSize;
+            var size = RawSize;
             if (FlipCompression)
                 size = size ^ (0x1 << 30);
 
@@ -145,23 +154,14 @@ namespace Wabbajack.Compression.BSA.TES5Archive
 
             uint originalSize;
             if (Compressed)
-            {
                 originalSize = rdr.ReadUInt32();
-            }
             else
-            {
                 originalSize = 0;
-            }
 
-            uint onDiskSize = size - nameBlobOffset;
+            var onDiskSize = size - nameBlobOffset;
             if (Compressed)
-            {
                 return (Size: originalSize, OnDisk: onDiskSize, Original: originalSize);
-            }
-            else
-            {
-                return (Size: onDiskSize, OnDisk: onDiskSize, Original: originalSize);
-            }
+            return (Size: onDiskSize, OnDisk: onDiskSize, Original: originalSize);
         }
 
         public void Dump(Action<string> print)
@@ -170,14 +170,6 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             print($"Offset: {Offset}");
             print($"Raw Size: {RawSize}");
             print($"Index: {_index}");
-        }
-
-        public async ValueTask<IStreamFactory> GetStreamFactory(CancellationToken token)
-        {
-            var ms = new MemoryStream();
-            await CopyDataTo(ms, token);
-            ms.Position = 0;
-            return new MemoryStreamFactory(ms, Path, BSA._streamFactory.LastModifiedUtc);
         }
     }
 }

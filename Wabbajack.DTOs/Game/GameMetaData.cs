@@ -3,14 +3,16 @@ using Wabbajack.Paths;
 
 namespace Wabbajack.DTOs
 {
-  public class GameMetaData
+    public class GameMetaData
     {
         public Game Game { get; internal init; }
-        
+
         public bool IsGenericMO2Plugin { get; internal init; }
-        
+
         public string? MO2ArchiveName { get; internal init; }
+
         public string? NexusName { get; internal init; }
+
         // Nexus DB id for the game, used in some specific situations
         public long NexusGameId { get; internal init; }
         public string? MO2Name { get; internal init; }
@@ -31,6 +33,7 @@ namespace Wabbajack.DTOs
 
         // to get BethNet IDs: check the registry
         public int BethNetID { get; internal init; }
+
         //for BethNet games only!
         public string RegString { get; internal init; } = string.Empty;
 
@@ -43,11 +46,10 @@ namespace Wabbajack.DTOs
         public Game[] CommonlyConfusedWith { get; set; } = Array.Empty<Game>();
 
         /// <summary>
-        ///  Other games this game can pull source files from (if the game is installed on the user's machine)
+        ///     Other games this game can pull source files from (if the game is installed on the user's machine)
         /// </summary>
         public Game[] CanSourceFrom { get; set; } = Array.Empty<Game>();
 
         public string HumanFriendlyGameName => Game.GetDescription();
-
     }
 }

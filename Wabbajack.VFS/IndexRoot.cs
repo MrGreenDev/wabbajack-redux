@@ -2,16 +2,14 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
 
 namespace Wabbajack.VFS
 {
-   public class IndexRoot
+    public class IndexRoot
     {
-        public static IndexRoot Empty = new IndexRoot();
+        public static IndexRoot Empty = new();
 
         public IndexRoot(IReadOnlyList<VirtualFile> aFiles,
             IDictionary<FullPath, VirtualFile> byFullPath,
@@ -51,14 +49,14 @@ namespace Wabbajack.VFS
                 .ToList();
 
             var byFullPath = Task.Run(() => allFiles.SelectMany(f => f.ThisAndAllChildren)
-                                     .ToDictionary(f => f.FullPath));
+                .ToDictionary(f => f.FullPath));
 
             var byHash = Task.Run(() => allFiles.SelectMany(f => f.ThisAndAllChildren)
-                                 .Where(f => f.Hash != default)
-                                 .ToLookup(f => f.Hash));
+                .Where(f => f.Hash != default)
+                .ToLookup(f => f.Hash));
 
             var byName = Task.Run(() => allFiles.SelectMany(f => f.ThisAndAllChildren)
-                                 .ToLookup(f => f.Name));
+                .ToLookup(f => f.Name));
 
             var byRootPath = Task.Run(() => allFiles.ToDictionary(f => f.AbsoluteName));
 
@@ -73,12 +71,14 @@ namespace Wabbajack.VFS
         public VirtualFile FileForArchiveHashPath(HashRelativePath argArchiveHashPath)
         {
             var cur = ByHash[argArchiveHashPath.Hash].First(f => f.Parent == null);
-            return argArchiveHashPath.Parts.Aggregate(cur, (current, itm) => ByName[itm].First(f => f.Parent == current));
+            return argArchiveHashPath.Parts.Aggregate(cur,
+                (current, itm) => ByName[itm].First(f => f.Parent == current));
         }
-        
+
         public static class EmptyLookup<TKey, TElement>
         {
-            public static ILookup<TKey, TElement> Instance { get; } = Enumerable.Empty<TElement>().ToLookup(x => default(TKey));
+            public static ILookup<TKey, TElement> Instance { get; } =
+                Enumerable.Empty<TElement>().ToLookup(x => default(TKey));
         }
     }
 }
