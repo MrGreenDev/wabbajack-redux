@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.DTOs;
@@ -42,10 +43,16 @@ namespace Wabbajack.Networking.WabbajackClientApi
             return d.Deserialize<ServerAllowList>(str);
         }
         
-        public static async Task<Archive[]> GetGameFilesFromGithub(Game game, string version)
+        public async Task<Archive[]> GetGameArchives(Game game, string version)
         {
             var url = $"https://raw.githubusercontent.com/wabbajack-tools/indexed-game-files/master/{game}/{version}.json";
-            return await _client.GetJsonAsync<Archive[]>(url);
+            return await _client.GetFromJsonAsync<Archive[]>(url) ?? Array.Empty<Archive>();
+        }
+        
+        public async Task<Archive[]> GetArchivesForHash(Hash hash)
+        {
+            return await _client.GetFromJsonAsync<Archive[]>(
+                $"{_configuration.BuildServerUrl}mod_files/by_hash/{hash.ToHex()}") ?? Array.Empty<Archive>();
         }
 
         public async Task<Uri?> GetMirrorUrl(Hash archiveHash)

@@ -153,6 +153,14 @@ namespace Wabbajack.Downloaders
             throw new NotImplementedException($"No downloader for {archive.State.GetType()}");
         }
 
+        public async Task<Archive> FillInMetadata(Archive a)
+        {
+            var downloader = Downloader(a);
+            if (downloader is IMetaStateDownloader msd)
+                return await msd.FillInMetadata(a);
+            return a;
+        }
+
         public IDownloadState? Parse(Uri url)
         {
             return _downloaders.OfType<IUrlDownloader>()
@@ -163,6 +171,11 @@ namespace Wabbajack.Downloaders
         public IEnumerable<string> MetaIni(Archive archive)
         {
             return Downloader(archive).MetaIni(archive);
+        }
+
+        public string MetaIniSection(Archive archive)
+        {
+            return string.Join("\n", new[] { "[General]" }.Concat(MetaIni(archive)));
         }
     }
 }

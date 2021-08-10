@@ -65,6 +65,11 @@ namespace Wabbajack.Paths
             Array.Copy(Parts, 0, newArray, basePath.Parts.Length, Parts.Length);
             return new AbsolutePath(newArray, basePath.PathFormat);
         }
+        
+        public bool InFolder(RelativePath parent)
+        {
+            return ArrayExtensions.AreEqual(parent.Parts, 0, Parts, 0, parent.Parts.Length);
+        }
 
         public override string ToString()
         {

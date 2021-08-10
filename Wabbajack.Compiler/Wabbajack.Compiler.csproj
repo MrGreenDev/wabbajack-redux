@@ -7,6 +7,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Wabbajack.Downloaders.Dispatcher\Wabbajack.Downloaders.Dispatcher.csproj" />
+      <ProjectReference Include="..\Wabbajack.Installer\Wabbajack.Installer.csproj" />
       <ProjectReference Include="..\Wabbajack.VFS\Wabbajack.VFS.csproj" />
     </ItemGroup>
 

@@ -13,7 +13,7 @@ namespace Wabbajack.Compiler
         public string Meta = string.Empty;
         public string Name = string.Empty;
         public VirtualFile File { get; }
-        public ADownloadState? State { get; set; }
+        public IDownloadState? State { get; set; }
 
         public IndexedArchive(VirtualFile file)
         {

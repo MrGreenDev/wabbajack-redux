@@ -42,6 +42,21 @@ namespace Wabbajack.Common
             await foreach (var itm in coll) lst.Add(itm);
             return lst;
         }
+        
+        public static async Task<HashSet<T>> ToHashSet<T>(this IAsyncEnumerable<T> coll, Predicate<T>? filter = default)
+        {
+            HashSet<T> lst = new();
+            if (filter == default)
+            {
+                await foreach (var itm in coll) lst.Add(itm);
+            }
+            else
+            {
+                await foreach (var itm in coll.Where(filter)) lst.Add(itm);
+            }
+
+            return lst;
+        }
 
         public static async Task Do<T>(this IAsyncEnumerable<T> coll, Func<T, Task> fn)
         {

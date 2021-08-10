@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
@@ -17,6 +18,8 @@ using Wabbajack.DTOs;
 using Wabbajack.DTOs.Directives;
 using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.Hashing.xxHash64;
+using Wabbajack.Installer;
+using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
 using Wabbajack.TaskTracking.Interfaces;
@@ -44,9 +47,11 @@ namespace Wabbajack.Compiler
 
         private ConcurrentDictionary<Directive, RawSourceFile> _sourceFileLinks;
         private readonly DownloadDispatcher _dispatcher;
+        private readonly Client _wjClient;
+        private readonly GameLocator _locator;
 
         public ACompiler(ILogger<T> logger, FileExtractor.FileExtractor extractor, FileHashCache hashCache, Context vfs, TemporaryFileManager manager, CompilerSettings settings,
-            IRateLimiter limiter, DownloadDispatcher dispatcher)
+            IRateLimiter limiter, DownloadDispatcher dispatcher, Client wjClient, GameLocator locator)
         {
             _logger = logger;
             _extractor = extractor;
@@ -58,6 +63,8 @@ namespace Wabbajack.Compiler
             _limiter = limiter;
             _sourceFileLinks = new ConcurrentDictionary<Directive, RawSourceFile>();
             _dispatcher = dispatcher;
+            _wjClient = wjClient;
+            _locator = locator;
 
         }
 
@@ -101,17 +108,17 @@ namespace Wabbajack.Compiler
             return id;
         }
 
-        internal async Task<RelativePath> IncludeFile(Stream data)
+        internal async Task<RelativePath> IncludeFile(Stream data, CancellationToken token)
         {
             var id = IncludeId();
-            await _stagingFolder.Combine(id).WriteAllAsync(data);
+            await _stagingFolder.Combine(id).WriteAllAsync(data, token);
             return id;
         }
 
-        internal async Task<RelativePath> IncludeFile(AbsolutePath data)
+        internal async Task<RelativePath> IncludeFile(AbsolutePath data, CancellationToken token)
         {
             await using var stream = data.Open(FileMode.Open);
-            return await IncludeFile(stream);
+            return await IncludeFile(stream, token);
         }
 
 
@@ -128,47 +135,12 @@ namespace Wabbajack.Compiler
             _logger.LogInformation("Getting meta data for {count} archives", SelectedArchives.Count);
             await SelectedArchives.PDo(_limiter, async a =>
             {
-                if (a.State is IMetaState metaState)
-                {
-                    if (metaState.URL == null || metaState.URL == Consts.WabbajackOrg)
-                        return;
-
-                    var b = await metaState.LoadMetaData();
-                    if (b) Utils.Log($"Getting meta data for {a.Name} was successful!");
-                }
+                await _dispatcher.FillInMetadata(a);
             });
 
             return true;
         }
 
-        public async Task PreflightChecks()
-        {
-            Utils.Log($"Running preflight checks");
-            if (PublishData == null) return;
-
-            var ourLists = await (await AuthorApi.Client.Create()).GetMyModlists();
-            if (ourLists.All(l => l.MachineURL != PublishData.MachineUrl))
-            {
-                Utils.ErrorThrow(new CriticalFailureIntervention(
-                    $"Cannot publish to {PublishData.MachineUrl}, you are not listed as a maintainer",
-                    "Cannot publish"));
-            }
-        }
-
-        public async Task PublishModlist()
-        {
-            if (PublishData == null) return;
-            var api = await AuthorApi.Client.Create();
-            Utils.Log($"Uploading modlist {PublishData!.MachineUrl}");
-
-            var metadata = ((AbsolutePath)(ModListOutputFile + ".meta.json")).FromJson<DownloadMetadata>();
-            var uri = await api.UploadFile(Queue, ModListOutputFile, (s, percent) => Utils.Status(s, percent));
-            PublishData.DownloadUrl = uri;
-            PublishData.DownloadMetadata = metadata;
-            
-            Utils.Log($"Publishing modlist {PublishData!.MachineUrl}");
-            await api.UpdateModListInformation(PublishData);
-        }
 
         protected async Task IndexGameFileHashes()
         {
@@ -180,25 +152,39 @@ namespace Wabbajack.Compiler
                 {
                     try
                     {
-                        var files = await ClientAPI.GetExistingGameFiles(Queue, ag);
-                        Utils.Log($"Including {files.Length} stock game files from {ag} as download sources");
+                        if (!_locator.TryFindLocation(ag, out var path))
+                        {
+                            _logger.LogWarning("Game {game} was to be used in compilation but it is not installed", ag);
+                            return;
+                        }
+
+                        var mainFile = ag.MetaData().MainExecutable!.Value.RelativeTo(path);
+
+                        if (!mainFile.FileExists())
+                        {
+                            _logger.LogWarning("Main file {file} for {game} does not exist", mainFile, ag);
+                        }
+
+                        var versionInfo = FileVersionInfo.GetVersionInfo(mainFile.ToString());
+
+                        var files = await _wjClient.GetGameArchives(ag, versionInfo.FileVersion ?? "0.0.0.0");
+                        
+                        _logger.LogInformation($"Including {files.Length} stock game files from {ag} as download sources");
                         GameHashes[ag] = files.Select(f => f.Hash).ToHashSet();
 
                         IndexedArchives.AddRange(files.Select(f =>
                         {
-                            var meta = f.State.GetMetaIniString();
-                            var ini = meta.LoadIniString();
-                            var state = (GameFileSourceDownloader.State)f.State;
+                            var state = (GameFileSource)f.State;
                             return new IndexedArchive(
-                                VFS.Index.ByRootPath[ag.MetaData().GameLocation().Combine(state.GameFile)])
+                                _vfs.Index.ByRootPath[path.Combine(state.GameFile)])
                             {
-                                IniData = ini, Meta = meta, Name = state.GameFile.Munge().ToString()
+                                Name = state.GameFile.ToString().Replace("/", "_").Replace("\\", "_")
                             };
                         }));
                     }
                     catch (Exception e)
                     {
-                        Utils.Error(e, "Unable to find existing game files, skipping.");
+                        _logger.LogCritical(e, "Unable to find existing game files for {game}, skipping.", ag);
                     }
                 }
 
@@ -210,83 +196,100 @@ namespace Wabbajack.Compiler
 
         protected async Task CleanInvalidArchivesAndFillState()
         {
-            var remove = (await IndexedArchives.PMap(Queue, async a =>
+            var remove = await IndexedArchives.PMap(_limiter, async a =>
             {
                 try
                 {
-                    a.State = (await ResolveArchive(a)).State;
+                    var resolved = await ResolveArchive(a);
+                    if (resolved == null)
+                    {
+                        return null;
+                    }
+
+                    a.State = resolved.State;
                     return null;
                 }
                 catch (Exception ex)
                 {
-                    Utils.Log(ex.ToString());
+                    _logger.LogWarning(ex.ToString(), "While resolving archive {archive}", a.Name);
                     return a;
                 }
-            }))
-                .NotNull().ToHashSet();
+            }).ToHashSet(f => f != null);
 
             if (remove.Count == 0)
             {
                 return;
             }
 
-            Utils.Log(
-                $"Removing {remove.Count} archives from the compilation state, this is probably not an issue but reference this if you have compilation failures");
-            remove.Do(r => Utils.Log($"Resolution failed for: ({r.File.Size} {r.File.Hash}) {r.File.FullPath}"));
+            _logger.LogWarning(
+                "Removing {count} archives from the compilation state, this is probably not an issue but reference this if you have compilation failures", remove.Count);
+            remove.Do(r => _logger.LogWarning("Resolution failed for: ({size} {hash}) {path}", r.File.Size, r.File.Hash, r.File.FullPath));
             IndexedArchives.RemoveAll(a => remove.Contains(a));
         }
 
-        protected async Task InferMetas()
+        protected async Task InferMetas(CancellationToken token)
         {
             async Task<bool> HasInvalidMeta(AbsolutePath filename)
             {
-                var metaname = filename.WithExtension(Consts.MetaFileExtension);
-                if (!metaname.Exists)
+                var metaName = filename.WithExtension(Ext.Meta);
+                if (!metaName.FileExists())
                 {
                     return true;
                 }
 
                 try
                 {
-                    return await DownloadDispatcher.ResolveArchive(metaname.LoadIniFile()) == null;
+                    var ini = metaName.LoadIniFile();
+                    return await _dispatcher.ResolveArchive(ini["General"].ToDictionary(d => d.KeyName,  d => d.Value)) == null;
                 }
                 catch (Exception e)
                 {
-                    Utils.ErrorThrow(e, $"Exception while checking meta {filename}");
+                    _logger.LogCritical(e, $"Exception while checking meta {filename}");
                     return false;
                 }
             }
 
-            var to_find = (await DownloadsPath.EnumerateFiles()
-                    .Where(f => f.Extension != Consts.MetaFileExtension && f.Extension != Consts.HashFileExtension)
-                    .PMap(Queue, async f => await HasInvalidMeta(f) ? f : default))
-                .Where(f => f.Exists)
+            var toFind = await (_settings.Downloads.EnumerateFiles()
+                    .Where(f => f.Extension != Ext.Meta)
+                    .PMap(_limiter, async f => await HasInvalidMeta(f) ? f : default))
+                .Where(f => f.FileExists())
                 .ToList();
 
-            if (to_find.Count == 0)
+            if (toFind.Count == 0)
             {
                 return;
             }
 
-            Utils.Log($"Attempting to infer {to_find.Count} metas from the server.");
+            _logger.LogInformation("Attempting to infer {count} metas from the server.", toFind.Count);
 
-            await to_find.PMap(Queue, async f =>
+            await toFind.PDo(_limiter, async f =>
             {
-                var vf = VFS.Index.ByRootPath[f];
+                var vf = _vfs.Index.ByRootPath[f];
 
-                var meta = await ClientAPI.InferDownloadState(vf.Hash);
+                var archives = await _wjClient.GetArchivesForHash(vf.Hash);
 
-                if (meta == null)
+                Archive? a = null;
+                foreach (var archive in archives)
                 {
-                    await vf.AbsoluteName.WithExtension(Consts.MetaFileExtension).WriteAllLinesAsync(
-                        "[General]",
-                        "unknownArchive=true");
+                    if (await _dispatcher.Verify(archive, token))
+                    {
+                        a = archive;
+                        break;
+                    }
+                }
+
+                if (a == null)
+                {
+                    await vf.AbsoluteName.WithExtension(Ext.Meta).WriteAllLinesAsync(
+                        new string[] {"[General]",
+                        "unknownArchive=true"}, token);
+                    _logger.LogWarning("Could not infer meta for {archive} {hash}", f, vf.Hash);
                     return;
                 }
 
-                Utils.Log($"Inferred .meta for {vf.FullPath.FileName}, writing to disk");
-                await vf.AbsoluteName.WithExtension(Consts.MetaFileExtension)
-                    .WriteAllTextAsync(meta.GetMetaIniString());
+                _logger.LogInformation($"Inferred .meta for {vf.FullPath.FileName}, writing to disk");
+                await vf.AbsoluteName.WithExtension(Ext.Meta)
+                    .WriteAllTextAsync(_dispatcher.MetaIniSection(a), token);
             });
         }
 
@@ -447,19 +450,19 @@ namespace Wabbajack.Compiler
 
         private VirtualFile FindDestFile(RelativePath to)
         {
-            var abs = to.RelativeTo(SourcePath);
-            if (abs.Exists)
+            var abs = to.RelativeTo(_settings.Source);
+            if (abs.FileExists())
             {
-                return VFS.Index.ByRootPath[abs];
+                return _vfs.Index.ByRootPath[abs];
             }
 
-            if (to.StartsWith(Consts.BSACreationDir))
+            if (to.InFolder(Consts.BSACreationDir))
             {
                 var bsaId = (RelativePath)((string)to).Split('\\')[1];
                 var bsa = InstallDirectives.OfType<CreateBSA>().First(b => b.TempID == bsaId);
                 var find = (RelativePath)Path.Combine(((string)to).Split('\\').Skip(2).ToArray());
 
-                return VFS.Index.ByRootPath[SourcePath.Combine(bsa.To)].Children.First(c => c.RelativeName == find);
+                return _vfs.Index.ByRootPath[_settings.Source.Combine(bsa.To)].Children.First(c => c.RelativeName == find);
             }
 
             throw new ArgumentException($"Couldn't load data for {to}");
@@ -473,17 +476,18 @@ namespace Wabbajack.Compiler
 
         public async Task GatherArchives()
         {
-            Info("Building a list of archives based on the files required");
+            _logger.LogInformation("Building a list of archives based on the files required");
 
             var hashes = InstallDirectives.OfType<FromArchive>()
-                .Select(a => a.ArchiveHashPath.BaseHash)
+                .Select(a => a.ArchiveHashPath.Hash)
                 .Distinct();
 
             var archives = IndexedArchives.OrderByDescending(f => f.File.LastModified)
                 .GroupBy(f => f.File.Hash)
                 .ToDictionary(f => f.Key, f => f.First());
 
-            SelectedArchives.SetTo(await hashes.PMap(Queue, hash => ResolveArchive(hash, archives)));
+            SelectedArchives.Clear();
+            SelectedArchives.AddRange(await hashes.PMap(_limiter, hash => ResolveArchive(hash, archives)).ToList());
         }
 
         public async Task<Archive> ResolveArchive(Hash hash, IDictionary<Hash, IndexedArchive> archives)
