@@ -14,7 +14,7 @@ namespace Wabbajack.CLI
 
         public ValueTask<string> GetKey()
         {
-            return new(_key);
+            return new ValueTask<string>(_key);
         }
     }
 }

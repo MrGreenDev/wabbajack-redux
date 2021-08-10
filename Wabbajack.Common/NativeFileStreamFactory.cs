@@ -11,23 +11,25 @@ namespace Wabbajack.Common
     {
         protected AbsolutePath _file;
 
+        private DateTime? _lastModifiedCache;
+
         public NativeFileStreamFactory(AbsolutePath file, IPath path)
         {
             _file = file;
             Name = path;
         }
-        
+
         public NativeFileStreamFactory(AbsolutePath file)
         {
             _file = file;
             Name = file;
         }
+
         public ValueTask<Stream> GetStream()
         {
             return new ValueTask<Stream>(_file.Open(FileMode.Open, FileAccess.Read, FileShare.Read));
         }
 
-        private DateTime? _lastModifiedCache = null;
         public DateTime LastModifiedUtc
         {
             get
@@ -39,5 +41,4 @@ namespace Wabbajack.Common
 
         public IPath Name { get; }
     }
-    
 }

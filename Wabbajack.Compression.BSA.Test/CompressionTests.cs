@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,27 +5,35 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
-using Wabbajack.Compression.BSA.Interfaces;
-using Wabbajack.DTOs.BSA.FileStates;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
-using Wabbajack.TaskTracking.Interfaces;
 using Xunit;
 
 namespace Wabbajack.Compression.BSA.Test
 {
     public class CompressionTestss
     {
+        private readonly IRateLimiter _limiter;
         private readonly ILogger<CompressionTestss> _logger;
         private readonly TemporaryFileManager _tempManager;
-        private readonly IRateLimiter _limiter;
 
-        public CompressionTestss(ILogger<CompressionTestss> logger, TemporaryFileManager tempManager, IRateLimiter limiter)
+        public CompressionTestss(ILogger<CompressionTestss> logger, TemporaryFileManager tempManager,
+            IRateLimiter limiter)
         {
             _logger = logger;
             _tempManager = tempManager;
             _limiter = limiter;
         }
+
+        public static IEnumerable<object[]> TestFiles
+        {
+            get
+            {
+                return KnownFolders.EntryPoint.Combine("TestFiles").EnumerateFiles("*.bsa", false)
+                    .Select(p => new object[] { p.FileName, p });
+            }
+        }
+
         [Theory]
         [MemberData(nameof(TestFiles))]
         public async Task CanReadDataContents(string name, AbsolutePath path)
@@ -44,9 +51,9 @@ namespace Wabbajack.Compression.BSA.Test
         public async Task CanRecreateBSAs(string name, AbsolutePath path)
         {
             if (name == "tes4.bsa") return; // not sure why is is failing
-            
+
             var reader = await BSADispatch.Open(path);
-            
+
             var dataStates = await reader.Files
                 .PMap(_limiter,
                     async file =>
@@ -55,17 +62,15 @@ namespace Wabbajack.Compression.BSA.Test
                         await file.CopyDataTo(ms, CancellationToken.None);
                         ms.Position = 0;
                         Assert.Equal(file.Size, ms.Length);
-                        return new {State = file.State, Stream = ms};
+                        return new { file.State, Stream = ms };
                     }).ToList();
-            
+
             var oldState = reader.State;
-            
+
             var build = BSADispatch.CreateBuilder(oldState, _tempManager);
 
-            await dataStates.PDo(_limiter, async itm =>
-            {
-                await build.AddFile(itm.State, itm.Stream, CancellationToken.None);
-            });
+            await dataStates.PDo(_limiter,
+                async itm => { await build.AddFile(itm.State, itm.Stream, CancellationToken.None); });
 
 
             var rebuiltStream = new MemoryStream();
@@ -80,7 +85,7 @@ namespace Wabbajack.Compression.BSA.Test
                     _logger.LogInformation("Comparing {old} and {new}", oldFile.Path, newFile.Path);
                     Assert.Equal(oldFile.Path, newFile.Path);
                     Assert.Equal(oldFile.Size, newFile.Size);
-                
+
                     var oldData = new MemoryStream();
                     var newData = new MemoryStream();
                     await oldFile.CopyDataTo(oldData, CancellationToken.None);
@@ -89,15 +94,5 @@ namespace Wabbajack.Compression.BSA.Test
                     Assert.Equal(oldFile.Size, newFile.Size);
                 });
         }
-
-        public static IEnumerable<object[]> TestFiles
-        {
-            get
-            {
-                return KnownFolders.EntryPoint.Combine("TestFiles").EnumerateFiles("*.bsa", false)
-                    .Select(p => new object[] {p.FileName, p});
-            }
-        } 
-        
     }
 }

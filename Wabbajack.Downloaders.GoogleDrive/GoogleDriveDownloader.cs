@@ -19,28 +19,19 @@ namespace Wabbajack.Downloaders.GoogleDrive
 {
     public class GoogleDriveDownloader : ADownloader<DTOs.DownloadStates.GoogleDrive>, IUrlDownloader
     {
-        private readonly ILogger<GoogleDriveDownloader> _logger;
+        private static readonly Regex GDriveRegex = new("((?<=id=)[a-zA-Z0-9_-]*)|(?<=\\/file\\/d\\/)[a-zA-Z0-9_-]*",
+            RegexOptions.Compiled);
+
         private readonly HttpClient _client;
         private readonly IHttpDownloader _downloader;
+        private readonly ILogger<GoogleDriveDownloader> _logger;
 
-        public GoogleDriveDownloader(ILogger<GoogleDriveDownloader> logger, HttpClient client, IHttpDownloader downloader)
+        public GoogleDriveDownloader(ILogger<GoogleDriveDownloader> logger, HttpClient client,
+            IHttpDownloader downloader)
         {
             _logger = logger;
             _client = client;
             _downloader = downloader;
-        }
-
-        public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.GoogleDrive state, AbsolutePath destination, CancellationToken token)
-        {
-            var msg = await ToMessage(state, true, token);
-            using var response = await _client.SendAsync(msg!, token);
-            return await _downloader.Download(response!, destination, token);
-        }
-
-        public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.GoogleDrive state, CancellationToken token)
-        {
-            var result = await ToMessage(state, false, token);
-            return result != null;
         }
 
         public override async Task<bool> Prepare()
@@ -53,12 +44,44 @@ namespace Wabbajack.Downloaders.GoogleDrive
             return allowList.GoogleIDs.Contains(((DTOs.DownloadStates.GoogleDrive)state).Id);
         }
 
-        public override IEnumerable<string> MetaIni(Archive a, DTOs.DownloadStates.GoogleDrive state)
+        public IDownloadState? Parse(Uri uri)
         {
-            return new [] {$"directURL=https://drive.google.com/uc?id={state.Id}&export=download"};
+            if (uri.Host != "drive.google.com") return null;
+            var match = GDriveRegex.Match(uri.ToString());
+            if (match.Success)
+                return new DTOs.DownloadStates.GoogleDrive { Id = match.ToString() };
+            _logger.LogWarning($"Tried to parse drive.google.com Url but couldn't get an id from: {uri}");
+            return null;
         }
 
-        private async Task<HttpRequestMessage?> ToMessage(DTOs.DownloadStates.GoogleDrive state, bool download, CancellationToken token)
+        public Uri UnParse(IDownloadState state)
+        {
+            return new Uri(
+                $"https://drive.google.com/uc?id={(state as DTOs.DownloadStates.GoogleDrive)?.Id}&export=download");
+        }
+
+        public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.GoogleDrive state,
+            AbsolutePath destination, CancellationToken token)
+        {
+            var msg = await ToMessage(state, true, token);
+            using var response = await _client.SendAsync(msg!, token);
+            return await _downloader.Download(response!, destination, token);
+        }
+
+        public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.GoogleDrive state,
+            CancellationToken token)
+        {
+            var result = await ToMessage(state, false, token);
+            return result != null;
+        }
+
+        public override IEnumerable<string> MetaIni(Archive a, DTOs.DownloadStates.GoogleDrive state)
+        {
+            return new[] { $"directURL=https://drive.google.com/uc?id={state.Id}&export=download" };
+        }
+
+        private async Task<HttpRequestMessage?> ToMessage(DTOs.DownloadStates.GoogleDrive state, bool download,
+            CancellationToken token)
         {
             if (download)
             {
@@ -67,10 +90,7 @@ namespace Wabbajack.Downloaders.GoogleDrive
                 var cookies = response.GetSetCookies();
                 var warning = cookies.FirstOrDefault(c => c.Key.StartsWith("download_warning_"));
                 response.Dispose();
-                if (warning == default)
-                {
-                    return new HttpRequestMessage(HttpMethod.Get, initialUrl);
-                }
+                if (warning == default) return new HttpRequestMessage(HttpMethod.Get, initialUrl);
 
                 var url = $"https://drive.google.com/uc?export=download&confirm={warning.Value}&id={state.Id}";
                 var httpState = new HttpRequestMessage(HttpMethod.Get, url);
@@ -82,24 +102,6 @@ namespace Wabbajack.Downloaders.GoogleDrive
                 using var response = await _client.GetAsync(url, token);
                 return !response.IsSuccessStatusCode ? null : new HttpRequestMessage(HttpMethod.Get, url);
             }
-        }
-
-        private static readonly Regex GDriveRegex = new("((?<=id=)[a-zA-Z0-9_-]*)|(?<=\\/file\\/d\\/)[a-zA-Z0-9_-]*", RegexOptions.Compiled);
-        public IDownloadState? Parse(Uri uri)
-        {
-            if (uri.Host != "drive.google.com") return null;
-            var match = GDriveRegex.Match(uri.ToString());
-            if (match.Success) 
-                return new DTOs.DownloadStates.GoogleDrive { Id = match.ToString() };
-            _logger.LogWarning($"Tried to parse drive.google.com Url but couldn't get an id from: {uri}");
-            return null;
-
-        }
-
-        public Uri UnParse(IDownloadState state)
-        {
-            return new Uri(
-                $"https://drive.google.com/uc?id={(state as DTOs.DownloadStates.GoogleDrive)?.Id}&export=download");
         }
     }
 }

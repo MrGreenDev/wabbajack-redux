@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Wabbajack.Compression.BSA.Interfaces;
 using Wabbajack.DTOs.BSA.ArchiveStates;
-using Wabbajack.DTOs.BSA.FileStates;
 using Wabbajack.DTOs.Streams;
 using Wabbajack.Paths;
 
@@ -13,19 +12,30 @@ namespace Wabbajack.Compression.BSA.TES3Archive
 {
     public class Reader : IReader
     {
-        public static string TES3_MAGIC = Encoding.ASCII.GetString(new byte[] {0, 1, 0, 0});
-        private uint _versionNumber;
-        private uint _hashTableOffset;
+        public static string TES3_MAGIC = Encoding.ASCII.GetString(new byte[] { 0, 1, 0, 0 });
+        internal long _dataOffset;
         private uint _fileCount;
         private TES3FileEntry[] _files;
-        internal long _dataOffset;
+        private uint _hashTableOffset;
         public IStreamFactory _streamFactory;
+        private uint _versionNumber;
+
+        public IEnumerable<IFile> Files => _files;
+
+        public IArchive State =>
+            new TES3State
+            {
+                FileCount = _fileCount,
+                DataOffset = _dataOffset,
+                HashOffset = _hashTableOffset,
+                VersionNumber = _versionNumber
+            };
 
         public static async ValueTask<Reader> Load(IStreamFactory factory)
         {
             await using var fs = await factory.GetStream();
             using var br = new BinaryReader(fs);
-            var rdr = new Reader()
+            var rdr = new Reader
             {
                 _streamFactory = factory,
                 _versionNumber = br.ReadUInt32(),
@@ -34,22 +44,19 @@ namespace Wabbajack.Compression.BSA.TES3Archive
             };
 
             rdr._files = new TES3FileEntry[rdr._fileCount];
-            for (int i = 0; i < rdr._fileCount; i++)
+            for (var i = 0; i < rdr._fileCount; i++)
             {
-                var file = new TES3FileEntry {
+                var file = new TES3FileEntry
+                {
                     Index = i,
-                    Archive = rdr, 
-                    Size = br.ReadUInt32(), 
+                    Archive = rdr,
+                    Size = br.ReadUInt32(),
                     Offset = br.ReadUInt32()
-                    
                 };
                 rdr._files[i] = file;
             }
 
-            for (int i = 0; i < rdr._fileCount; i++)
-            {
-                rdr._files[i].NameOffset = br.ReadUInt32();
-            }
+            for (var i = 0; i < rdr._fileCount; i++) rdr._files[i].NameOffset = br.ReadUInt32();
 
             var origPos = br.BaseStream.Position;
             for (var i = 0; i < rdr._fileCount; i++)
@@ -72,17 +79,6 @@ namespace Wabbajack.Compression.BSA.TES3Archive
         public async ValueTask DisposeAsync()
         {
         }
-
-        public IEnumerable<IFile> Files => _files;
-        
-        public IArchive State =>
-            new TES3State
-            {
-                FileCount = _fileCount,
-                DataOffset = _dataOffset,
-                HashOffset = _hashTableOffset,
-                VersionNumber = _versionNumber,
-            };
 
         public void Dump(Action<string> print)
         {

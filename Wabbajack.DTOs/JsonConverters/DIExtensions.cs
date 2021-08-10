@@ -1,7 +1,5 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
-using Wabbajack.Hashing.xxHash64;
 
 namespace Wabbajack.DTOs.JsonConverters
 {

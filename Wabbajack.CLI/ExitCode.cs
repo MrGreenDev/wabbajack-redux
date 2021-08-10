@@ -1,9 +1,9 @@
 namespace Wabbajack.CLI
 {
-    public enum ExitCode : int
+    public enum ExitCode
     {
         Success = 0,
         Error = 1,
-        BadArguments =2,
+        BadArguments = 2
     }
 }

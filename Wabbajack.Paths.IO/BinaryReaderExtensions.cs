@@ -6,10 +6,7 @@ namespace Wabbajack.Paths.IO
     {
         public static IPath ReadIPath(this BinaryReader rdr)
         {
-            if (rdr.ReadBoolean())
-            {
-                return rdr.ReadAbsolutePath();
-            }
+            if (rdr.ReadBoolean()) return rdr.ReadAbsolutePath();
 
             return rdr.ReadRelativePath();
         }
@@ -23,6 +20,5 @@ namespace Wabbajack.Paths.IO
         {
             return rdr.ReadString().ToRelativePath();
         }
-        
     }
 }

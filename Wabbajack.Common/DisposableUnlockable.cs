@@ -10,7 +10,7 @@ namespace Wabbajack.Common
         {
             _unlock = unlock;
         }
-        
+
         public void Dispose()
         {
             _unlock.Unlock();

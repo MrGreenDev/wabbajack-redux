@@ -10,8 +10,13 @@ namespace Wabbajack.Hashing.xxHash64
         public readonly RelativePath[] Parts;
 
 
-        public Extension Extension => Parts.Length > 0 ? Parts[^1].Extension : throw new InvalidOperationException("No path in HashRelativePath");
-        public RelativePath FileName => Parts.Length > 0 ? Parts[^1].FileName : throw new InvalidOperationException("No path in HashRelativePath");
+        public Extension Extension => Parts.Length > 0
+            ? Parts[^1].Extension
+            : throw new InvalidOperationException("No path in HashRelativePath");
+
+        public RelativePath FileName => Parts.Length > 0
+            ? Parts[^1].FileName
+            : throw new InvalidOperationException("No path in HashRelativePath");
 
         public HashRelativePath(Hash basePath, params RelativePath[] parts)
         {
@@ -47,7 +52,7 @@ namespace Wabbajack.Hashing.xxHash64
             if (init != 0) return init;
             return ArrayExtensions.Compare(Parts, other.Parts);
         }
-        
+
         public static bool operator ==(HashRelativePath a, HashRelativePath b)
         {
             return a.Equals(b);

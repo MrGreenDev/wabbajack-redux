@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Wabbajack.DTOs.Test
 {
-    public class ArchiveTests 
+    public class ArchiveTests
     {
         private readonly DTOSerializer _serializer;
 
@@ -13,7 +13,7 @@ namespace Wabbajack.DTOs.Test
             _serializer = serializer;
         }
 
-        
+
         [Fact]
         public void CanLoadPolymorphicStates()
         {

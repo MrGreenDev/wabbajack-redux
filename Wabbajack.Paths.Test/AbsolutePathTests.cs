@@ -3,7 +3,6 @@ using Xunit;
 
 namespace Wabbajack.Paths.Test
 {
-
     public class AbsolutePathTests
     {
         [Fact]
@@ -11,30 +10,35 @@ namespace Wabbajack.Paths.Test
         {
             Assert.Equal(((AbsolutePath)@"c:\foo\bar").ToString(), ((AbsolutePath)@"c:\foo\bar").ToString());
         }
+
         [Fact]
         public void CanGetParentPath()
         {
             Assert.Equal(((AbsolutePath)@"c:\foo").ToString(), ((AbsolutePath)@"c:\foo\bar").Parent.ToString());
         }
-        
+
         [Fact]
         public void ParentOfTopLevelPathThrows()
         {
-            Assert.Throws<PathException>(()=>((AbsolutePath)@"c:\").Parent.ToString());
+            Assert.Throws<PathException>(() => ((AbsolutePath)@"c:\").Parent.ToString());
         }
 
         [Fact]
         public void CanCreateRelativePathsFromAbolutePaths()
         {
-            Assert.Equal((RelativePath)@"baz\qux.zip", ((AbsolutePath)@"\\foo\bar\baz\qux.zip").RelativeTo((AbsolutePath)@"\\foo\bar"));
-            Assert.Throws<PathException>(() => ((AbsolutePath)@"\\foo\bar\baz\qux.zip").RelativeTo((AbsolutePath)@"\\z\bar"));
-            Assert.Throws<PathException>(() => ((AbsolutePath)@"\\foo\bar\baz\qux.zip").RelativeTo((AbsolutePath)@"\\z\bar\buz"));
+            Assert.Equal((RelativePath)@"baz\qux.zip",
+                ((AbsolutePath)@"\\foo\bar\baz\qux.zip").RelativeTo((AbsolutePath)@"\\foo\bar"));
+            Assert.Throws<PathException>(() =>
+                ((AbsolutePath)@"\\foo\bar\baz\qux.zip").RelativeTo((AbsolutePath)@"\\z\bar"));
+            Assert.Throws<PathException>(() =>
+                ((AbsolutePath)@"\\foo\bar\baz\qux.zip").RelativeTo((AbsolutePath)@"\\z\bar\buz"));
         }
+
         [Fact]
         public void PathsAreEquatable()
         {
             Assert.Equal((AbsolutePath)@"c:\foo", (AbsolutePath)@"c:\foo");
-            
+
             Assert.True((AbsolutePath)@"c:\foo" == (AbsolutePath)@"c:\Foo");
             Assert.False((AbsolutePath)@"c:\foo" != (AbsolutePath)@"c:\Foo");
             Assert.NotEqual((AbsolutePath)@"c:\foo", (AbsolutePath)@"c:\bar");
@@ -44,10 +48,11 @@ namespace Wabbajack.Paths.Test
         [Fact]
         public void CanGetPathHashCodes()
         {
-            Assert.Equal(@"c:\foo\bar.baz".ToAbsolutePath().GetHashCode(), @"C:\Foo\Bar.bAz".ToAbsolutePath().GetHashCode());
+            Assert.Equal(@"c:\foo\bar.baz".ToAbsolutePath().GetHashCode(),
+                @"C:\Foo\Bar.bAz".ToAbsolutePath().GetHashCode());
         }
-        
-        
+
+
         [Fact]
         public void CaseInsensitiveEquality()
         {
@@ -60,8 +65,10 @@ namespace Wabbajack.Paths.Test
         {
             Assert.Equal(new Extension(".dds"), ((AbsolutePath)@"/foo/bar.dds").Extension);
             Assert.Equal((RelativePath)"bar.dds", ((AbsolutePath)@"/foo/bar.dds").FileName);
-            Assert.Equal((AbsolutePath)@"/foo/bar.zip", ((AbsolutePath)@"/foo/bar.dds").ReplaceExtension(new Extension(".zip")));
-            Assert.Equal((AbsolutePath)@"/foo\bar.zip", ((AbsolutePath)@"/foo\bar").ReplaceExtension(new Extension(".zip")));
+            Assert.Equal((AbsolutePath)@"/foo/bar.zip",
+                ((AbsolutePath)@"/foo/bar.dds").ReplaceExtension(new Extension(".zip")));
+            Assert.Equal((AbsolutePath)@"/foo\bar.zip",
+                ((AbsolutePath)@"/foo\bar").ReplaceExtension(new Extension(".zip")));
         }
 
         [Fact]
@@ -70,14 +77,15 @@ namespace Wabbajack.Paths.Test
             Assert.Equal(PathFormat.Windows, ((AbsolutePath)@"c:\foo\bar").PathFormat);
             Assert.Equal(PathFormat.Windows, ((AbsolutePath)@"\\foo\bar").PathFormat);
             Assert.Equal(PathFormat.Unix, ((AbsolutePath)@"/foo/bar").PathFormat);
-            Assert.Throws<PathException>(()=> ((AbsolutePath)@"c!\foo/bar").PathFormat);
+            Assert.Throws<PathException>(() => ((AbsolutePath)@"c!\foo/bar").PathFormat);
         }
 
         [Fact]
         public void CanCombinePaths()
         {
-            Assert.Equal("/foo/bar/baz/qux", ((AbsolutePath)"/").Combine("foo", (RelativePath)"bar", "baz/qux").ToString());
-            Assert.Throws<PathException>(() => ((AbsolutePath) "/").Combine(42));
+            Assert.Equal("/foo/bar/baz/qux",
+                ((AbsolutePath)"/").Combine("foo", (RelativePath)"bar", "baz/qux").ToString());
+            Assert.Throws<PathException>(() => ((AbsolutePath)"/").Combine(42));
         }
 
         [Fact]
@@ -91,22 +99,21 @@ namespace Wabbajack.Paths.Test
         {
             var data = new[]
             {
-                (AbsolutePath) @"c:\a",
-                (AbsolutePath) @"c:\b\c",
-                (AbsolutePath) @"c:\d\e\f",
-                (AbsolutePath) @"c:\b",
+                (AbsolutePath)@"c:\a",
+                (AbsolutePath)@"c:\b\c",
+                (AbsolutePath)@"c:\d\e\f",
+                (AbsolutePath)@"c:\b"
             };
             var data2 = data.OrderBy(a => a).ToArray();
-            
+
             var data3 = new[]
             {
-                (AbsolutePath) @"c:\a",
-                (AbsolutePath) @"c:\b",
-                (AbsolutePath) @"c:\b\c",
-                (AbsolutePath) @"c:\d\e\f",
+                (AbsolutePath)@"c:\a",
+                (AbsolutePath)@"c:\b",
+                (AbsolutePath)@"c:\b\c",
+                (AbsolutePath)@"c:\d\e\f"
             };
             Assert.Equal(data3, data2);
-            
         }
     }
 }

@@ -11,8 +11,15 @@ namespace Wabbajack.Compression.BSA.TES3Archive
 {
     public class TES3FileEntry : IFile
     {
-        public RelativePath Path { get; set;  }
+        public uint Offset { get; set; }
+        public uint NameOffset { get; set; }
+        public uint Hash1 { get; set; }
+        public uint Hash2 { get; set; }
+        public Reader Archive { get; set; }
+        public int Index { get; set; }
+        public RelativePath Path { get; set; }
         public uint Size { get; set; }
+
         public AFile State =>
             new TES3File
             {
@@ -39,12 +46,5 @@ namespace Wabbajack.Compression.BSA.TES3Archive
             ms.Position = 0;
             return new MemoryStreamFactory(ms, Path, Archive._streamFactory.LastModifiedUtc);
         }
-        public uint Offset { get; set; }
-        public uint NameOffset { get; set; }
-        public uint Hash1 { get; set; }
-        public uint Hash2 { get; set; }
-        public Reader Archive { get; set; }
-        public int Index { get; set; }
-
     }
 }

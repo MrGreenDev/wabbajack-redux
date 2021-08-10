@@ -9,10 +9,16 @@ namespace Wabbajack.Paths.IO
         public TemporaryFileManager() : this(KnownFolders.EntryPoint.Combine("temp"))
         {
         }
+
         public TemporaryFileManager(AbsolutePath basePath)
         {
             _basePath = basePath;
             _basePath.CreateDirectory();
+        }
+
+        public void Dispose()
+        {
+            _basePath.DeleteDirectory();
         }
 
         public TemporaryPath CreateFile(Extension? ext = default)
@@ -22,17 +28,12 @@ namespace Wabbajack.Paths.IO
                 path = path.WithExtension(ext);
             return new TemporaryPath(path);
         }
-        
+
         public TemporaryPath CreateFolder()
         {
             var path = _basePath.Combine(Guid.NewGuid().ToString());
             path.CreateDirectory();
             return new TemporaryPath(path);
-        }
-
-        public void Dispose()
-        {
-            _basePath.DeleteDirectory();
         }
     }
 }

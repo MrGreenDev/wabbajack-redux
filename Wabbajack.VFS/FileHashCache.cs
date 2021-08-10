@@ -1,4 +1,3 @@
-using System;
 using System.Data.SQLite;
 using System.IO;
 using System.Threading;
@@ -11,17 +10,18 @@ namespace Wabbajack.VFS
 {
     public class FileHashCache
     {
-        private readonly AbsolutePath _location;
-        private readonly string _connectionString;
         private readonly SQLiteConnection _conn;
+        private readonly string _connectionString;
+        private readonly AbsolutePath _location;
 
         public FileHashCache(AbsolutePath location)
         {
             _location = location;
-            _connectionString = string.Intern($"URI=file:{_location};Pooling=True;Max Pool Size=100; Journal Mode=Memory;");
+            _connectionString =
+                string.Intern($"URI=file:{_location};Pooling=True;Max Pool Size=100; Journal Mode=Memory;");
             _conn = new SQLiteConnection(_connectionString);
             _conn.Open();
-            
+
             using var cmd = new SQLiteCommand(_conn);
             cmd.CommandText = @"CREATE TABLE IF NOT EXISTS HashCache (
             Path TEXT PRIMARY KEY,
@@ -30,19 +30,16 @@ namespace Wabbajack.VFS
             WITHOUT ROWID";
             cmd.ExecuteNonQuery();
         }
-        
+
         private (AbsolutePath Path, long LastModified, Hash Hash) Get(AbsolutePath path)
         {
             using var cmd = new SQLiteCommand(_conn);
             cmd.CommandText = "SELECT LastModified, Hash FROM HashCache WHERE Path = @path";
             cmd.Parameters.AddWithValue("@path", path.ToString());
             cmd.PrepareAsync();
-            
+
             using var reader = cmd.ExecuteReader();
-            while (reader.Read())
-            {
-                return (path, reader.GetInt64(0), Hash.FromLong(reader.GetInt64(1)));
-            }
+            while (reader.Read()) return (path, reader.GetInt64(0), Hash.FromLong(reader.GetInt64(1)));
 
             return default;
         }
@@ -53,7 +50,7 @@ namespace Wabbajack.VFS
             cmd.CommandText = "DELETE FROM HashCache WHERE Path = @path";
             cmd.Parameters.AddWithValue("@path", path.ToString());
             cmd.PrepareAsync();
-            
+
             cmd.ExecuteNonQuery();
         }
 
@@ -66,7 +63,7 @@ namespace Wabbajack.VFS
             cmd.Parameters.AddWithValue("@lastModified", lastModified);
             cmd.Parameters.AddWithValue("@hash", (long)hash);
             cmd.PrepareAsync();
-            
+
             cmd.ExecuteNonQuery();
         }
 
@@ -78,7 +75,7 @@ namespace Wabbajack.VFS
 
             cmd.ExecuteNonQuery();
         }
-        
+
         public bool TryGetHashCache(AbsolutePath file, out Hash hash)
         {
             hash = default;
@@ -114,7 +111,7 @@ namespace Wabbajack.VFS
             if (TryGetHashCache(file, out var foundHash)) return foundHash;
 
             await using var fs = file.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
-            
+
             var hash = await fs.HashingCopy(Stream.Null, token);
             if (hash != default)
                 WriteHashCache(file, hash);

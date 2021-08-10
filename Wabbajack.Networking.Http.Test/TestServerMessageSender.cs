@@ -7,8 +7,8 @@ namespace Wabbajack.Networking.Http.Test
 {
     public class TestServerMessageSender : IHttpMessageSender
     {
-        private readonly TestServer _testServer;
         private readonly HttpClient _client;
+        private readonly TestServer _testServer;
 
         public TestServerMessageSender(IServer ts)
         {

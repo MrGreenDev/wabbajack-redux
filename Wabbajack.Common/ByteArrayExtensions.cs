@@ -15,6 +15,7 @@ namespace Wabbajack.Common
                 Array.Copy(arr, 0, outArray, offset, arr.Length);
                 offset += arr.Length;
             }
+
             return outArray;
         }
     }

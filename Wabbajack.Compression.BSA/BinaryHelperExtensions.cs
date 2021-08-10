@@ -16,7 +16,7 @@ namespace Wabbajack.Compression.BSA
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Windows1252 = Encoding.GetEncoding(1252);
         }
-        
+
         private static Encoding GetEncoding(VersionType version)
         {
             return version switch
@@ -58,9 +58,9 @@ namespace Wabbajack.Compression.BSA
 
             return GetEncoding(version).GetString(acc.ToArray());
         }
-        
+
         /// <summary>
-        /// Returns \0 terminated bytes for a string encoded with a given BSA version's encoding format
+        ///     Returns \0 terminated bytes for a string encoded with a given BSA version's encoding format
         /// </summary>
         /// <param name="val"></param>
         /// <param name="version"></param>
@@ -70,7 +70,7 @@ namespace Wabbajack.Compression.BSA
             var b = GetEncoding(version).GetBytes((string)val);
             var b2 = new byte[b.Length + 2];
             b.CopyTo(b2, 1);
-            b2[0] = (byte) (b.Length + 1);
+            b2[0] = (byte)(b.Length + 1);
             return b2;
         }
 
@@ -84,11 +84,11 @@ namespace Wabbajack.Compression.BSA
             var b = Encoding.ASCII.GetBytes((string)val);
             var b2 = new byte[b.Length + 1];
             b.CopyTo(b2, 1);
-            b2[0] = (byte) b.Length;
+            b2[0] = (byte)b.Length;
 
             return b2;
         }
-        
+
         public static string ReadStringLenTerm(this ReadOnlyMemorySlice<byte> bytes, VersionType version)
         {
             if (bytes.Length <= 1) return string.Empty;
@@ -98,11 +98,11 @@ namespace Wabbajack.Compression.BSA
         public static string ReadStringTerm(this ReadOnlyMemorySlice<byte> bytes, VersionType version)
         {
             if (bytes.Length <= 1) return string.Empty;
-            return GetEncoding(version).GetString(bytes[0..^1]);
+            return GetEncoding(version).GetString(bytes[..^1]);
         }
 
         /// <summary>
-        /// Returns bytes for a string with a length prefix, version is the BSA version
+        ///     Returns bytes for a string with a length prefix, version is the BSA version
         /// </summary>
         /// <param name="val"></param>
         /// <param name="version"></param>
@@ -112,10 +112,10 @@ namespace Wabbajack.Compression.BSA
             var b = GetEncoding(version).GetBytes(val);
             var b2 = new byte[b.Length + 1];
             b.CopyTo(b2, 0);
-            b[0] = (byte) b.Length;
+            b[0] = (byte)b.Length;
             return b2;
         }
-        
+
         public static byte[] ToTermString(this RelativePath val, VersionType version)
         {
             return ((string)val).ToTermString(version);
@@ -126,12 +126,12 @@ namespace Wabbajack.Compression.BSA
             name = name.Replace('/', '\\');
             return GetBSAHash(Path.ChangeExtension(name, null), Path.GetExtension(name));
         }
-        
+
         public static ulong GetBSAHash(this RelativePath name)
         {
             return ((string)name).GetBSAHash();
         }
-        
+
         public static ulong GetFolderBSAHash(this RelativePath name)
         {
             return GetBSAHash((string)name, "");
@@ -147,10 +147,10 @@ namespace Wabbajack.Compression.BSA
 
             var hashBytes = new[]
             {
-                (byte) (name.Length == 0 ? '\0' : name[name.Length - 1]),
-                (byte) (name.Length < 3 ? '\0' : name[name.Length - 2]),
-                (byte) name.Length,
-                (byte) name[0]
+                (byte)(name.Length == 0 ? '\0' : name[name.Length - 1]),
+                (byte)(name.Length < 3 ? '\0' : name[name.Length - 2]),
+                (byte)name.Length,
+                (byte)name[0]
             };
             var hash1 = BitConverter.ToUInt32(hashBytes, 0);
             switch (ext)
@@ -170,12 +170,12 @@ namespace Wabbajack.Compression.BSA
             }
 
             uint hash2 = 0;
-            for (var i = 1; i < name.Length - 2; i++) hash2 = hash2 * 0x1003f + (byte) name[i];
+            for (var i = 1; i < name.Length - 2; i++) hash2 = hash2 * 0x1003f + (byte)name[i];
 
             uint hash3 = 0;
-            for (var i = 0; i < ext.Length; i++) hash3 = hash3 * 0x1003f + (byte) ext[i];
+            for (var i = 0; i < ext.Length; i++) hash3 = hash3 * 0x1003f + (byte)ext[i];
 
-            return ((ulong) (hash2 + hash3) << 32) + hash1;
+            return ((ulong)(hash2 + hash3) << 32) + hash1;
         }
     }
 }

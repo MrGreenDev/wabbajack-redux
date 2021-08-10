@@ -6,8 +6,9 @@ namespace Wabbajack.Common
 {
     public class FixedSizeRateLimiter : IRateLimiter
     {
-        private readonly int _size;
+        private readonly AsyncLocal<bool> _isWorkerTask = new();
         private readonly AsyncBlockingCollection<Func<Task>> _queue = new();
+        private readonly int _size;
 
         public FixedSizeRateLimiter(int size)
         {
@@ -15,28 +16,12 @@ namespace Wabbajack.Common
             StartWorkers(_size, CancellationToken.None);
         }
 
-        private readonly AsyncLocal<bool> _isWorkerTask = new();
-
         public void Assist(CancellationToken token)
         {
             StartWorkers(1, token);
         }
 
         public bool IsWorkerTask => _isWorkerTask.Value;
-        private void StartWorkers(int size, CancellationToken token)
-        {
-            for (var i = 0; i < size; i++)
-            {
-                Task.Run(async () =>
-                {
-                    _isWorkerTask.Value = true;
-                    await foreach (var task in _queue.GetConsumingEnumerable().WithCancellation(token))
-                    {
-                        await task();
-                    }
-                }, token);
-            }
-        }
 
         public Task<T> Enqueue<T>(Func<Task<T>> fn)
         {
@@ -56,7 +41,7 @@ namespace Wabbajack.Common
 
             return tcs.Task;
         }
-        
+
         public Task Enqueue(Func<Task> fn)
         {
             TaskCompletionSource tcs = new();
@@ -75,6 +60,14 @@ namespace Wabbajack.Common
             return tcs.Task;
         }
 
-
+        private void StartWorkers(int size, CancellationToken token)
+        {
+            for (var i = 0; i < size; i++)
+                Task.Run(async () =>
+                {
+                    _isWorkerTask.Value = true;
+                    await foreach (var task in _queue.GetConsumingEnumerable().WithCancellation(token)) await task();
+                }, token);
+        }
     }
 }

@@ -25,12 +25,12 @@ namespace Wabbajack.DTOs.DownloadStates
         public long ModID { get; set; }
         public long FileID { get; set; }
 
+        public override string TypeName => "NexusDownloader+State";
+        public override object[] PrimaryKey => new object[] { Game, ModID, FileID };
+
         public async Task<bool> LoadMetaData()
         {
             return true;
         }
-
-        public override string TypeName => "NexusDownloader+State";
-        public override object[] PrimaryKey => new object[] {Game, ModID, FileID};
     }
 }

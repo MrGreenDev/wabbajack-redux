@@ -11,9 +11,9 @@ namespace Wabbajack.Networking.WabbajackClientApi
 {
     public class Client
     {
+        private readonly HttpClient _client;
 
         private readonly Configuration _configuration;
-        private readonly HttpClient _client;
         private readonly ILogger<Client> _logger;
 
         public Client(ILogger<Client> logger, HttpClient client, Configuration configuration)
@@ -23,10 +23,11 @@ namespace Wabbajack.Networking.WabbajackClientApi
             _logger = logger;
             _logger.LogInformation("File hash check (-42) {key}", _configuration.MetricsKey);
         }
-        
+
         public async Task SendMetric(string action, string subject)
         {
-            var msg = new HttpRequestMessage(HttpMethod.Get, $"{_configuration.BuildServerUrl}metrics/{action}/{subject}");
+            var msg = new HttpRequestMessage(HttpMethod.Get,
+                $"{_configuration.BuildServerUrl}metrics/{action}/{subject}");
             msg.Headers.Add(_configuration.MetricsKeyHeader, _configuration.MetricsKey);
             await _client.SendAsync(msg);
         }
@@ -44,7 +45,8 @@ namespace Wabbajack.Networking.WabbajackClientApi
         {
             try
             {
-                var result = await _client.GetStringAsync($"{_configuration.BuildServerUrl}mirror/{archiveHash.ToHex()}");
+                var result =
+                    await _client.GetStringAsync($"{_configuration.BuildServerUrl}mirror/{archiveHash.ToHex()}");
                 return new Uri(result);
             }
             catch (Exception ex)

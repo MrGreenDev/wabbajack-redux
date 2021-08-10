@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -24,9 +23,9 @@ namespace Wabbajack.Compression.BSA.TES5Archive
         private Lazy<FolderRecord[]> _folders = null!;
         private Lazy<Dictionary<string, FolderRecord>> _foldersByName = null!;
         internal string _magic = string.Empty;
+        public IStreamFactory _streamFactory = new NativeFileStreamFactory(default);
         internal uint _totalFileNameLength;
         internal uint _totalFolderNameLength;
-        public IStreamFactory _streamFactory = new NativeFileStreamFactory(default);
 
         public VersionType HeaderType { get; private set; }
 
@@ -34,17 +33,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
 
         public FileFlags FileFlags { get; private set; }
 
-        public IEnumerable<IFile> Files => _folders.Value.SelectMany(f => f.Files);
-
         public IEnumerable<FolderRecord> Folders => _folders.Value;
-
-        public IArchive State => new BSAState
-        {
-            Magic = _magic,
-            Version = (uint)HeaderType,
-            ArchiveFlags = (uint)ArchiveFlags,
-            FileFlags = (uint)FileFlags
-        };
 
         public bool HasFolderNames => ArchiveFlags.HasFlag(ArchiveFlags.HasFolderNames);
 
@@ -55,6 +44,16 @@ namespace Wabbajack.Compression.BSA.TES5Archive
         public bool Bit9Set => ArchiveFlags.HasFlag(ArchiveFlags.HasFileNameBlobs);
 
         public bool HasNameBlobs => HeaderType is VersionType.FO3 or VersionType.SSE && Bit9Set;
+
+        public IEnumerable<IFile> Files => _folders.Value.SelectMany(f => f.Files);
+
+        public IArchive State => new BSAState
+        {
+            Magic = _magic,
+            Version = (uint)HeaderType,
+            ArchiveFlags = (uint)ArchiveFlags,
+            FileFlags = (uint)FileFlags
+        };
 
         public static async ValueTask<Reader> Load(IStreamFactory factory)
         {
@@ -68,7 +67,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
 
         public static Reader Load(AbsolutePath filename)
         {
-            var bsa = new Reader { _streamFactory = new NativeFileStreamFactory(filename)};
+            var bsa = new Reader { _streamFactory = new NativeFileStreamFactory(filename) };
             using var rdr = bsa.GetStream();
             bsa.LoadHeaders(rdr);
             return bsa;
@@ -109,27 +108,26 @@ namespace Wabbajack.Compression.BSA.TES5Archive
             using var rdr = GetStream();
             rdr.BaseStream.Position = _folderRecordOffset;
             var folderHeaderLength = FolderRecord.HeaderLength(HeaderType);
-            ReadOnlyMemorySlice<byte> folderHeaderData = rdr.ReadBytes(checked((int)(folderHeaderLength * _folderCount)));
+            ReadOnlyMemorySlice<byte> folderHeaderData =
+                rdr.ReadBytes(checked((int)(folderHeaderLength * _folderCount)));
 
             var ret = new FolderRecord[_folderCount];
             for (var idx = 0; idx < _folderCount; idx += 1)
-                ret[idx] = new FolderRecord(this, folderHeaderData.Slice(idx * folderHeaderLength, folderHeaderLength), idx);
+                ret[idx] = new FolderRecord(this, folderHeaderData.Slice(idx * folderHeaderLength, folderHeaderLength),
+                    idx);
 
             // Slice off appropriate file header data per folder
-            int fileCountTally = 0;
+            var fileCountTally = 0;
             foreach (var folder in ret)
             {
                 folder.ProcessFileRecordHeadersBlock(rdr, fileCountTally);
-                fileCountTally = checked((int)(fileCountTally + folder.FileCount));
+                fileCountTally = checked(fileCountTally + folder.FileCount);
             }
 
             if (HasFileNames)
             {
                 var filenameBlock = new FileNameBlock(this, rdr.BaseStream.Position);
-                foreach (var folder in ret)
-                {
-                    folder.FileNameBlock = filenameBlock;
-                }
+                foreach (var folder in ret) folder.FileNameBlock = filenameBlock;
             }
 
             return ret;
@@ -138,9 +136,7 @@ namespace Wabbajack.Compression.BSA.TES5Archive
         private Dictionary<string, FolderRecord> GetFolderDictionary()
         {
             if (!HasFolderNames)
-            {
                 throw new ArgumentException("Cannot get folders by name if the BSA does not have folder names.");
-            }
             return _folders.Value.ToDictionary(folder => folder.Name!);
         }
     }

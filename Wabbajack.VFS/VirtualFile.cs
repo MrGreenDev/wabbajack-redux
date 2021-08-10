@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Data;
-using System.Data.SQLite;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.Common;
 using Wabbajack.Common.FileSignatures;
 using Wabbajack.DTOs.Streams;
@@ -21,10 +17,12 @@ using Wabbajack.Paths.IO;
 
 namespace Wabbajack.VFS
 {
-   public class VirtualFile
+    public class VirtualFile
     {
-        
-        static readonly HashSet<Extension> TextureExtensions = new() {new Extension(".dds"), new Extension(".tga")};
+        private static readonly HashSet<Extension> TextureExtensions = new()
+            { new Extension(".dds"), new Extension(".tga") };
+
+        private static readonly SignatureChecker DDSSig = new(FileType.DDS);
 
         private IEnumerable<VirtualFile> _thisAndAllChildren;
 
@@ -80,9 +78,7 @@ namespace Wabbajack.VFS
             get
             {
                 if (_thisAndAllChildren == null)
-                {
                     _thisAndAllChildren = Children.SelectMany(child => child.ThisAndAllChildren).Append(this).ToList();
-                }
 
                 return _thisAndAllChildren;
             }
@@ -124,8 +120,9 @@ namespace Wabbajack.VFS
             foreach (var itm in Children)
                 itm.ThisAndAllChildrenReduced(fn);
         }
-        
-        private static VirtualFile ConvertFromIndexedFile(Context context, IndexedVirtualFile file, IPath path, VirtualFile vparent, IStreamFactory extractedFile)
+
+        private static VirtualFile ConvertFromIndexedFile(Context context, IndexedVirtualFile file, IPath path,
+            VirtualFile vparent, IStreamFactory extractedFile)
         {
             var vself = new VirtualFile
             {
@@ -138,10 +135,11 @@ namespace Wabbajack.VFS
                 Hash = file.Hash,
                 ImageState = file.ImageState
             };
-                        
+
             vself.FillFullPath();
 
-            vself.Children = file.Children.Select(f => ConvertFromIndexedFile(context, f, f.Name, vself, extractedFile)).ToImmutableList();
+            vself.Children = file.Children.Select(f => ConvertFromIndexedFile(context, f, f.Name, vself, extractedFile))
+                .ToImmutableList();
 
             return vself;
         }
@@ -149,7 +147,7 @@ namespace Wabbajack.VFS
 
         internal IndexedVirtualFile ToIndexedVirtualFile()
         {
-            return new()
+            return new IndexedVirtualFile
             {
                 Hash = Hash,
                 ImageState = ImageState,
@@ -159,15 +157,15 @@ namespace Wabbajack.VFS
             };
         }
 
-        private static SignatureChecker DDSSig = new(FileType.DDS);
-        public static async Task<VirtualFile> Analyze(Context context, VirtualFile? parent, IStreamFactory extractedFile,
+        public static async Task<VirtualFile> Analyze(Context context, VirtualFile? parent,
+            IStreamFactory extractedFile,
             IPath relPath, CancellationToken token, int depth = 0)
         {
             Hash hash;
             if (extractedFile is NativeFileStreamFactory)
             {
                 hash = await context.HashCache.FileHashCachedAsync((AbsolutePath)extractedFile.Name, token);
-            } 
+            }
             else
             {
                 await using var hstream = await extractedFile.GetStream();
@@ -175,15 +173,13 @@ namespace Wabbajack.VFS
             }
 
             if (context.VfsCache.TryGetFromCache(context, parent, relPath, extractedFile, hash, out var vself))
-            {
                 return vself;
-            }
 
-            
+
             await using var stream = await extractedFile.GetStream();
             var sig = await FileExtractor.FileExtractor.ArchiveSigs.MatchesAsync(stream);
             stream.Position = 0;
-            
+
             var self = new VirtualFile
             {
                 Context = context,
@@ -192,12 +188,11 @@ namespace Wabbajack.VFS
                 Size = stream.Length,
                 LastModified = extractedFile.LastModifiedUtc.AsUnixTime(),
                 LastAnalyzed = DateTime.Now.AsUnixTime(),
-                Hash = hash,
+                Hash = hash
             };
 
-            
+
             if (TextureExtensions.Contains(relPath.FileName.Extension) && await DDSSig.MatchesAsync(stream) != null)
-            {
                 try
                 {
                     self.ImageState = await ImageLoader.Load(stream);
@@ -205,15 +200,14 @@ namespace Wabbajack.VFS
                 }
                 catch (Exception)
                 {
-                    
                 }
-            }
 
             self.FillFullPath(depth);
-            
+
 
             // Can't extract, so return
-            if (!sig.HasValue || !FileExtractor.FileExtractor.ExtractableExtensions.Contains(relPath.FileName.Extension))
+            if (!sig.HasValue ||
+                !FileExtractor.FileExtractor.ExtractableExtensions.Contains(relPath.FileName.Extension))
             {
                 await context.VfsCache.WriteToCache(self);
                 return self;
@@ -221,7 +215,6 @@ namespace Wabbajack.VFS
 
             try
             {
-
                 var list = await context.Extractor.GatheringExtract(extractedFile,
                     _ => true,
                     async (path, sfactory) => await Analyze(context, self, sfactory, path, token, depth + 1),
@@ -242,11 +235,11 @@ namespace Wabbajack.VFS
             await context.VfsCache.WriteToCache(self);
             return self;
         }
-        
+
 
         internal void FillFullPath()
         {
-            int depth = 0;
+            var depth = 0;
             var self = this;
             while (self.Parent != null)
             {
@@ -256,7 +249,7 @@ namespace Wabbajack.VFS
 
             FillFullPath(depth);
         }
-        
+
         internal void FillFullPath(int depth)
         {
             if (depth == 0)
@@ -272,10 +265,11 @@ namespace Wabbajack.VFS
                     paths[idx - 1] = self.RelativeName;
                     self = self.Parent;
                 }
+
                 FullPath = new FullPath(self.AbsoluteName, paths);
             }
-            
         }
+
         public void Write(BinaryWriter bw)
         {
             bw.Write(Name.ToString() ?? string.Empty);
@@ -308,17 +302,19 @@ namespace Wabbajack.VFS
                 Parent = parent,
                 Children = ImmutableList<VirtualFile>.Empty
             };
-            vf.FullPath = new FullPath(vf.AbsoluteName, new RelativePath[0]);
+            vf.FullPath = new FullPath(vf.AbsoluteName);
             var children = br.ReadInt32();
             for (var i = 0; i < children; i++)
             {
                 var child = Read(context, vf, br, (AbsolutePath)vf.Name, new RelativePath[0]);
                 vf.Children = vf.Children.Add(child);
             }
+
             return vf;
         }
-        
-        private static VirtualFile Read(Context context, VirtualFile parent, BinaryReader br, AbsolutePath top, RelativePath[] subpaths)
+
+        private static VirtualFile Read(Context context, VirtualFile parent, BinaryReader br, AbsolutePath top,
+            RelativePath[] subpaths)
         {
             var name = (RelativePath)br.ReadIPath();
             subpaths = subpaths.Add(name);
@@ -338,9 +334,10 @@ namespace Wabbajack.VFS
             var children = br.ReadInt32();
             for (var i = 0; i < children; i++)
             {
-                var child = Read(context, vf, br,top, subpaths);
+                var child = Read(context, vf, br, top, subpaths);
                 vf.Children = vf.Children.Add(child);
             }
+
             return vf;
         }
 

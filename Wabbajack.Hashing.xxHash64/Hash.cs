@@ -1,15 +1,17 @@
 using System;
+using System.Buffers.Text;
 
 namespace Wabbajack.Hashing.xxHash64
 {
     public struct Hash : IEquatable<Hash>, IComparable<Hash>
     {
         private readonly ulong _code;
+
         public Hash(ulong code = 0)
         {
             _code = code;
         }
-        
+
         public override string ToString()
         {
             return BitConverter.GetBytes(_code).ToBase64();
@@ -46,17 +48,17 @@ namespace Wabbajack.Hashing.xxHash64
         {
             return !(a == b);
         }
-        
+
         public static explicit operator ulong(Hash a)
         {
             return a._code;
         }
-        
+
         public static explicit operator long(Hash a)
         {
             return BitConverter.ToInt64(BitConverter.GetBytes(a._code));
         }
-        
+
         public string ToBase64()
         {
             return BitConverter.GetBytes(_code).ToBase64();
@@ -66,12 +68,13 @@ namespace Wabbajack.Hashing.xxHash64
         {
             return new Hash(BitConverter.ToUInt64(hash.FromBase64()));
         }
+
         public static Hash FromBase64(ReadOnlySpan<byte> data)
         {
             unsafe
             {
                 Span<byte> buffer = stackalloc byte[sizeof(ulong)];
-                System.Buffers.Text.Base64.DecodeFromUtf8(data, buffer, out var consumed, out var written, true);
+                Base64.DecodeFromUtf8(data, buffer, out var consumed, out var written);
                 return new Hash(BitConverter.ToUInt64(buffer));
             }
         }
@@ -83,7 +86,7 @@ namespace Wabbajack.Hashing.xxHash64
                 Span<byte> buffer = stackalloc byte[sizeof(ulong)];
                 if (!BitConverter.TryWriteBytes(buffer, _code))
                     throw new Exception("Base64 Encoding error");
-                System.Buffers.Text.Base64.EncodeToUtf8(buffer, output, out var consumed, out var written, true);
+                Base64.EncodeToUtf8(buffer, output, out var consumed, out var written);
             }
         }
 
@@ -91,15 +94,17 @@ namespace Wabbajack.Hashing.xxHash64
         {
             return new Hash(BitConverter.ToUInt64(BitConverter.GetBytes(argHash)));
         }
-        
+
         public static Hash FromULong(in ulong argHash)
         {
             return new Hash(argHash);
         }
+
         public static Hash FromHex(string xxHashAsHex)
         {
             return new Hash(BitConverter.ToUInt64(xxHashAsHex.FromHex()));
         }
+
         public string ToHex()
         {
             return BitConverter.GetBytes(_code).ToHex();
@@ -109,7 +114,7 @@ namespace Wabbajack.Hashing.xxHash64
         {
             return BitConverter.GetBytes(_code);
         }
-        
+
         public static Hash Interpret(string input)
         {
             return input.Length switch

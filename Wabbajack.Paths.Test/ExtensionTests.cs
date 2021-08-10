@@ -9,19 +9,19 @@ namespace Wabbajack.Paths.Test
         public static Extension Dds = new(".Dds");
         public static Extension DDS2 = new(".DDS");
         public static Extension EMPTY = new("");
-        
+
         [Fact]
         public void ExtensionsAreEqual()
         {
             Assert.Equal(DDS, DDS);
             Assert.Equal(DDS, DDS2);
             Assert.Equal(DDS, Dds);
-            
+
             Assert.True(DDS == Dds);
             Assert.True(DDS != EMPTY);
-            
+
             Assert.NotEqual(EMPTY, DDS);
-            
+
             Assert.NotEqual(DDS, (object)42);
         }
 

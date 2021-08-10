@@ -9,6 +9,5 @@ namespace Wabbajack.Networking.Http
         {
             services.AddSingleton<IHttpDownloader, SingleThreadedDownloader>();
         }
-        
     }
 }

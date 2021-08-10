@@ -5,9 +5,6 @@ namespace Wabbajack.Networking.Http
 {
     public class HttpException : Exception
     {
-        public string Reason { get; set; }
-        public int Code { get; set; }
-
         public HttpException(int code, string reason) : base($"Http Error {code} - {reason}")
         {
             Code = code;
@@ -20,5 +17,8 @@ namespace Wabbajack.Networking.Http
             Code = (int)response.StatusCode;
             Reason = response.ReasonPhrase ?? "Unknown";
         }
+
+        public string Reason { get; set; }
+        public int Code { get; set; }
     }
 }

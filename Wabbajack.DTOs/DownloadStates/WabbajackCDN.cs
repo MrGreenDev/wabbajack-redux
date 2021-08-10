@@ -9,6 +9,6 @@ namespace Wabbajack.DTOs.DownloadStates
     {
         public Uri Url { get; init; }
         public override string TypeName => "WabbajackCDNDownloader+State";
-        public override object[] PrimaryKey => new object[] {Url};
+        public override object[] PrimaryKey => new object[] { Url };
     }
 }

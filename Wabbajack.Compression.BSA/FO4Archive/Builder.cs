@@ -8,28 +8,15 @@ using System.Threading.Tasks;
 using Wabbajack.Compression.BSA.Interfaces;
 using Wabbajack.DTOs.BSA.ArchiveStates;
 using Wabbajack.DTOs.BSA.FileStates;
-using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
-using Wabbajack.TaskTracking.Interfaces;
 
 namespace Wabbajack.Compression.BSA.FO4Archive
 {
     public class Builder : IBuilder
     {
-        private BA2State _state;
-        private List<IFileBuilder> _entries = new List<IFileBuilder>();
+        private List<IFileBuilder> _entries = new();
         private DiskSlabAllocator _slab;
-
-        public static Builder Create(BA2State state, TemporaryFileManager manager)
-        {
-            var self = new Builder {_state = state, _slab = new DiskSlabAllocator(manager)};
-            return self;
-        }
-        
-        public async ValueTask DisposeAsync()
-        {
-            await _slab.DisposeAsync();
-        }
+        private BA2State _state;
 
         public async ValueTask AddFile(AFile state, Stream src, CancellationToken token)
         {
@@ -37,11 +24,19 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             {
                 case BA2EntryType.GNRL:
                     var result = await FileEntryBuilder.Create((BA2File)state, src, _slab, token);
-                    lock(_entries) _entries.Add(result);
+                    lock (_entries)
+                    {
+                        _entries.Add(result);
+                    }
+
                     break;
                 case BA2EntryType.DX10:
                     var resultdx10 = await DX10FileEntryBuilder.Create((BA2DX10File)state, src, _slab, token);
-                    lock(_entries) _entries.Add(resultdx10);
+                    lock (_entries)
+                    {
+                        _entries.Add(resultdx10);
+                    }
+
                     break;
             }
         }
@@ -50,7 +45,7 @@ namespace Wabbajack.Compression.BSA.FO4Archive
         {
             SortEntries();
             await using var bw = new BinaryWriter(fs, Encoding.Default, true);
-            
+
             bw.Write(Encoding.ASCII.GetBytes(_state.HeaderMagic));
             bw.Write(_state.Version);
             bw.Write(Encoding.ASCII.GetBytes(Enum.GetName(_state.Type)!));
@@ -58,15 +53,9 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             var tableOffsetLoc = bw.BaseStream.Position;
             bw.Write((ulong)0);
 
-            foreach (var entry in _entries)
-            {
-                entry.WriteHeader(bw, token);
-            }
+            foreach (var entry in _entries) entry.WriteHeader(bw, token);
 
-            foreach (var entry in _entries)
-            {
-                await entry.WriteData(bw, token);
-            }
+            foreach (var entry in _entries) await entry.WriteData(bw, token);
 
             if (!_state.HasNameTable) return;
 
@@ -81,6 +70,17 @@ namespace Wabbajack.Compression.BSA.FO4Archive
                 bw.Write((ushort)bytes.Length);
                 await bw.BaseStream.WriteAsync(bytes, token);
             }
+        }
+
+        public static Builder Create(BA2State state, TemporaryFileManager manager)
+        {
+            var self = new Builder { _state = state, _slab = new DiskSlabAllocator(manager) };
+            return self;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await _slab.DisposeAsync();
         }
 
         private void SortEntries()

@@ -9,28 +9,23 @@ namespace Wabbajack.TaskTracking.Interfaces
         public static readonly Percent Zero = new(0d);
 
         public readonly double Value;
-        public Percent Inverse => new(1d - this.Value, check: false);
+        public Percent Inverse => new(1d - Value, false);
 
         private Percent(double d, bool check)
         {
             if (!check || InRange(d))
-            {
-                this.Value = d;
-            }
+                Value = d;
             else
-            {
                 throw new ArgumentException("Element out of range: " + d);
-            }
         }
 
         public Percent(long max, long current)
             : this((double)current / max)
         {
-
         }
 
         public Percent(double d)
-            : this(d, check: true)
+            : this(d, true)
         {
         }
 
@@ -96,19 +91,11 @@ namespace Wabbajack.TaskTracking.Interfaces
 
         public static Percent FactoryPutInRange(double d)
         {
-            if (double.IsNaN(d) || double.IsInfinity(d))
-            {
-                throw new ArgumentException();
-            }
+            if (double.IsNaN(d) || double.IsInfinity(d)) throw new ArgumentException();
             if (d < 0)
-            {
-                return Percent.Zero;
-            }
-            else if (d > 1)
-            {
-                return Percent.One;
-            }
-            return new Percent(d, check: false);
+                return Zero;
+            if (d > 1) return One;
+            return new Percent(d, false);
         }
 
         public static Percent FactoryPutInRange(int cur, int max)
@@ -124,17 +111,14 @@ namespace Wabbajack.TaskTracking.Interfaces
         public static Percent AverageFromPercents(params Percent[] ps)
         {
             var percent = ps.Sum(p => p.Value);
-            return new Percent(percent / ps.Length, check: false);
+            return new Percent(percent / ps.Length, false);
         }
 
         public static Percent MultFromPercents(params Percent[] ps)
         {
             double percent = 1;
-            foreach (var p in ps)
-            {
-                percent *= p.Value;
-            }
-            return new Percent(percent, check: false);
+            foreach (var p in ps) percent *= p.Value;
+            return new Percent(percent, false);
         }
 
         public override bool Equals(object? obj)
@@ -145,12 +129,12 @@ namespace Wabbajack.TaskTracking.Interfaces
 
         public bool Equals(Percent other)
         {
-            return Math.Abs(this.Value - other.Value) < 0.001;
+            return Math.Abs(Value - other.Value) < 0.001;
         }
 
         public override int GetHashCode()
         {
-            return this.Value.GetHashCode();
+            return Value.GetHashCode();
         }
 
         public override string ToString()
@@ -180,24 +164,20 @@ namespace Wabbajack.TaskTracking.Interfaces
 
         public int CompareTo(object? obj)
         {
-            if (obj is Percent rhs)
-            {
-                return this.Value.CompareTo(rhs.Value);
-            }
+            if (obj is Percent rhs) return Value.CompareTo(rhs.Value);
             return 0;
         }
 
         public static bool TryParse(string str, out Percent p)
         {
-            if (double.TryParse(str, out double d))
-            {
+            if (double.TryParse(str, out var d))
                 if (InRange(d))
                 {
                     p = new Percent(d);
                     return true;
                 }
-            }
-            p = default(Percent);
+
+            p = default;
             return false;
         }
     }

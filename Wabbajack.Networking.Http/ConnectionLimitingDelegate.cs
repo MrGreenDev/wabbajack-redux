@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -15,16 +14,17 @@ namespace Wabbajack.Networking.Http
         {
             _semaphore = new SemaphoreSlim(connectionLimit);
         }
-        
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken);
-            
+
             var responseMessage = await base.SendAsync(request, cancellationToken);
             responseMessage.Content = new DisposingContent(responseMessage.Content, _semaphore);
             return responseMessage;
         }
-        
+
         private class DisposingContent : HttpContent
         {
             private readonly HttpContent _inner;

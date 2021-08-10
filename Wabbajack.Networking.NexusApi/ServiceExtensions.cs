@@ -9,6 +9,5 @@ namespace Wabbajack.Networking.NexusApi
             services.AddSingleton<NexusApi>();
             services.AddSingleton<ProxiedNexusApi>();
         }
-
     }
 }

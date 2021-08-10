@@ -11,7 +11,7 @@ namespace Wabbajack.DTOs.JsonConverters
         public override PHash Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             var data = new byte[40];
-            Base64.DecodeFromUtf8(reader.ValueSpan, data, out int _, out int _);
+            Base64.DecodeFromUtf8(reader.ValueSpan, data, out var _, out var _);
             return new PHash(data);
         }
 

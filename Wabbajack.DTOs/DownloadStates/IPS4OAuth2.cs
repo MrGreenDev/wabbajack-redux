@@ -5,11 +5,11 @@ namespace Wabbajack.DTOs.DownloadStates
     public abstract class IPS4OAuth2 : ADownloadState, IMetaState
     {
         public long IPS4Mod { get; set; }
-            
+
         public bool IsAttachment { get; set; } = false;
         public string IPS4File { get; set; } = "";
         public string IPS4Url { get; set; } = "";
-        
+
         public override object[] PrimaryKey { get; }
         public Uri URL { get; }
         public string? Name { get; set; }

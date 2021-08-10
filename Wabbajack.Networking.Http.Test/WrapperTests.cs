@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.Extensions.Logging;
@@ -14,7 +13,8 @@ namespace Wabbajack.Networking.Http.Test
         private readonly IHttpMessageSender _client;
         private readonly ILogger<WrapperTests> _logger;
 
-        public WrapperTests(IServer server, IHttpMessageSender client, IHttpDownloader downloader, ILogger<WrapperTests> logger)
+        public WrapperTests(IServer server, IHttpMessageSender client, IHttpDownloader downloader,
+            ILogger<WrapperTests> logger)
         {
             _client = client;
             _logger = logger;

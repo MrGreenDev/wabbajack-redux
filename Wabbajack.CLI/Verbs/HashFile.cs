@@ -1,4 +1,3 @@
-using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
@@ -23,13 +22,13 @@ namespace Wabbajack.CLI.Verbs
         public Command MakeCommand()
         {
             var command = new Command("hash-file");
-            command.Add(new Option<AbsolutePath>(new [] {"-i", "-input"}, "Path to the file to hash"));
+            command.Add(new Option<AbsolutePath>(new[] { "-i", "-input" }, "Path to the file to hash"));
             command.Description = "Hashes a file with Wabbajack's xxHash64 implementation";
             command.Handler = CommandHandler.Create(Run);
             return command;
         }
 
-               
+
         public async Task<int> Run(AbsolutePath input)
         {
             await using var istream = input.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -37,6 +36,5 @@ namespace Wabbajack.CLI.Verbs
             _logger.LogInformation($"{input} hash: {hash} {hash.ToHex()} {(long)hash}");
             return 0;
         }
-
     }
 }

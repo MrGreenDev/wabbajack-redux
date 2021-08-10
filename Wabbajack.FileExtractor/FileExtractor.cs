@@ -7,7 +7,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
 using OMODFramework;
 using Wabbajack.Common;
 using Wabbajack.Common.FileSignatures;
@@ -16,14 +15,39 @@ using Wabbajack.DTOs.Streams;
 using Wabbajack.FileExtractor.ExtractedFiles;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
-using Wabbajack.TaskTracking.Interfaces;
 
 namespace Wabbajack.FileExtractor
 {
     public class FileExtractor
     {
-        private readonly ILogger<FileExtractor> _logger;
+        public static readonly SignatureChecker ArchiveSigs = new(FileType.TES3,
+            FileType.BSA,
+            FileType.BA2,
+            FileType.ZIP,
+            //FileType.EXE,
+            FileType.RAR_OLD,
+            FileType.RAR_NEW,
+            FileType._7Z);
+
+        private static readonly Extension OMODExtension = new(".omod");
+        private static readonly Extension FOMODExtension = new(".fomod");
+
+        private static readonly Extension BSAExtension = new(".bsa");
+
+        public static readonly HashSet<Extension> ExtractableExtensions = new()
+        {
+            new Extension(".bsa"),
+            new Extension(".ba2"),
+            new Extension(".7z"),
+            new Extension(".7zip"),
+            new Extension(".rar"),
+            new Extension(".zip"),
+            OMODExtension,
+            FOMODExtension
+        };
+
         private readonly IRateLimiter _limiter;
+        private readonly ILogger<FileExtractor> _logger;
         private readonly TemporaryFileManager _manager;
 
         public FileExtractor(ILogger<FileExtractor> logger, IRateLimiter limiter, TemporaryFileManager manager)
@@ -33,48 +57,18 @@ namespace Wabbajack.FileExtractor
             _manager = manager;
         }
 
-        public static readonly SignatureChecker ArchiveSigs = new(FileType.TES3,
-            FileType.BSA,
-            FileType.BA2,
-            FileType.ZIP,
-            //FileType.EXE,
-            FileType.RAR_OLD,
-            FileType.RAR_NEW,
-            FileType._7Z);
-        
-        private static Extension OMODExtension = new(".omod");
-        private static Extension FOMODExtension = new(".fomod");
-
-        private static Extension BSAExtension = new(".bsa");
-        
-        public static readonly HashSet<Extension> ExtractableExtensions = new()
-        {
-            new(".bsa"),
-            new(".ba2"),
-            new(".7z"),
-            new(".7zip"),
-            new(".rar"),
-            new(".zip"),
-            OMODExtension,
-            FOMODExtension
-        };
-        
         public async Task<IDictionary<RelativePath, T>> GatheringExtract<T>(
-             IStreamFactory sFn,
-            Predicate<RelativePath> shouldExtract, 
+            IStreamFactory sFn,
+            Predicate<RelativePath> shouldExtract,
             Func<RelativePath, IExtractedFile, ValueTask<T>> mapfn,
-             CancellationToken token,
+            CancellationToken token,
             HashSet<RelativePath>? onlyFiles = null)
         {
-            if (sFn is NativeFileStreamFactory)
-            {
-                _logger.LogInformation("Extracting {file}", sFn.Name);
-            }
+            if (sFn is NativeFileStreamFactory) _logger.LogInformation("Extracting {file}", sFn.Name);
             await using var archive = await sFn.GetStream();
             var sig = await ArchiveSigs.MatchesAsync(archive);
             archive.Position = 0;
-            
-            
+
 
             IDictionary<RelativePath, T> results;
 
@@ -88,12 +82,11 @@ namespace Wabbajack.FileExtractor
                     if (sFn.Name.FileName.Extension == OMODExtension)
                     {
                         results = await GatheringExtractWithOMOD(archive, shouldExtract, mapfn, token);
-
                     }
                     else
                     {
                         await using var tempFolder = _manager.CreateFolder();
-                        results = await GatheringExtractWith7Zip<T>(sFn, shouldExtract,
+                        results = await GatheringExtractWith7Zip(sFn, shouldExtract,
                             mapfn, onlyFiles, token);
                     }
 
@@ -116,16 +109,14 @@ namespace Wabbajack.FileExtractor
             }
 
             if (onlyFiles != null && onlyFiles.Count != results.Count)
-            {
                 throw new Exception(
                     $"Sanity check error extracting {sFn.Name} - {results.Count} results, expected {onlyFiles.Count}");
-            }
             return results;
         }
-        
-        private async Task<Dictionary<RelativePath,T>> GatheringExtractWithOMOD<T>
-            (Stream archive, Predicate<RelativePath> shouldExtract, Func<RelativePath,IExtractedFile,ValueTask<T>> mapfn,
-                CancellationToken token)
+
+        private async Task<Dictionary<RelativePath, T>> GatheringExtractWithOMOD<T>
+        (Stream archive, Predicate<RelativePath> shouldExtract, Func<RelativePath, IExtractedFile, ValueTask<T>> mapfn,
+            CancellationToken token)
         {
             var tmpFile = _manager.CreateFile();
             await tmpFile.Path.WriteAllAsync(archive, CancellationToken.None);
@@ -134,7 +125,7 @@ namespace Wabbajack.FileExtractor
             using var omod = new OMOD(tmpFile.Path.ToString());
 
             var results = new Dictionary<RelativePath, T>();
-            
+
             omod.ExtractFilesParallel(dest.Path.ToString(), 4, cancellationToken: token);
             if (omod.HasEntryFile(OMODEntryFileType.PluginsCRC))
                 omod.ExtractFiles(false, dest.Path.ToString());
@@ -142,24 +133,24 @@ namespace Wabbajack.FileExtractor
             var files = omod.GetDataFiles();
             if (omod.HasEntryFile(OMODEntryFileType.PluginsCRC))
                 files.UnionWith(omod.GetPluginFiles());
-            
+
             foreach (var compressedFile in files)
             {
                 var abs = compressedFile.Name.ToRelativePath().RelativeTo(dest.Path);
-                var rel = abs.RelativeTo(dest.Path); 
+                var rel = abs.RelativeTo(dest.Path);
                 if (!shouldExtract(rel)) continue;
 
                 var result = await mapfn(rel, new ExtractedNativeFile(abs));
                 results.Add(rel, result);
             }
-            
+
             return results;
         }
-        
-        public static async Task<Dictionary<RelativePath,T>> GatheringExtractWithBSA<T>(IStreamFactory sFn, 
-            FileType sig, 
-            Predicate<RelativePath> shouldExtract, 
-            Func<RelativePath,IExtractedFile,ValueTask<T>> mapFn, 
+
+        public static async Task<Dictionary<RelativePath, T>> GatheringExtractWithBSA<T>(IStreamFactory sFn,
+            FileType sig,
+            Predicate<RelativePath> shouldExtract,
+            Func<RelativePath, IExtractedFile, ValueTask<T>> mapFn,
             CancellationToken token)
         {
             var archive = await BSADispatch.Open(sFn, sig);
@@ -167,21 +158,22 @@ namespace Wabbajack.FileExtractor
             foreach (var entry in archive.Files)
             {
                 if (token.IsCancellationRequested) break;
-                
+
                 if (!shouldExtract(entry.Path))
                     continue;
 
                 var result = await mapFn(entry.Path, new ExtractedMemoryFile(await entry.GetStreamFactory(token)));
                 results.Add(entry.Path, result);
             }
+
             return results;
         }
-        
-        public async Task<IDictionary<RelativePath,T>> GatheringExtractWith7Zip<T>(
-            IStreamFactory sf, 
-            Predicate<RelativePath> shouldExtract, 
-            Func<RelativePath,IExtractedFile,ValueTask<T>> mapfn,
-            IReadOnlyCollection<RelativePath>? onlyFiles, 
+
+        public async Task<IDictionary<RelativePath, T>> GatheringExtractWith7Zip<T>(
+            IStreamFactory sf,
+            Predicate<RelativePath> shouldExtract,
+            Func<RelativePath, IExtractedFile, ValueTask<T>> mapfn,
+            IReadOnlyCollection<RelativePath>? onlyFiles,
             CancellationToken token)
         {
             TemporaryPath? tmpFile = null;
@@ -206,7 +198,7 @@ namespace Wabbajack.FileExtractor
 
                 _logger.LogInformation("Extracting {source}", source.FileName);
 
-                
+
                 string initialPath = "";
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     initialPath = @"Extractors\windows-x64\7z.exe";
@@ -215,7 +207,8 @@ namespace Wabbajack.FileExtractor
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     initialPath = @"Extractors\mac\7zz";
 
-                var process = new ProcessHelper {Path = initialPath.ToRelativePath().RelativeTo(KnownFolders.EntryPoint),};
+                var process = new ProcessHelper
+                    { Path = initialPath.ToRelativePath().RelativeTo(KnownFolders.EntryPoint) };
 
                 if (onlyFiles != null)
                 {
@@ -230,7 +223,8 @@ namespace Wabbajack.FileExtractor
                     }
 
                     tmpFile = _manager.CreateFile();
-                    await tmpFile.Value.Path.WriteAllLinesAsync(onlyFiles.SelectMany(f => AllVariants((string)f)), token);
+                    await tmpFile.Value.Path.WriteAllLinesAsync(onlyFiles.SelectMany(f => AllVariants((string)f)),
+                        token);
                     process.Arguments = new object[]
                     {
                         "x", "-bsp1", "-y", $"-o\"{dest}\"", source, $"@\"{tmpFile.Value.ToString()}\"", "-mmt=off"
@@ -238,9 +232,9 @@ namespace Wabbajack.FileExtractor
                 }
                 else
                 {
-                    process.Arguments = new object[] {"x", "-bsp1", "-y", $"-o\"{dest}\"", source, "-mmt=off"};
+                    process.Arguments = new object[] { "x", "-bsp1", "-y", $"-o\"{dest}\"", source, "-mmt=off" };
                 }
-                
+
                 _logger.LogInformation("{prog} {args}", process.Path, process.Arguments);
 
 
@@ -287,19 +281,13 @@ namespace Wabbajack.FileExtractor
                 return results;
             }
             finally
-            { 
-                if (tmpFile != null)
-                {
-                    await tmpFile.Value.DisposeAsync();
-                }
+            {
+                if (tmpFile != null) await tmpFile.Value.DisposeAsync();
 
-                if (spoolFile != null)
-                {
-                    await spoolFile.Value.DisposeAsync();
-                }
+                if (spoolFile != null) await spoolFile.Value.DisposeAsync();
             }
         }
-        
+
         public async Task ExtractAll(AbsolutePath src, AbsolutePath dest, CancellationToken token)
         {
             await GatheringExtract(new NativeFileStreamFactory(src), _ => true, async (path, factory) =>
@@ -311,6 +299,5 @@ namespace Wabbajack.FileExtractor
                 return 0;
             }, token);
         }
-
     }
 }

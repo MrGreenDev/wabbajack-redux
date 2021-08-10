@@ -6,16 +6,14 @@ using Wabbajack.Paths;
 namespace Wabbajack.DTOs.Streams
 {
     /// <summary>
-    /// A generic way of specifying a file-like source. Could be a in memory object
-    /// a file on disk, or a file inside an archive. 
+    ///     A generic way of specifying a file-like source. Could be a in memory object
+    ///     a file on disk, or a file inside an archive.
     /// </summary>
     public interface IStreamFactory
     {
-        ValueTask<Stream> GetStream();
-        
         DateTime LastModifiedUtc { get; }
-        
+
         IPath Name { get; }
-        
+        ValueTask<Stream> GetStream();
     }
 }

@@ -7,6 +7,7 @@ namespace Wabbajack.DTOs.DownloadStates
     {
         public abstract string TypeName { get; }
         public abstract object[] PrimaryKey { get; }
+
         public string PrimaryKeyString
         {
             get
@@ -14,10 +15,9 @@ namespace Wabbajack.DTOs.DownloadStates
                 var pk = new List<object>();
                 pk.Add(TypeName);
                 pk.AddRange(PrimaryKey);
-                var pk_str = string.Join("|",pk.Select(p => p.ToString()));
+                var pk_str = string.Join("|", pk.Select(p => p.ToString()));
                 return pk_str;
             }
         }
-        
     }
 }

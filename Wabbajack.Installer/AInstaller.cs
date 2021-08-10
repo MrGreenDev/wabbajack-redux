@@ -23,20 +23,26 @@ using Wabbajack.VFS;
 namespace Wabbajack.Installer
 {
     public abstract class AInstaller<T>
-    where T : AInstaller<T>
+        where T : AInstaller<T>
     {
-        public Dictionary<Hash, AbsolutePath> HashedArchives { get; set; } = new();
-        public bool UseCompression { get; set; }
-
-        public TemporaryPath ExtractedModlistFolder { get; set; }
-
-        public ModList ModList => _configuration.ModList;
+        private static readonly Regex NoDeleteRegex = new(@"(?i)[\\\/]\[NoDelete\]", RegexOptions.Compiled);
 
         protected readonly InstallerConfiguration _configuration;
+        protected readonly DownloadDispatcher _downloadDispatcher;
+        private readonly FileExtractor.FileExtractor _extractor;
+        private readonly FileHashCache _fileHashCache;
+        protected readonly IGameLocator _gameLocator;
+        private readonly DTOSerializer _jsonSerializer;
+        protected readonly IRateLimiter _limiter;
         protected readonly ILogger<T> _logger;
-        
-        public AInstaller(ILogger<T> logger, InstallerConfiguration config, IGameLocator gameLocator, FileExtractor.FileExtractor extractor,
-            DTOSerializer jsonSerializer, Context vfs, FileHashCache fileHashCache, DownloadDispatcher downloadDispatcher,
+        protected readonly TemporaryFileManager _manager;
+        private readonly Context _vfs;
+        protected readonly Client _wjClient;
+
+        public AInstaller(ILogger<T> logger, InstallerConfiguration config, IGameLocator gameLocator,
+            FileExtractor.FileExtractor extractor,
+            DTOSerializer jsonSerializer, Context vfs, FileHashCache fileHashCache,
+            DownloadDispatcher downloadDispatcher,
             IRateLimiter limiter, Client wjClient)
         {
             _manager = new TemporaryFileManager(config.Install.Combine("__temp__"));
@@ -51,8 +57,14 @@ namespace Wabbajack.Installer
             _limiter = limiter;
             _gameLocator = gameLocator;
             _wjClient = wjClient;
-
         }
+
+        public Dictionary<Hash, AbsolutePath> HashedArchives { get; set; } = new();
+        public bool UseCompression { get; set; }
+
+        public TemporaryPath ExtractedModlistFolder { get; set; }
+
+        public ModList ModList => _configuration.ModList;
 
         public abstract Task<bool> Begin(CancellationToken token);
 
@@ -65,12 +77,12 @@ namespace Wabbajack.Installer
         public async Task<byte[]> LoadBytesFromPath(RelativePath path)
         {
             var fullPath = ExtractedModlistFolder.Path.Combine(path);
-            if (!fullPath.FileExists()) 
+            if (!fullPath.FileExists())
                 throw new Exception($"Cannot load inlined data {path} file does not exist");
-            
+
             return await fullPath.ReadAllBytesAsync();
         }
-        
+
         public async Task<Stream> InlinedFileStream(RelativePath inlinedFile)
         {
             var fullPath = ExtractedModlistFolder.Path.Combine(inlinedFile);
@@ -92,7 +104,9 @@ namespace Wabbajack.Installer
             }
 
             await using (var e = entry.Open())
+            {
                 return (await serializer.DeserializeAsync<ModList>(e))!;
+            }
         }
 
         /// <summary>
@@ -101,7 +115,8 @@ namespace Wabbajack.Installer
         /// </summary>
         protected async Task PrimeVFS()
         {
-            _vfs.AddKnown(_configuration.ModList.Directives.OfType<FromArchive>().Select(d => d.ArchiveHashPath), HashedArchives);
+            _vfs.AddKnown(_configuration.ModList.Directives.OfType<FromArchive>().Select(d => d.ArchiveHashPath),
+                HashedArchives);
             await _vfs.BackfillMissing();
         }
 
@@ -117,15 +132,14 @@ namespace Wabbajack.Installer
 
         public async Task InstallArchives(CancellationToken token)
         {
-
             var grouped = ModList.Directives
                 .OfType<FromArchive>()
-                .Select(a => new {VF = _vfs.Index.FileForArchiveHashPath(a.ArchiveHashPath), Directive = a})
+                .Select(a => new { VF = _vfs.Index.FileForArchiveHashPath(a.ArchiveHashPath), Directive = a })
                 .GroupBy(a => a.VF)
                 .ToDictionary(a => a.Key);
 
             if (grouped.Count == 0) return;
-            
+
             await _vfs.Extract(grouped.Keys.ToHashSet(), async (vf, sf) =>
             {
                 foreach (var directive in grouped[vf])
@@ -144,19 +158,18 @@ namespace Wabbajack.Installer
                                 await using var os = toFile.Open(FileMode.Create, FileAccess.Read, FileShare.None);
                                 await BinaryPatching.ApplyPatch(s, patchDataStream, os);
                             }
-                        } 
+                        }
                             break;
 
-                        
+
                         case TransformedTexture tt:
                         {
                             throw new NotImplementedException();
                             //await using var s = await sf.GetStream();
                             //await ImageState.ConvertImage(s, tt.ImageState, tt.To.Extension, directive.Directive.To.RelativeTo(_configuration.Install));
-
                         }
                             break;
-                        
+
 
                         case FromArchive _:
                             if (grouped[vf].Count() == 1)
@@ -166,14 +179,13 @@ namespace Wabbajack.Installer
                             else
                             {
                                 await using var s = await sf.GetStream();
-                                await directive.Directive.To.RelativeTo(_configuration.Install).WriteAllAsync(s, token, false);
+                                await directive.Directive.To.RelativeTo(_configuration.Install)
+                                    .WriteAllAsync(s, token, false);
                             }
 
                             break;
                         default:
                             throw new Exception($"No handler for {directive}");
-
-
                     }
                 }
             }, token);
@@ -192,7 +204,8 @@ namespace Wabbajack.Installer
 
             var validationData = await _wjClient.LoadAllowList();
 
-            foreach (var archive in missing.Where(archive => !_downloadDispatcher.Downloader(archive).IsAllowed(validationData, archive.State)))
+            foreach (var archive in missing.Where(archive =>
+                !_downloadDispatcher.Downloader(archive).IsAllowed(validationData, archive.State)))
             {
                 _logger.LogCritical("File {primaryKeyString} failed validation", archive.State.PrimaryKeyString);
                 return;
@@ -212,6 +225,7 @@ namespace Wabbajack.Installer
                     await _downloadDispatcher.Download(a, outputPath, token);
                 }
             }
+
             _logger.LogInformation("Downloading {count} archives", missing.Count);
 
             await missing.Where(a => a.State is not Manual)
@@ -221,7 +235,6 @@ namespace Wabbajack.Installer
                     var outputPath = _configuration.Downloads.Combine(archive.Name);
 
                     if (download)
-                    {
                         if (outputPath.FileExists())
                         {
                             var origName = Path.GetFileNameWithoutExtension(archive.Name);
@@ -230,7 +243,6 @@ namespace Wabbajack.Installer
                             outputPath = _configuration.Downloads.Combine(origName + "_" + uniqueKey + "_" + ext);
                             outputPath.Delete();
                         }
-                    }
 
                     await DownloadArchive(archive, download, token, outputPath);
                 });
@@ -240,26 +252,26 @@ namespace Wabbajack.Installer
         {
             var grouped = missing.GroupBy(m => m.State.GetType());
             foreach (var group in grouped)
-            {
-                await _wjClient.SendMetric($"downloading_{group.Key.FullName!.Split(".").Last().Split("+").First()}", group.Sum(g => (long)g.Size).ToString());
-            }
+                await _wjClient.SendMetric($"downloading_{@group.Key.FullName!.Split(".").Last().Split("+").First()}",
+                    @group.Sum(g => (long)g.Size).ToString());
         }
 
-        public async Task<bool> DownloadArchive(Archive archive, bool download, CancellationToken token, AbsolutePath? destination = null)
+        public async Task<bool> DownloadArchive(Archive archive, bool download, CancellationToken token,
+            AbsolutePath? destination = null)
         {
             try
             {
                 destination ??= _configuration.Downloads.Combine(archive.Name);
-                
-                var (result, hash) = await _downloadDispatcher.DownloadWithPossibleUpgrade(archive, destination.Value, token);
-                
-                if (hash != default) 
+
+                var (result, hash) =
+                    await _downloadDispatcher.DownloadWithPossibleUpgrade(archive, destination.Value, token);
+
+                if (hash != default)
                     _fileHashCache.FileHashWriteCache(destination.Value, hash);
-                
+
                 if (result == DownloadResult.Update)
-                {
-                    await destination.Value.MoveToAsync(destination.Value.Parent.Combine(archive.Hash.ToHex()), true, token);
-                }
+                    await destination.Value.MoveToAsync(destination.Value.Parent.Combine(archive.Hash.ToHex()), true,
+                        token);
             }
             catch (Exception ex)
             {
@@ -280,15 +292,17 @@ namespace Wabbajack.Installer
 
             var hashDict = allFiles.GroupBy(f => f.Size()).ToDictionary(g => g.Key);
 
-            var toHash = ModList.Archives.Where(a => hashDict.ContainsKey((long)a.Size)).SelectMany(a => hashDict[(long)a.Size]).ToList();
-            
-            _logger.LogInformation("Found {count} total files, {hashedCount} matching filesize", allFiles.Count, toHash.Count);
+            var toHash = ModList.Archives.Where(a => hashDict.ContainsKey((long)a.Size))
+                .SelectMany(a => hashDict[(long)a.Size]).ToList();
 
-            var hashResults = await 
+            _logger.LogInformation("Found {count} total files, {hashedCount} matching filesize", allFiles.Count,
+                toHash.Count);
+
+            var hashResults = await
                 toHash
-                .PMap(_limiter,async e => (await _fileHashCache.FileHashCachedAsync(e, token), e))
-                .ToList(); 
-            
+                    .PMap(_limiter, async e => (await _fileHashCache.FileHashCachedAsync(e, token), e))
+                    .ToList();
+
             HashedArchives = hashResults
                 .OrderByDescending(e => e.Item2.LastModified())
                 .GroupBy(e => e.Item1)
@@ -296,28 +310,16 @@ namespace Wabbajack.Installer
                 .Where(x => x.Item1 != default)
                 .ToDictionary(kv => kv.Item1, kv => kv.e);
         }
-        
-        
-        private static readonly Regex NoDeleteRegex = new(@"(?i)[\\\/]\[NoDelete\]", RegexOptions.Compiled);
-        protected readonly TemporaryFileManager _manager;
-        private readonly FileExtractor.FileExtractor _extractor;
-        private readonly DTOSerializer _jsonSerializer;
-        private readonly Context _vfs;
-        private readonly FileHashCache _fileHashCache;
-        protected readonly DownloadDispatcher _downloadDispatcher;
-        protected readonly IRateLimiter _limiter;
-        protected readonly IGameLocator _gameLocator;
-        protected readonly Client _wjClient;
 
 
         /// <summary>
-        /// The user may already have some files in the _configuration.Install. If so we can go through these and
-        /// figure out which need to be updated, deleted, or left alone
+        ///     The user may already have some files in the _configuration.Install. If so we can go through these and
+        ///     figure out which need to be updated, deleted, or left alone
         /// </summary>
         protected async Task OptimizeModlist(CancellationToken token)
         {
             _logger.LogInformation("Optimizing ModList directives");
-            
+
             var indexed = ModList.Directives.ToDictionary(d => d.To);
 
 
@@ -332,10 +334,10 @@ namespace Wabbajack.Installer
                         return;
 
                     if (f.InFolder(profileFolder) && f.Parent.FileName == savePath) return;
-                    
+
                     if (NoDeleteRegex.IsMatch(f.ToString()))
                         return;
-                        
+
                     _logger.LogInformation("Deleting {relativeTo} it's not part of this ModList", relativeTo);
                     f.Delete();
                 });
@@ -353,20 +355,17 @@ namespace Wabbajack.Installer
                     var split = ((string)path.RelativeTo(_configuration.Install)).Split('\\');
                     return Enumerable.Range(1, split.Length - 1).Select(t => string.Join("\\", split.Take(t)));
                 })
-               .Distinct()
+                .Distinct()
                 .Select(p => _configuration.Install.Combine(p))
-               .ToHashSet();
+                .ToHashSet();
 
             try
             {
-                var toDelete = _configuration.Install.EnumerateDirectories(true)
+                var toDelete = _configuration.Install.EnumerateDirectories()
                     .Where(p => !expectedFolders.Contains(p))
                     .OrderByDescending(p => p.ToString().Length)
                     .ToList();
-                foreach (var dir in toDelete)
-                {
-                    dir.DeleteDirectory(dontDeleteIfNotEmpty:true);
-                }
+                foreach (var dir in toDelete) dir.DeleteDirectory(true);
             }
             catch (Exception)
             {
@@ -375,34 +374,31 @@ namespace Wabbajack.Installer
             }
 
             var existingfiles = _configuration.Install.EnumerateFiles().ToHashSet();
-            
-            await indexed.Values.PMap<Directive, Directive?>(_limiter, async d =>
-            {
-                // Bit backwards, but we want to return null for 
-                // all files we *want* installed. We return the files
-                // to remove from the install list.
-                var path = _configuration.Install.Combine(d.To);
-                if (!existingfiles.Contains(path)) return null;
 
-                return await _fileHashCache.FileHashCachedAsync(path, token) == d.Hash ? d : null;
-            })
+            await indexed.Values.PMap<Directive, Directive?>(_limiter, async d =>
+                {
+                    // Bit backwards, but we want to return null for 
+                    // all files we *want* installed. We return the files
+                    // to remove from the install list.
+                    var path = _configuration.Install.Combine(d.To);
+                    if (!existingfiles.Contains(path)) return null;
+
+                    return await _fileHashCache.FileHashCachedAsync(path, token) == d.Hash ? d : null;
+                })
                 .Do(d =>
-              {
-                  if (d != null)
-                  {
-                      indexed.Remove(d.To);
-                  }
-              });
-            
-            _logger.LogInformation("Optimized {optimized} directives to {indexed} required", ModList.Directives.Length, indexed.Count);
+                {
+                    if (d != null) indexed.Remove(d.To);
+                });
+
+            _logger.LogInformation("Optimized {optimized} directives to {indexed} required", ModList.Directives.Length,
+                indexed.Count);
             var requiredArchives = indexed.Values.OfType<FromArchive>()
                 .GroupBy(d => d.ArchiveHashPath.Hash)
                 .Select(d => d.Key)
                 .ToHashSet();
-            
+
             ModList.Archives = ModList.Archives.Where(a => requiredArchives.Contains(a.Hash)).ToArray();
             ModList.Directives = indexed.Values.ToArray();
-
         }
     }
 }

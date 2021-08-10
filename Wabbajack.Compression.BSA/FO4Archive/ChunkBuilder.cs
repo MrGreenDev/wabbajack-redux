@@ -5,23 +5,23 @@ using ICSharpCode.SharpZipLib.Zip.Compression;
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 using Wabbajack.Common;
 using Wabbajack.DTOs.BSA.FileStates;
-using Wabbajack.TaskTracking.Interfaces;
 
 namespace Wabbajack.Compression.BSA.FO4Archive
 {
     public class ChunkBuilder
     {
         private BA2Chunk _chunk;
-        private uint _packSize;
-        private long _offsetOffset;
         private Stream _dataSlab;
+        private long _offsetOffset;
+        private uint _packSize;
 
-        public static async Task<ChunkBuilder> Create(BA2DX10File state, BA2Chunk chunk, Stream src, DiskSlabAllocator slab, CancellationToken token)
+        public static async Task<ChunkBuilder> Create(BA2DX10File state, BA2Chunk chunk, Stream src,
+            DiskSlabAllocator slab, CancellationToken token)
         {
-            var builder = new ChunkBuilder {_chunk = chunk};
+            var builder = new ChunkBuilder { _chunk = chunk };
 
             if (!chunk.Compressed)
-            { 
+            {
                 builder._dataSlab = slab.Allocate(chunk.FullSz);
                 await src.CopyToLimitAsync(builder._dataSlab, (int)chunk.FullSz, token);
             }
@@ -40,6 +40,7 @@ namespace Wabbajack.Compression.BSA.FO4Archive
                 await ms.CopyToLimitAsync(builder._dataSlab, (int)ms.Length, token);
                 builder._packSize = (uint)ms.Length;
             }
+
             builder._dataSlab.Position = 0;
 
             return builder;
@@ -54,7 +55,6 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             bw.Write(_chunk.StartMip);
             bw.Write(_chunk.EndMip);
             bw.Write(_chunk.Align);
-
         }
 
         public async ValueTask WriteData(BinaryWriter bw, CancellationToken token)
@@ -66,6 +66,5 @@ namespace Wabbajack.Compression.BSA.FO4Archive
             await _dataSlab.CopyToLimitAsync(bw.BaseStream, (int)_dataSlab.Length, token);
             await _dataSlab.DisposeAsync();
         }
-
     }
 }

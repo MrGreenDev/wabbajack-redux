@@ -9,14 +9,14 @@ namespace Wabbajack.Common.FileSignatures
 {
     public class SignatureChecker
     {
-        private readonly (FileType, byte[])[] _signatures;
-
         private readonly int _maxLength;
+        private readonly (FileType, byte[])[] _signatures;
 
         public SignatureChecker(params FileType[] types)
         {
             HashSet<FileType> types1 = new(types);
-            _signatures = Definitions.Signatures.Where(row => types1.Contains(row.Item1)).OrderByDescending(x => x.Item2.Length).ToArray();
+            _signatures = Definitions.Signatures.Where(row => types1.Contains(row.Item1))
+                .OrderByDescending(x => x.Item2.Length).ToArray();
             _maxLength = _signatures.First().Item2.Length;
         }
 
@@ -25,7 +25,7 @@ namespace Wabbajack.Common.FileSignatures
             await using var fs = path.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
             return await MatchesAsync(fs);
         }
-        
+
         public async ValueTask<FileType?> MatchesAsync(Stream stream)
         {
             var buffer = new byte[_maxLength];
@@ -34,10 +34,8 @@ namespace Wabbajack.Common.FileSignatures
             stream.Position = 0;
 
             foreach (var (fileType, signature) in _signatures)
-            {
                 if (AreEqual(buffer, signature))
                     return fileType;
-            }
 
             return null;
         }

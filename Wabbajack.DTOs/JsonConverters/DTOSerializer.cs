@@ -20,7 +20,7 @@ namespace Wabbajack.DTOs.JsonConverters
         {
             return JsonSerializer.Deserialize<T>(text, Options);
         }
-        
+
         public ValueTask<T?> DeserializeAsync<T>(Stream stream)
         {
             return JsonSerializer.DeserializeAsync<T>(stream, Options);

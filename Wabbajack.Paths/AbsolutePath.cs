@@ -18,7 +18,7 @@ namespace Wabbajack.Paths
         internal readonly string[] Parts;
 
         public Extension Extension => Extension.FromPath(Parts[^1]);
-        public RelativePath FileName => (RelativePath) Parts[^1];
+        public RelativePath FileName => (RelativePath)Parts[^1];
 
         internal AbsolutePath(string[] parts, PathFormat format)
         {
@@ -26,7 +26,7 @@ namespace Wabbajack.Paths
             PathFormat = format;
         }
 
-        internal static readonly char[] StringSplits = {'/', '\\'};
+        internal static readonly char[] StringSplits = { '/', '\\' };
 
         private static AbsolutePath Parse(string path)
         {
@@ -59,11 +59,11 @@ namespace Wabbajack.Paths
                         throw new PathException($"Path {this} does not have a parent folder");
                     var newParts = new string[Parts.Length - 1];
                     Array.Copy(Parts, newParts, newParts.Length);
-                    return new(newParts, PathFormat);
+                    return new AbsolutePath(newParts, PathFormat);
                 }
             }
         }
-        
+
         public AbsolutePath ReplaceExtension(Extension newExtension)
         {
             var paths = new string[Parts.Length];
@@ -88,7 +88,8 @@ namespace Wabbajack.Paths
 
         public override int GetHashCode()
         {
-            return Parts.Aggregate(0, (current, part) => current ^ part.GetHashCode(StringComparison.CurrentCultureIgnoreCase));
+            return Parts.Aggregate(0,
+                (current, part) => current ^ part.GetHashCode(StringComparison.CurrentCultureIgnoreCase));
         }
 
         public override bool Equals(object? obj)
@@ -107,10 +108,8 @@ namespace Wabbajack.Paths
             if (other.Parts == null) return other.Parts == Parts;
             if (Parts.Length != other.Parts.Length) return false;
             for (var idx = 0; idx < Parts.Length; idx++)
-            {
                 if (!Parts[idx].Equals(other.Parts[idx], StringComparison.InvariantCultureIgnoreCase))
                     return false;
-            }
             return true;
         }
 
@@ -123,7 +122,7 @@ namespace Wabbajack.Paths
             Array.Copy(Parts, basePath.Parts.Length, newParts, 0, newParts.Length);
             return new RelativePath(newParts);
         }
-        
+
         public bool InFolder(AbsolutePath parent)
         {
             return ArrayExtensions.AreEqual(parent.Parts, 0, Parts, 0, parent.Parts.Length);
@@ -135,7 +134,7 @@ namespace Wabbajack.Paths
             {
                 return p switch
                 {
-                    string s => (RelativePath) s,
+                    string s => (RelativePath)s,
                     RelativePath path => path,
                     _ => throw new PathException($"Cannot cast {p} of type {p.GetType()} to Path")
                 };
@@ -148,16 +147,17 @@ namespace Wabbajack.Paths
             var newLen = Parts.Length + paths.Sum(p => p.Parts.Length);
             var newParts = new string[newLen];
             Array.Copy(Parts, newParts, Parts.Length);
-            
+
             var toIdx = Parts.Length;
             foreach (var p in paths)
             {
                 Array.Copy(p.Parts, 0, newParts, toIdx, p.Parts.Length);
                 toIdx += p.Parts.Length;
             }
+
             return new AbsolutePath(newParts, PathFormat);
         }
-        
+
         public static bool operator ==(AbsolutePath a, AbsolutePath b)
         {
             return a.Equals(b);
@@ -176,5 +176,4 @@ namespace Wabbajack.Paths
             return new AbsolutePath(parts, PathFormat);
         }
     }
-    
 }

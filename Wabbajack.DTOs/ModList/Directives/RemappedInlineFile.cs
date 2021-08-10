@@ -10,5 +10,4 @@ namespace Wabbajack.DTOs.Directives
     public class RemappedInlineFile : InlineFile
     {
     }
-
 }

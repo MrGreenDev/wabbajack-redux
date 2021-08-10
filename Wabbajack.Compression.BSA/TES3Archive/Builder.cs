@@ -6,15 +6,13 @@ using Wabbajack.Common;
 using Wabbajack.Compression.BSA.Interfaces;
 using Wabbajack.DTOs.BSA.ArchiveStates;
 using Wabbajack.DTOs.BSA.FileStates;
-using Wabbajack.Paths;
-using Wabbajack.TaskTracking.Interfaces;
 
 namespace Wabbajack.Compression.BSA.TES3Archive
 {
     public class Builder : IBuilder
     {
-        private TES3State _state;
-        private (TES3File state, Stream data)[] _files;
+        private readonly (TES3File state, Stream data)[] _files;
+        private readonly TES3State _state;
 
         public Builder(TES3State state)
         {
@@ -31,7 +29,7 @@ namespace Wabbajack.Compression.BSA.TES3Archive
         public async ValueTask Build(Stream file, CancellationToken token)
         {
             await using var bw = new BinaryWriter(file, Encoding.Default, true);
-            
+
             bw.Write(_state.VersionNumber);
             bw.Write(_state.HashOffset);
             bw.Write(_state.FileCount);
@@ -42,13 +40,10 @@ namespace Wabbajack.Compression.BSA.TES3Archive
                 bw.Write(state.Offset);
             }
 
-            foreach (var (state, _) in _files)
-            {
-                bw.Write(state.NameOffset);
-            }
+            foreach (var (state, _) in _files) bw.Write(state.NameOffset);
 
             var orgPos = bw.BaseStream.Position;
-            
+
             foreach (var (state, _) in _files)
             {
                 if (bw.BaseStream.Position != orgPos + state.NameOffset)
@@ -63,7 +58,7 @@ namespace Wabbajack.Compression.BSA.TES3Archive
                 bw.Write(state.Hash1);
                 bw.Write(state.Hash2);
             }
-            
+
             if (bw.BaseStream.Position != _state.DataOffset)
                 throw new InvalidDataException("Data offset doesn't match when writing TES3 BSA");
 

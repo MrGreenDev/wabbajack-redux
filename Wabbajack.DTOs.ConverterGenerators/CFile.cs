@@ -18,7 +18,6 @@ namespace Wabbajack.DTOs.ConverterGenerators
             Code("using Wabbajack.Hashing.xxHash64;");
             Code("using Microsoft.Extensions.DependencyInjection;");
             Code("");
-
         }
 
         public void Write(string path)
@@ -33,11 +32,9 @@ namespace Wabbajack.DTOs.ConverterGenerators
 
             for (var i = 0; i < _indent; i++) _sb.Append("  ");
             _sb.AppendLine(c);
-            
+
             if (c.EndsWith("{"))
                 _indent++;
-
-
         }
     }
 }

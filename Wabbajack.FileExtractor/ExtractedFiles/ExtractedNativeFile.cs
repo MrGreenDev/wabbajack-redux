@@ -8,8 +8,6 @@ namespace Wabbajack.FileExtractor.ExtractedFiles
 {
     public class ExtractedNativeFile : NativeFileStreamFactory, IExtractedFile
     {
-        public bool CanMove { get; set; } = true;
-
         public ExtractedNativeFile(AbsolutePath file, IPath path) : base(file, path)
         {
         }
@@ -18,11 +16,13 @@ namespace Wabbajack.FileExtractor.ExtractedFiles
         {
         }
 
+        public bool CanMove { get; set; } = true;
+
         public async ValueTask Move(AbsolutePath newPath, CancellationToken token)
         {
-            if (CanMove) 
+            if (CanMove)
                 await _file.MoveToAsync(newPath, true, token);
-            else 
+            else
                 await _file.CopyToAsync(newPath, true, token);
         }
     }

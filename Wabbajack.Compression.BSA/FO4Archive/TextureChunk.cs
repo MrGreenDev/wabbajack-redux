@@ -4,12 +4,12 @@ namespace Wabbajack.Compression.BSA.FO4Archive
 {
     public class TextureChunk
     {
+        internal uint _align;
+        internal ushort _endMip;
+        internal uint _fullSz;
         internal ulong _offset;
         internal uint _packSz;
-        internal uint _fullSz;
         internal ushort _startMip;
-        internal ushort _endMip;
-        internal uint _align;
 
         public TextureChunk(BinaryReader rdr)
         {

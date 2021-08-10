@@ -4,6 +4,5 @@ namespace Wabbajack.Paths
     {
         Extension Extension { get; }
         RelativePath FileName { get; }
-        
     }
 }

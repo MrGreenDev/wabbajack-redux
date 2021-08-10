@@ -1,10 +1,7 @@
-using System;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Octodiff.Core;
 using Octodiff.Diagnostics;
-using Wabbajack.DTOs.Streams;
 
 namespace Wabbajack.Installer.Utilities
 {

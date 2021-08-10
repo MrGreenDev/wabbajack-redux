@@ -1,12 +1,11 @@
 using System;
-using System.IO;
 
 namespace Wabbajack.Paths
 {
     public struct Extension
     {
         private static readonly Extension None = new("");
-        
+
         #region ObjectEquality
 
         private bool Equals(Extension other)
@@ -42,9 +41,7 @@ namespace Wabbajack.Paths
         private void Validate()
         {
             if (!_extension.StartsWith(".") && _extension != "")
-            {
                 throw new PathException($"Extensions must start with '.' got {_extension}");
-            }
         }
 
         public static explicit operator string(Extension path)
@@ -54,7 +51,7 @@ namespace Wabbajack.Paths
 
         public static explicit operator Extension(string path)
         {
-            return new(path);
+            return new Extension(path);
         }
 
         public static bool operator ==(Extension a, Extension b)

@@ -9,7 +9,7 @@ namespace Wabbajack.DTOs.JsonConverters
     {
         public override RelativePath Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return (RelativePath) reader.GetString()!;
+            return (RelativePath)reader.GetString()!;
         }
 
         public override void Write(Utf8JsonWriter writer, RelativePath value, JsonSerializerOptions options)

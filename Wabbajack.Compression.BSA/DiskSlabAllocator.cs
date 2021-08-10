@@ -9,10 +9,10 @@ namespace Wabbajack.Compression.BSA
     public class DiskSlabAllocator
     {
         private readonly TemporaryFileManager _manager;
-        private ConcurrentBag<TemporaryPath> _files = new();
-        private ConcurrentBag<Stream> _streams = new();
-        private long _memorySize;
         private readonly long _maxMemorySize;
+        private readonly ConcurrentBag<TemporaryPath> _files = new();
+        private long _memorySize;
+        private readonly ConcurrentBag<Stream> _streams = new();
 
         public DiskSlabAllocator(TemporaryFileManager manager, long maxMemorySize = 1024 * 1024 * 256)
         {
@@ -26,10 +26,7 @@ namespace Wabbajack.Compression.BSA
             foreach (var s in _streams)
                 await s.DisposeAsync();
 
-            foreach (var file in _files)
-            {
-                file.Dispose();
-            }
+            foreach (var file in _files) file.Dispose();
         }
 
         public Stream Allocate(long rLength)

@@ -69,9 +69,7 @@ namespace Wabbajack.Hashing.xxHash64
         public void TransformByteGroupsInternal(ReadOnlySpan<byte> data)
         {
             if (_finished || data.Length % 32 > 0)
-            {
                 throw new Exception("Hash is finished, or input is not a multiple of 32");
-            }
             var tempA = _a;
             var tempB = _b;
             var tempC = _c;
@@ -104,7 +102,7 @@ namespace Wabbajack.Hashing.xxHash64
             _c = tempC;
             _d = tempD;
 
-            _bytesProcessed += (ulong) data.Length;
+            _bytesProcessed += (ulong)data.Length;
         }
 
 
@@ -162,7 +160,7 @@ namespace Wabbajack.Hashing.xxHash64
 
             var remainderLength = data.Length;
 
-            hashValue += _bytesProcessed + (ulong) remainderLength;
+            hashValue += _bytesProcessed + (ulong)remainderLength;
 
             if (remainderLength > 0)
             {

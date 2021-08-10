@@ -12,10 +12,10 @@ namespace Wabbajack.Installer.Test
     public class StandardInstallerTest
     {
         private readonly StandardInstaller _installer;
-        private readonly AbsolutePath _modList;
-        private readonly DTOSerializer _serializer;
-        private readonly IServiceProvider _provider;
         private readonly TemporaryFileManager _manager;
+        private readonly AbsolutePath _modList;
+        private readonly IServiceProvider _provider;
+        private readonly DTOSerializer _serializer;
 
         public StandardInstallerTest(IServiceProvider provider, DTOSerializer serializer, TemporaryFileManager manager)
         {
@@ -24,7 +24,7 @@ namespace Wabbajack.Installer.Test
             _modList = "TestData/MO2AndSKSETest.wabbajack".ToRelativePath().RelativeTo(KnownFolders.EntryPoint);
             _manager = manager;
         }
-        
+
         [Fact]
         public async Task CanLoadModlistDefinition()
         {
@@ -55,9 +55,8 @@ namespace Wabbajack.Installer.Test
 
             var installer = _provider.GetService<StandardInstaller>();
             Assert.True(await installer.Begin(CancellationToken.None));
-            
-            Assert.True("ModOrganizer.exe".ToRelativePath().RelativeTo(installFolder).FileExists());
 
+            Assert.True("ModOrganizer.exe".ToRelativePath().RelativeTo(installFolder).FileExists());
         }
     }
 }

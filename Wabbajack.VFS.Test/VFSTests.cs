@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading;
@@ -13,26 +12,31 @@ namespace Wabbajack.VFS.Test
 {
     public class VFSTests : IDisposable
     {
+        private readonly AbsolutePath _archiveTestTxt;
 
 
         private readonly Context _context;
         private readonly TemporaryFileManager _manager;
-        private readonly AbsolutePath _vfsTestDir;
-        private readonly AbsolutePath _testZip;
         private readonly AbsolutePath _testTxt;
-        private readonly AbsolutePath _archiveTestTxt;
+        private readonly AbsolutePath _testZip;
+        private readonly AbsolutePath _vfsTestDir;
 
         public VFSTests(Context context, TemporaryFileManager manager)
         {
             _context = context;
             _manager = manager;
-            
+
             _vfsTestDir = _manager.CreateFolder();
             _testZip = "test.zip".ToRelativePath().RelativeTo(_vfsTestDir);
             _testTxt = "test.txt".ToRelativePath().RelativeTo(_vfsTestDir);
             _archiveTestTxt = "archive/test.txt".ToRelativePath().RelativeTo(_vfsTestDir);
         }
-        
+
+        public void Dispose()
+        {
+            _manager?.Dispose();
+        }
+
         [Fact]
         public async Task FilesAreIndexed()
         {
@@ -45,13 +49,14 @@ namespace Wabbajack.VFS.Test
             Assert.Equal(14, file.Size);
             Assert.Equal(file.Hash, Hash.FromBase64("qX0GZvIaTKM="));
         }
+
         [Fact]
         public async Task ArchiveContentsAreIndexed()
         {
             await AddFile(_archiveTestTxt, "This is a test");
             await ZipUpFolder(_archiveTestTxt.Parent, _testZip);
             await _context.AddRoot(_vfsTestDir, CancellationToken.None);
-            
+
             var absPath = "test.zip".ToRelativePath().RelativeTo(_vfsTestDir);
             var file = _context.Index.ByRootPath[absPath];
             Assert.NotNull(file);
@@ -65,7 +70,7 @@ namespace Wabbajack.VFS.Test
             Assert.Equal(Hash.FromBase64("qX0GZvIaTKM="), innerFile.Hash);
             Assert.Same(file, file.Children.First().Parent);
         }
-        
+
 
         [Fact]
         public async Task DuplicateFileHashes()
@@ -122,8 +127,8 @@ namespace Wabbajack.VFS.Test
             await ZipUpFolder(_archiveTestTxt.Parent, _testZip);
             await _context.AddRoot(_vfsTestDir, CancellationToken.None);
 
-            var res = new FullPath(_testZip, new[] {(RelativePath)"test.txt"});
-            var files = new [] {_context.Index.ByFullPath[res]};
+            var res = new FullPath(_testZip, (RelativePath)"test.txt");
+            var files = new[] { _context.Index.ByFullPath[res] };
 
 
             await _context.Extract(files.ToHashSet(), async (file, factory) =>
@@ -131,7 +136,6 @@ namespace Wabbajack.VFS.Test
                 await using var s = await factory.GetStream();
                 //Assert.Equal("This is a test", await s.ReadAllTextAsync());
             }, CancellationToken.None);
-
         }
 
         [Fact]
@@ -142,19 +146,19 @@ namespace Wabbajack.VFS.Test
 
             var inner_dir = @"archive\other\dir".ToRelativePath().RelativeTo(_vfsTestDir);
             inner_dir.CreateDirectory();
-            await _testZip.MoveToAsync( @"archive\other\dir\nested.zip".ToRelativePath().RelativeTo(_vfsTestDir), true, CancellationToken.None);
+            await _testZip.MoveToAsync(@"archive\other\dir\nested.zip".ToRelativePath().RelativeTo(_vfsTestDir), true,
+                CancellationToken.None);
             await ZipUpFolder(_archiveTestTxt.Parent, _testZip);
 
             await _context.AddRoot(_vfsTestDir, CancellationToken.None);
 
             var files = _context.Index.ByHash[Hash.FromBase64("qX0GZvIaTKM=")];
-            
+
             await _context.Extract(files.ToHashSet(), async (file, factory) =>
             {
                 await using var s = await factory.GetStream();
                 //Assert.Equal("This is a test", await s.ReadAllTextAsync());
             }, CancellationToken.None);
-
         }
 
 
@@ -168,11 +172,6 @@ namespace Wabbajack.VFS.Test
         {
             ZipFile.CreateFromDirectory(folder.ToString(), output.ToString());
             folder.DeleteDirectory();
-        }
-
-        public void Dispose()
-        {
-            _manager?.Dispose();
         }
     }
 }

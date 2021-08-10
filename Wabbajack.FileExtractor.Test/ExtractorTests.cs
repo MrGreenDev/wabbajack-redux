@@ -1,10 +1,7 @@
-using System;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Wabbajack.Common;
-using Wabbajack.Common.FileSignatures;
 using Wabbajack.Paths.IO;
 using Xunit;
 
@@ -20,7 +17,7 @@ namespace Wabbajack.FileExtractor.Test
             _extractor = extractor;
             _manager = manager;
         }
-        
+
         [Fact]
         public async Task CanExtract7z()
         {
@@ -33,10 +30,10 @@ namespace Wabbajack.FileExtractor.Test
                     using var sr = new StreamReader(s);
                     return new { Path = path, Data = await sr.ReadToEndAsync() };
                 }, null, CancellationToken.None);
-            
+
             Assert.True(results.Count == 1);
         }
-        
+
         [Fact]
         public async Task CanExtractWithGatheringExtract()
         {
@@ -49,7 +46,7 @@ namespace Wabbajack.FileExtractor.Test
                     using var sr = new StreamReader(s);
                     return new { Path = path, Data = await sr.ReadToEndAsync() };
                 }, CancellationToken.None);
-            
+
             Assert.True(results.Count == 1);
         }
     }

@@ -5,23 +5,23 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Wabbajack.Paths;
 
 namespace Wabbajack.Paths.IO
 {
     public static class AbsolutePathExtensions
     {
         public const int BufferSize = 1024 * 128;
-        
-        public static Stream Open(this AbsolutePath file, FileMode mode, FileAccess access = FileAccess.Read, FileShare share = FileShare.ReadWrite)
+
+        public static Stream Open(this AbsolutePath file, FileMode mode, FileAccess access = FileAccess.Read,
+            FileShare share = FileShare.ReadWrite)
         {
             return File.Open(file.ToNativePath(), mode, access, share);
         }
-        
+
         public static void Delete(this AbsolutePath file)
         {
             var path = file.ToNativePath();
-            if (File.Exists(path)) 
+            if (File.Exists(path))
                 File.Delete(path);
             if (Directory.Exists(path))
                 Directory.Delete(path, true);
@@ -31,28 +31,25 @@ namespace Wabbajack.Paths.IO
         {
             return new FileInfo(file.ToNativePath()).Length;
         }
-        
+
         public static DateTime LastModifiedUtc(this AbsolutePath file)
         {
             return new FileInfo(file.ToNativePath()).LastWriteTimeUtc;
         }
-        
+
         public static DateTime LastModified(this AbsolutePath file)
         {
             return new FileInfo(file.ToNativePath()).LastWriteTime;
         }
-        
+
         public static byte[] ReadAllBytes(this AbsolutePath file)
         {
             using var s = File.Open(file.ToNativePath(), FileMode.Open, FileAccess.Read, FileShare.Read);
             var remain = s.Length;
             var length = remain;
             var bytes = new byte[length];
-            
-            while (remain > 0)
-            {
-                remain -= s.Read(bytes, (int)Math.Min(length - remain, 1024 * 1024), bytes.Length);
-            }
+
+            while (remain > 0) remain -= s.Read(bytes, (int)Math.Min(length - remain, 1024 * 1024), bytes.Length);
 
             return bytes;
         }
@@ -61,23 +58,23 @@ namespace Wabbajack.Paths.IO
         {
             return Encoding.UTF8.GetString(file.ReadAllBytes());
         }
-        
+
         public static async Task<string> ReadAllTextAsync(this AbsolutePath file)
         {
             return Encoding.UTF8.GetString(await file.ReadAllBytesAsync());
         }
-        
-        public static async ValueTask<byte[]> ReadAllBytesAsync(this AbsolutePath file, CancellationToken token = default)
+
+        public static async ValueTask<byte[]> ReadAllBytesAsync(this AbsolutePath file,
+            CancellationToken token = default)
         {
             await using var s = File.Open(file.ToNativePath(), FileMode.Open, FileAccess.Read, FileShare.Read);
             var remain = s.Length;
             var length = remain;
             var bytes = new byte[length];
-            
+
             while (remain > 0)
-            {
-                remain -= await s.ReadAsync(bytes.AsMemory((int)Math.Min(length - remain, 1024 * 1024), bytes.Length), token);
-            }
+                remain -= await s.ReadAsync(bytes.AsMemory((int)Math.Min(length - remain, 1024 * 1024), bytes.Length),
+                    token);
 
             return bytes;
         }
@@ -88,7 +85,8 @@ namespace Wabbajack.Paths.IO
             s.Write(data);
         }
 
-        public static async Task WriteAllAsync(this AbsolutePath file, Stream srcStream, CancellationToken token, bool closeWhenDone = true)
+        public static async Task WriteAllAsync(this AbsolutePath file, Stream srcStream, CancellationToken token,
+            bool closeWhenDone = true)
         {
             var buff = new byte[BufferSize];
             await using var dest = file.Open(FileMode.Create, FileAccess.Write, FileShare.None);
@@ -99,37 +97,38 @@ namespace Wabbajack.Paths.IO
                     break;
                 await dest.WriteAsync(buff.AsMemory(0, read), token);
             }
-            
-            if (closeWhenDone) 
+
+            if (closeWhenDone)
                 await srcStream.DisposeAsync();
         }
-        
-        public static async Task WriteAllLinesAsync(this AbsolutePath file, IEnumerable<string> src, CancellationToken token, bool closeWhenDone = true)
+
+        public static async Task WriteAllLinesAsync(this AbsolutePath file, IEnumerable<string> src,
+            CancellationToken token, bool closeWhenDone = true)
         {
             await using var dest = file.Open(FileMode.Create, FileAccess.Write, FileShare.None);
             await using var sw = new StreamWriter(dest, Encoding.UTF8);
 
-            foreach (var line in src)
-            {
-                await sw.WriteLineAsync(line);
-            }
+            foreach (var line in src) await sw.WriteLineAsync(line);
 
             await sw.DisposeAsync();
         }
-        
-        public static async ValueTask WriteAllBytesAsync(this AbsolutePath file, Memory<byte> data, CancellationToken token = default)
+
+        public static async ValueTask WriteAllBytesAsync(this AbsolutePath file, Memory<byte> data,
+            CancellationToken token = default)
         {
             await using var s = file.Open(FileMode.Create, FileAccess.Write, FileShare.None);
             await s.WriteAsync(data, token);
         }
 
-        public static async ValueTask MoveToAsync(this AbsolutePath src, AbsolutePath dest, bool overwrite, CancellationToken token)
+        public static async ValueTask MoveToAsync(this AbsolutePath src, AbsolutePath dest, bool overwrite,
+            CancellationToken token)
         {
             // TODO: Make this async
             File.Move(src.ToString(), dest.ToString(), overwrite);
         }
-        
-        public static async ValueTask CopyToAsync(this AbsolutePath src, AbsolutePath dest, bool overwrite, CancellationToken token)
+
+        public static async ValueTask CopyToAsync(this AbsolutePath src, AbsolutePath dest, bool overwrite,
+            CancellationToken token)
         {
             // TODO: Make this async
             File.Copy(src.ToString(), dest.ToString(), overwrite);
@@ -139,8 +138,9 @@ namespace Wabbajack.Paths.IO
         {
             file.WriteAllBytes(Encoding.UTF8.GetBytes(str));
         }
-        
-        public static async Task WriteAllTextAsync(this AbsolutePath file, string str, CancellationToken token = default)
+
+        public static async Task WriteAllTextAsync(this AbsolutePath file, string str,
+            CancellationToken token = default)
         {
             await file.WriteAllBytesAsync(Encoding.UTF8.GetBytes(str), token);
         }
@@ -168,26 +168,28 @@ namespace Wabbajack.Paths.IO
         {
             return Directory.Exists(path.ToNativePath());
         }
-        
+
         public static bool FileExists(this AbsolutePath path)
         {
             return File.Exists(path.ToNativePath());
         }
 
-        public static IEnumerable<AbsolutePath> EnumerateFiles(this AbsolutePath path, string pattern = "*", bool recursive = true)
+        public static IEnumerable<AbsolutePath> EnumerateFiles(this AbsolutePath path, string pattern = "*",
+            bool recursive = true)
         {
             return Directory.EnumerateFiles(path.ToString(), pattern,
                     recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
                 .Select(file => file.ToAbsolutePath());
         }
-        
-                
+
+
         public static IEnumerable<AbsolutePath> EnumerateDirectories(this AbsolutePath path, bool recursive = true)
         {
-            return Directory.EnumerateDirectories(path.ToString(), "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+            return Directory.EnumerateDirectories(path.ToString(), "*",
+                    recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
                 .Select(p => (AbsolutePath)p);
         }
-        
+
         #endregion
     }
 }

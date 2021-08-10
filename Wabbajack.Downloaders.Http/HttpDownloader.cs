@@ -17,17 +17,18 @@ namespace Wabbajack.Downloaders.Http
     public class HttpDownloader : ADownloader<DTOs.DownloadStates.Http>
     {
         private readonly HttpClient _client;
-        private readonly ILogger<HttpDownloader> _logger;
         private readonly IHttpDownloader _downloader;
+        private readonly ILogger<HttpDownloader> _logger;
 
         public HttpDownloader(ILogger<HttpDownloader> logger, HttpClient client, IHttpDownloader downloader)
         {
             _client = client;
             _logger = logger;
             _downloader = downloader;
-
         }
-        public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.Http state, AbsolutePath destination, CancellationToken token)
+
+        public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.Http state,
+            AbsolutePath destination, CancellationToken token)
         {
             return await _downloader.Download(await GetResponse(state, token), destination, token);
         }
@@ -44,11 +45,12 @@ namespace Wabbajack.Downloaders.Http
             return await _client.SendAsync(msg, token);
         }
 
-        public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.Http archiveState, CancellationToken token)
+        public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.Http archiveState,
+            CancellationToken token)
         {
             var response = await GetResponse(archiveState, token);
             if (!response.IsSuccessStatusCode) return false;
-            
+
             var headerVar = archive.Size == 0 ? "1" : archive.Size.ToString();
             ulong headerContentSize = 0;
             if (response.Content.Headers.Contains("Content-Length"))
@@ -58,12 +60,11 @@ namespace Wabbajack.Downloaders.Http
                     if (!ulong.TryParse(headerVar, out headerContentSize))
                         return true;
             }
-                
+
             response.Dispose();
             if (archive.Size != 0 && headerContentSize != 0)
                 return archive.Size == headerContentSize;
             return true;
-
         }
 
         public override async Task<bool> Prepare()
@@ -79,11 +80,12 @@ namespace Wabbajack.Downloaders.Http
         public override IEnumerable<string> MetaIni(Archive a, DTOs.DownloadStates.Http state)
         {
             if (state.Headers.Length > 0)
-                return new [] {
+                return new[]
+                {
                     $"directURL={state.Url}",
-                    $"directURLHeaders={string.Join("|", state.Headers)}"};
-            else
-                return new [] {$"directURL={state.Url}"};
+                    $"directURLHeaders={string.Join("|", state.Headers)}"
+                };
+            return new[] { $"directURL={state.Url}" };
         }
     }
 }

@@ -13,6 +13,8 @@ namespace Wabbajack.DTOs.DownloadStates
         public Hash Hash { get; set; }
         public string GameVersion { get; set; } = "";
         public override string TypeName => "GameFileSourceDownloader+State";
-        public override object[] PrimaryKey => new object[] {Game, GameVersion ?? "0.0.0.0", GameFile.ToString().ToLowerInvariant()};
+
+        public override object[] PrimaryKey => new object[]
+            { Game, GameVersion ?? "0.0.0.0", GameFile.ToString().ToLowerInvariant() };
     }
 }

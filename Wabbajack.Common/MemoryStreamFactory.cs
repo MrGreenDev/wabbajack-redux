@@ -16,6 +16,7 @@ namespace Wabbajack.Common
             Name = path;
             LastModifiedUtc = lastModified;
         }
+
         public ValueTask<Stream> GetStream()
         {
             return new ValueTask<Stream>(new MemoryStream(_data.GetBuffer(), 0, (int)_data.Length));

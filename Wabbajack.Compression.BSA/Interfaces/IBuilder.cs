@@ -2,8 +2,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Wabbajack.DTOs.BSA.FileStates;
-using Wabbajack.Paths;
-using Wabbajack.TaskTracking.Interfaces;
 
 namespace Wabbajack.Compression.BSA.Interfaces
 {

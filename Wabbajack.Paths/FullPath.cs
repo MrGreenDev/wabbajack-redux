@@ -46,7 +46,7 @@ namespace Wabbajack.Paths
             if (init != 0) return init;
             return ArrayExtensions.Compare(Parts, other.Parts);
         }
-        
+
         public static bool operator ==(FullPath a, FullPath b)
         {
             return a.Equals(b);
@@ -56,9 +56,9 @@ namespace Wabbajack.Paths
         {
             return !a.Equals(b);
         }
-        
+
         /// <summary>
-        /// Creates a new full path, with relativePath combined with the deepest leaf in the full path
+        ///     Creates a new full path, with relativePath combined with the deepest leaf in the full path
         /// </summary>
         /// <param name="relativePath"></param>
         /// <returns></returns>
@@ -68,13 +68,11 @@ namespace Wabbajack.Paths
             {
                 return new FullPath(Base.Parent.Combine(relativePath));
             }
-            else
-            {
-                var paths = new RelativePath[Parts.Length];
-                Parts.CopyTo(paths, 0);
-                paths[^1] = paths[^1].Parent.Combine(relativePath);
-                return new FullPath(Base, paths);
-            }
+
+            var paths = new RelativePath[Parts.Length];
+            Parts.CopyTo(paths, 0);
+            paths[^1] = paths[^1].Parent.Combine(relativePath);
+            return new FullPath(Base, paths);
         }
     }
 }
