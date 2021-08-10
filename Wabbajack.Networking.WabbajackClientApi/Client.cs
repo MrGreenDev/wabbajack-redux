@@ -69,5 +69,10 @@ namespace Wabbajack.Networking.WabbajackClientApi
                 return null;
             }
         }
+
+        public async Task SendModListDefinition(ModList modList)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

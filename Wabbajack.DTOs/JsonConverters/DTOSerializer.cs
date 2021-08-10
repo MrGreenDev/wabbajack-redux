@@ -30,5 +30,10 @@ namespace Wabbajack.DTOs.JsonConverters
         {
             return JsonSerializer.Serialize(data, Options);
         }
+
+        public async Task Serialize<T>(T data, Stream of)
+        {
+            await JsonSerializer.SerializeAsync(of, data, Options);
+        }
     }
 }

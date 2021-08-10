@@ -10,7 +10,8 @@ namespace Wabbajack.Compiler
         public AbsolutePath Downloads { get; set; }
         public Game Game { get; set; }
         public AbsolutePath OutputFile { get; set; }
-        public AbsolutePath OutputFolder => OutputFile.Parent;
+        
+        public AbsolutePath ModListImage { get; set; }
         public bool UseGamePaths { get; set; }
         public Game[] OtherGames { get; set; } = Array.Empty<Game>();
         

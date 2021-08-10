@@ -17,6 +17,7 @@ using Wabbajack.Downloaders;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.Directives;
 using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Installer;
 using Wabbajack.Networking.WabbajackClientApi;
@@ -27,8 +28,7 @@ using Wabbajack.VFS;
 
 namespace Wabbajack.Compiler
 {
-    public abstract class ACompiler<T>
-        where T : ACompiler<T>
+    public abstract class ACompiler
     {
         public List<IndexedArchive> IndexedArchives = new();
 
@@ -36,22 +36,26 @@ namespace Wabbajack.Compiler
 
         public ModList ModList = new();
         public AbsolutePath ModListImage;
-        private readonly ILogger<T> _logger;
+        private readonly ILogger _logger;
         private readonly FileExtractor.FileExtractor _extractor;
         private readonly FileHashCache _hashCache;
         private readonly Context _vfs;
         private readonly TemporaryFileManager _manager;
-        private readonly CompilerSettings _settings;
+        public readonly CompilerSettings _settings;
         private readonly AbsolutePath _stagingFolder;
         private readonly IRateLimiter _limiter;
 
         private ConcurrentDictionary<Directive, RawSourceFile> _sourceFileLinks;
+        private ConcurrentDictionary<PatchedFromArchive, VirtualFile[]> _patchOptions;
         private readonly DownloadDispatcher _dispatcher;
         private readonly Client _wjClient;
         private readonly GameLocator _locator;
+        private readonly DTOSerializer _dtos;
+        private readonly IBinaryPatchCache _patchCache;
 
-        public ACompiler(ILogger<T> logger, FileExtractor.FileExtractor extractor, FileHashCache hashCache, Context vfs, TemporaryFileManager manager, CompilerSettings settings,
-            IRateLimiter limiter, DownloadDispatcher dispatcher, Client wjClient, GameLocator locator)
+        public ACompiler(ILogger logger, FileExtractor.FileExtractor extractor, FileHashCache hashCache, Context vfs, TemporaryFileManager manager, CompilerSettings settings,
+            IRateLimiter limiter, DownloadDispatcher dispatcher, Client wjClient, GameLocator locator, DTOSerializer dtos,
+            IBinaryPatchCache patchCache)
         {
             _logger = logger;
             _extractor = extractor;
@@ -65,6 +69,10 @@ namespace Wabbajack.Compiler
             _dispatcher = dispatcher;
             _wjClient = wjClient;
             _locator = locator;
+            _dtos = dtos;
+            _patchOptions = new();
+            _sourceFileLinks = new();
+            _patchCache = patchCache;
 
         }
 
@@ -92,6 +100,14 @@ namespace Wabbajack.Compiler
         {
             var id = IncludeId();
             await _stagingFolder.Combine(id).WriteAllBytesAsync(data);
+            return id;
+        }
+        
+        internal async Task<RelativePath> IncludeFile(Stream data)
+        {
+            var id = IncludeId();
+            await using var os = _stagingFolder.Combine(id).Open(FileMode.Create, FileAccess.Write);
+            await data.CopyToAsync(os);
             return id;
         }
 
@@ -293,88 +309,84 @@ namespace Wabbajack.Compiler
             });
         }
 
-        protected async Task ExportModList()
+        protected async Task ExportModList(CancellationToken token)
         {
-            Utils.Log($"Exporting ModList to {ModListOutputFile}");
+            _logger.LogInformation("Exporting ModList to {location}", _settings.OutputFile);
 
             // Modify readme and ModList image to relative paths if they exist
-            if (ModListImage.Exists)
+            if (_settings.ModListImage.FileExists())
             {
                 ModList.Image = (RelativePath)"modlist-image.png";
             }
 
-            await using (var of = await ModListOutputFolder.Combine("modlist").Create())
-                ModList.ToJson(of);
+            await using (var of = _stagingFolder.Combine("modlist").Open(FileMode.Create, FileAccess.Write))
+                await _dtos.Serialize(ModList, of);
 
-            await ModListOutputFolder.Combine("sig")
-                .WriteAllBytesAsync(((await ModListOutputFolder.Combine("modlist").FileHashAsync()) ?? Hash.Empty).ToArray());
+            await _wjClient.SendModListDefinition(ModList);
+            
+            _settings.OutputFile.Delete();
 
-            //await ClientAPI.SendModListDefinition(ModList);
-
-            await ModListOutputFile.DeleteAsync();
-
-            await using (var fs = await ModListOutputFile.Create())
+            await using (var fs = _settings.OutputFile.Open(FileMode.Create, FileAccess.Write))
             {
                 using var za = new ZipArchive(fs, ZipArchiveMode.Create);
 
-                await ModListOutputFolder.EnumerateFiles()
-                    .DoProgress("Compressing ModList",
-                        async f =>
-                        {
-                            var ze = za.CreateEntry((string)f.FileName);
-                            await using var os = ze.Open();
-                            await using var ins = await f.OpenRead();
-                            await ins.CopyToAsync(os);
-                        });
+                foreach (var f in _settings.OutputFile.EnumerateFiles())
+                {
+                    var ze = za.CreateEntry((string)f.FileName);
+                    await using var os = ze.Open();
+                    await using var ins = f.Open(FileMode.Open);
+                    await ins.CopyToAsync(os);
+                }
 
                 // Copy in modimage
-                if (ModListImage.Exists)
+                if (_settings.ModListImage.FileExists())
                 {
                     var ze = za.CreateEntry((string)ModList.Image);
                     await using var os = ze.Open();
-                    await using var ins = await ModListImage.OpenRead();
-                    await ins.CopyToAsync(os);
+                    await using var ins = _settings.ModListImage.Open(FileMode.Open);
+                    await ins.CopyToAsync(os, token);
                 }
             }
 
-            Utils.Log("Exporting Modlist metadata");
-            var outputFileHash = await ModListOutputFile.FileHashAsync();
-            if (outputFileHash == null)
+            _logger.LogInformation("Exporting Modlist metadata");
+            var outputFileHash = await _hashCache.FileHashCachedAsync(_settings.OutputFile, token);
+            if (outputFileHash == default)
             {
-                Utils.Error("Unable to hash Modlist Output File");
+                _logger.LogCritical("Unable to hash Modlist Output File");
                 return;
             }
             
             var metadata = new DownloadMetadata
             {
-                Size = ModListOutputFile.Size,
-                Hash = outputFileHash.Value,
-                NumberOfArchives = ModList.Archives.Count,
-                SizeOfArchives = ModList.Archives.Sum(a => a.Size),
-                NumberOfInstalledFiles = ModList.Directives.Count,
+                Size = _settings.OutputFile.Size(),
+                Hash = outputFileHash,
+                NumberOfArchives = ModList.Archives.Length,
+                SizeOfArchives = ModList.Archives.Sum(a => (long)a.Size),
+                NumberOfInstalledFiles = ModList.Directives.Length,
                 SizeOfInstalledFiles = ModList.Directives.Sum(a => a.Size)
             };
-            metadata.ToJson(ModListOutputFile + ".meta.json");
+            await using var metajson = _settings.OutputFile.WithExtension(new Extension(".meta.json"))
+                .Open(FileMode.Create, FileAccess.Write);
+            await _dtos.Serialize(metadata, metajson);
 
-            Utils.Log("Removing ModList staging folder");
-            await Utils.DeleteDirectory(ModListOutputFolder);
+            _logger.LogInformation("Removing ModList staging folder");
+            _stagingFolder.DeleteDirectory();
         }
 
         /// <summary>
         ///     Fills in the Patch fields in files that require them
         /// </summary>
-        protected async Task BuildPatches()
+        protected async Task BuildPatches(CancellationToken token)
         {
-            Info("Gathering patch files");
+            _logger.LogInformation("Gathering patch files");
 
             var toBuild = InstallDirectives.OfType<PatchedFromArchive>()
-                .Where(p => p.Choices.Length > 0)
-                .SelectMany(p => p.Choices.Select(c => new PatchedFromArchive
+                .Where(p => _patchOptions[p].Length > 0)
+                .SelectMany(p => _patchOptions[p].Select(c => new PatchedFromArchive
                 {
                     To = p.To,
                     Hash = p.Hash,
                     ArchiveHashPath = c.MakeRelativePaths(),
-                    FromFile = c,
                     Size = p.Size
                 }))
                 .ToArray();
@@ -385,49 +397,47 @@ namespace Wabbajack.Compiler
             }
 
             // Extract all the source files
-            var indexed = toBuild.GroupBy(f => VFS.Index.FileForArchiveHashPath(f.ArchiveHashPath))
+            var indexed = toBuild.GroupBy(f => _vfs.Index.FileForArchiveHashPath(f.ArchiveHashPath))
                 .ToDictionary(f => f.Key);
-            await VFS.Extract(Queue, indexed.Keys.ToHashSet(),
+            await _vfs.Extract( indexed.Keys.ToHashSet(),
                 async (vf, sf) =>
                 {
                     // For each, extract the destination
                     var matches = indexed[vf];
-                    using var iqueue = new WorkQueue(1);
                     foreach (var match in matches)
                     {
                         var destFile = FindDestFile(match.To);
                         // Build the patch
-                        await VFS.Extract(iqueue, new[] {destFile}.ToHashSet(),
+                        await _vfs.Extract(new[] {destFile}.ToHashSet(),
                             async (destvf, destsfn) =>
                             {
-                                Info($"Patching {match.To}");
-                                Status($"Patching {match.To}");
+                                _logger.LogInformation("Patching {from} {to}",destFile ,match.To);
                                 await using var srcStream = await sf.GetStream();
                                 await using var destStream = await destsfn.GetStream();
                                 var patchSize =
-                                    await Utils.CreatePatchCached(srcStream, vf.Hash, destStream, destvf.Hash);
-                                Info($"Patch size {patchSize} for {match.To}");
-                            });
+                                    await _patchCache.CreatePatch(srcStream, vf.Hash, destStream, destvf.Hash);
+                                _logger.LogInformation("Patch size {patchSize} for {to}", patchSize, match.To);
+                            }, token);
                     }
-                });
+                }, token);
 
             // Load in the patches
             await InstallDirectives.OfType<PatchedFromArchive>()
                 .Where(p => p.PatchID == default)
-                .PMap(Queue, async pfa =>
+                .PDo(_limiter, async pfa =>
                 {
-                    var patches = pfa.Choices
-                        .Select(c => (Utils.TryGetPatch(c.Hash, pfa.Hash, out var data), data, c))
-                        .ToArray();
+                    
+                    var patches = await _patchOptions[pfa]
+                        .Select(async c => (await _patchCache.GetPatch(c.Hash, pfa.Hash), c))
+                        .ToList();
 
                     // Pick the best patch
-                    if (patches.All(p => p.Item1))
+                    if (patches.All(p => p.Item1 != null))
                     {
-                        var (_, bytes, file) = IncludePatches.PickPatch(this, patches);
-                        pfa.FromFile = file;
+                        var (patch, file) = IncludePatches.PickPatch(this, patches);
                         pfa.FromHash = file.Hash;
                         pfa.ArchiveHashPath = file.MakeRelativePaths();
-                        pfa.PatchID = await IncludeFile(await bytes!.GetData());
+                        pfa.PatchID = await IncludeFile(await patch.cache.GetData(patch));
                     }
                 });
 
@@ -435,16 +445,16 @@ namespace Wabbajack.Compiler
                 InstallDirectives.OfType<PatchedFromArchive>().FirstOrDefault(f => f.PatchID == default);
             if (firstFailedPatch != null)
             {
-                Utils.Log("Missing data from failed patch, starting data dump");
-                Utils.Log($"Dest File: {firstFailedPatch.To}");
-                Utils.Log($"Options ({firstFailedPatch.Choices.Length}:");
-                foreach (var choice in firstFailedPatch.Choices)
+                _logger.LogCritical("Missing data from failed patch, starting data dump");
+                _logger.LogCritical("Dest File: {to}", firstFailedPatch.To);
+                _logger.LogCritical("Options ({count}):", _patchOptions[firstFailedPatch].Length);
+                foreach (var choice in _patchOptions[firstFailedPatch])
                 {
-                    Utils.Log($"  {choice.FullPath}");
+                    _logger.LogCritical("  {path}", choice.FullPath);
                 }
 
-                Error(
-                    $"Missing patches after generation, this should not happen. First failure: {firstFailedPatch.FullPath}");
+                _logger.LogCritical(
+                    "Missing patches after generation, this should not happen. First failure: {path}", firstFailedPatch.To);
             }
         }
 
@@ -468,10 +478,11 @@ namespace Wabbajack.Compiler
             throw new ArgumentException($"Couldn't load data for {to}");
         }
 
-        public void GenerateManifest()
+        public async Task GenerateManifest()
         {
             var manifest = new Manifest(ModList);
-            manifest.ToJson(ModListOutputFile + ".manifest.json");
+            await using var of = _settings.OutputFile.Open(FileMode.Create, FileAccess.Write);
+            await _dtos.Serialize(manifest, of);
         }
 
         public async Task GatherArchives()

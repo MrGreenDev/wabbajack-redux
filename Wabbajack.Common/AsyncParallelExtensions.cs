@@ -43,6 +43,13 @@ namespace Wabbajack.Common
             return lst;
         }
         
+        public static async Task<IReadOnlyCollection<T>> ToReadOnlyCollection<T>(this IAsyncEnumerable<T> coll)
+        {
+            List<T> lst = new();
+            await foreach (var itm in coll) lst.Add(itm);
+            return lst;
+        }
+        
         public static async Task<HashSet<T>> ToHashSet<T>(this IAsyncEnumerable<T> coll, Predicate<T>? filter = default)
         {
             HashSet<T> lst = new();
@@ -91,6 +98,18 @@ namespace Wabbajack.Common
             await foreach (var itm in coll)
                 if (p(itm))
                     yield return itm;
+        }
+        
+        public static async IAsyncEnumerable<TOut> Select<TIn, TOut>(this IEnumerable<TIn> coll, Func<TIn, ValueTask<TOut>> fn)
+        {
+            foreach (var itm in coll)
+                yield return await fn(itm);
+        }
+        
+        public static async IAsyncEnumerable<TOut> Select<TIn, TOut>(this IAsyncEnumerable<TIn> coll, Func<TIn, ValueTask<TOut>> fn)
+        {
+            await foreach (var itm in coll)
+                yield return await fn(itm);
         }
     }
 }
