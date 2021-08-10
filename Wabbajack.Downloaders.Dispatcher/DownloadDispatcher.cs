@@ -36,6 +36,11 @@ namespace Wabbajack.Downloaders
             return hash;
         }
 
+        public async Task<IDownloadState?> ResolveArchive(IReadOnlyDictionary<string, string> ini)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<bool> Verify(Archive a, CancellationToken token)
         {
             foreach (var downloader in _downloaders)

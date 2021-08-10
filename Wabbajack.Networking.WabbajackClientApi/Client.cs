@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Wabbajack.DTOs;
 using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using YamlDotNet.Serialization;
@@ -39,6 +40,12 @@ namespace Wabbajack.Networking.WabbajackClientApi
                 .WithNamingConvention(PascalCaseNamingConvention.Instance)
                 .Build();
             return d.Deserialize<ServerAllowList>(str);
+        }
+        
+        public static async Task<Archive[]> GetGameFilesFromGithub(Game game, string version)
+        {
+            var url = $"https://raw.githubusercontent.com/wabbajack-tools/indexed-game-files/master/{game}/{version}.json";
+            return await _client.GetJsonAsync<Archive[]>(url);
         }
 
         public async Task<Uri?> GetMirrorUrl(Hash archiveHash)

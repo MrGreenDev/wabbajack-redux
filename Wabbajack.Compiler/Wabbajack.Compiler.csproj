@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Wabbajack.Downloaders.Dispatcher\Wabbajack.Downloaders.Dispatcher.csproj" />
+      <ProjectReference Include="..\Wabbajack.VFS\Wabbajack.VFS.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
+    </ItemGroup>
+
+</Project>
