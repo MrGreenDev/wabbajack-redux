@@ -12,8 +12,8 @@ namespace Wabbajack.Downloaders.Interfaces
     public abstract class ADownloader<T> : IDownloader<T>
         where T : IDownloadState
     {
-        public abstract Task<Hash> Download(Archive archive, T state, AbsolutePath destination, CancellationToken token);
-        public abstract Task<bool> Verify(Archive archive, T archiveState, CancellationToken token);
+        public abstract Task<Hash> Download(Archive archive, T state, AbsolutePath destination,
+            CancellationToken token);
 
         public bool CanDownload(Archive a)
         {
@@ -22,12 +22,12 @@ namespace Wabbajack.Downloaders.Interfaces
 
         public Task<Hash> Download(Archive archive, AbsolutePath destination, CancellationToken token)
         {
-            return Download(archive, (T) archive.State, destination, token);
+            return Download(archive, (T)archive.State, destination, token);
         }
 
         public Task<bool> Verify(Archive archive, CancellationToken token)
         {
-            return Verify(archive, (T) archive.State, token);
+            return Verify(archive, (T)archive.State, token);
         }
 
         public abstract Task<bool> Prepare();
@@ -37,6 +37,8 @@ namespace Wabbajack.Downloaders.Interfaces
         {
             return MetaIni(a, (T)a.State);
         }
+
+        public abstract Task<bool> Verify(Archive archive, T archiveState, CancellationToken token);
         public abstract IEnumerable<string> MetaIni(Archive a, T state);
     }
 }
