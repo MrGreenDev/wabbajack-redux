@@ -123,7 +123,6 @@ namespace Wabbajack.Compiler
             await _stagingFolder.Combine(id).WriteAllTextAsync(data);
             return id;
         }
-
         internal async Task<RelativePath> IncludeFile(Stream data, CancellationToken token)
         {
             var id = IncludeId();

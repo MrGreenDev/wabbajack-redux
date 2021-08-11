@@ -158,5 +158,11 @@ namespace Wabbajack.Paths
                 return new RelativePath(newParts);
             }
         }
+
+        public RelativePath WithoutExtension()
+        {
+            var ext = Extension;
+            return Parts[^1][..^ext.ToString().Length].ToRelativePath();
+        }
     }
 }

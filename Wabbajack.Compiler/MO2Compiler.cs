@@ -216,11 +216,11 @@ namespace Wabbajack.Compiler
                 new IncludePropertyFiles(this),
                 //new IncludeSteamWorkshopItems(this),
                 new IgnoreSaveFiles(this),
-                new IgnoreStartsWith(this, "logs\\"),
-                new IgnoreStartsWith(this, "downloads\\"),
-                new IgnoreStartsWith(this, "webcache\\"),
-                new IgnoreStartsWith(this, "overwrite\\"),
-                new IgnoreStartsWith(this, "crashDumps\\"),
+                new IgnoreInPath(this, "logs".ToRelativePath()),
+                new IgnoreInPath(this, "downloads".ToRelativePath()),
+                new IgnoreInPath(this, "webcache".ToRelativePath()),
+                new IgnoreInPath(this, "overwrite".ToRelativePath()),
+                new IgnoreInPath(this, "crashDumps".ToRelativePath()),
                 new IgnorePathContains(this, "temporary_logs"),
                 new IgnorePathContains(this, "GPUCache"),
                 new IgnorePathContains(this, "SSEEdit Cache"),
@@ -232,17 +232,18 @@ namespace Wabbajack.Compiler
                 // Ignore the ModOrganizer.ini file it contains info created by MO2 on startup
                 new IncludeStubbedConfigFiles(this),
                 new IncludeLootFiles(this),
-                new IgnoreStartsWith(this, Path.Combine((string)Consts.GameFolderFilesDir, "Data\\")),
-                new IgnoreStartsWith(this, Path.Combine((string)Consts.GameFolderFilesDir, "Papyrus Compiler\\")),
-                new IgnoreStartsWith(this, Path.Combine((string)Consts.GameFolderFilesDir, "Skyrim\\")),
+                new IgnoreInPath(this, Consts.GameFolderFilesDir.Combine("Data")),
+                new IgnoreInPath(this, Consts.GameFolderFilesDir.Combine("Papyrus Compiler")),
+                new IgnoreInPath(this, Consts.GameFolderFilesDir.Combine("Skyrim")),
                 new IgnoreRegex(this, Consts.GameFolderFilesDir + "\\\\.*\\.bsa"),
                 new IncludeRegex(this, "^[^\\\\]*\\.bat$"),
                 new IncludeModIniData(this),
                 new DirectMatch(this),
                 new IncludeTaggedMods(this, Consts.WABBAJACK_INCLUDE),
-                new IncludeTaggedFolders(this, Consts.WABBAJACK_INCLUDE),
-                new IgnoreEndsWith(this, ".pyc"),
-                new IgnoreEndsWith(this, ".log"),
+                // TODO: rework tagged files
+                // new IncludeTaggedFolders(this, Consts.WABBAJACK_INCLUDE),
+                new IgnoreExtension(this, Ext.Pyc),
+                new IgnoreExtension(this, Ext.Log),
                 new DeconstructBSAs(
                     this), // Deconstruct BSAs before building patches so we don't generate massive patch files
                 new MatchSimilarTextures(this),
@@ -251,20 +252,17 @@ namespace Wabbajack.Compiler
 
                 // There are some types of files that will error the compilation, because they're created on-the-fly via tools
                 // so if we don't have a match by this point, just drop them.
-                new IgnoreEndsWith(this, ".html"),                
+                new IgnoreExtension(this, Ext.Html),                
                 // Don't know why, but this seems to get copied around a bit
-                new IgnoreEndsWith(this, "HavokBehaviorPostProcess.exe"),
+                new IgnoreFilename(this, "HavokBehaviorPostProcess.exe".ToRelativePath()),
                 // Theme file MO2 downloads somehow
                 new IncludeRegex(this, "splash\\.png"),
                 // File to force MO2 into portable mode
-                new IgnoreEndsWith(this, "portable.txt"),
-                new IgnoreEndsWith(this, ".bin"),
-                new IgnoreEndsWith(this, ".refcache"),
+                new IgnoreFilename(this, "portable.txt".ToRelativePath()),
+                new IgnoreExtension(this, Ext.Bin),
+                new IgnoreFilename(this, ".refcache".ToRelativePath()),
                 //Include custom categories  
                 new IncludeRegex(this, "categories.dat$"),
-                new IgnoreWabbajackInstallCruft(this),
-
-                //new PatchStockESMs(this),
 
                 new IncludeAllConfigs(this),
                 new zEditIntegration.IncludeZEditPatches(this),
