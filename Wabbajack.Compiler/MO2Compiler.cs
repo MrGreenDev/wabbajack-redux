@@ -28,9 +28,9 @@ namespace Wabbajack.Compiler
     {
         private readonly MO2CompilerSettings _mo2Settings;
 
-        public MO2Compiler(ILogger logger, FileExtractor.FileExtractor extractor, FileHashCache hashCache, Context vfs, 
+        public MO2Compiler(ILogger<MO2Compiler> logger, FileExtractor.FileExtractor extractor, FileHashCache hashCache, Context vfs, 
             TemporaryFileManager manager, MO2CompilerSettings settings, IRateLimiter limiter, DownloadDispatcher dispatcher, 
-            Client wjClient, GameLocator locator, DTOSerializer dtos, IBinaryPatchCache patchCache) : 
+            Client wjClient, IGameLocator locator, DTOSerializer dtos, IBinaryPatchCache patchCache) : 
             base(logger, extractor, hashCache, vfs, manager, settings, limiter, dispatcher, wjClient, locator, dtos, patchCache)
         {
             _mo2Settings = settings;
@@ -54,7 +54,7 @@ namespace Wabbajack.Compiler
             return mo2Folder.Combine("downloads");
         }
 
-        protected async Task<bool> Begin(CancellationToken token)
+        public async Task<bool> Begin(CancellationToken token)
         {
             await _wjClient.SendMetric("begin_compiling", _mo2Settings.Profile);
             

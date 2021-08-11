@@ -49,12 +49,12 @@ namespace Wabbajack.Compiler
         public ConcurrentDictionary<PatchedFromArchive, VirtualFile[]> _patchOptions;
         private readonly DownloadDispatcher _dispatcher;
         protected readonly Client _wjClient;
-        public readonly GameLocator _locator;
+        public readonly IGameLocator _locator;
         private readonly DTOSerializer _dtos;
         public readonly IBinaryPatchCache _patchCache;
 
         public ACompiler(ILogger logger, FileExtractor.FileExtractor extractor, FileHashCache hashCache, Context vfs, TemporaryFileManager manager, CompilerSettings settings,
-            IRateLimiter limiter, DownloadDispatcher dispatcher, Client wjClient, GameLocator locator, DTOSerializer dtos,
+            IRateLimiter limiter, DownloadDispatcher dispatcher, Client wjClient, IGameLocator locator, DTOSerializer dtos,
             IBinaryPatchCache patchCache)
         {
             _logger = logger;

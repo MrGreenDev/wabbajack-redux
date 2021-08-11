@@ -11,7 +11,8 @@ namespace Wabbajack.Compiler
         public static RelativePath BSACreationDir = "TEMP_BSA_FILES".ToRelativePath();
         public static RelativePath MO2ModFolderName = "mods".ToRelativePath();
         public static RelativePath MO2Profiles = "profiles".ToRelativePath();
-        public static RelativePath MO2Saves = "profiles".ToRelativePath();
+        public static RelativePath MO2Downloads = "downloads".ToRelativePath();
+        public static RelativePath MO2Saves = "saves".ToRelativePath();
         public static Version? CurrentMinimumWabbajackVersion = new("2.2.2.0");
         
         public static RelativePath GameFolderFilesDir = "Game Folder Files".ToRelativePath();
