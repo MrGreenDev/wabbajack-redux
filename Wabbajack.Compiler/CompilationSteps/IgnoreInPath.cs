@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.Directives;
 using Wabbajack.Paths;
+#pragma warning disable 1998
 
 namespace Wabbajack.Compiler.CompilationSteps
 {

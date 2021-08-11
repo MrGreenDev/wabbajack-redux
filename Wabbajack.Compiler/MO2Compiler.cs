@@ -213,7 +213,6 @@ namespace Wabbajack.Compiler
             var steps = new List<ICompilationStep>
             {
                 new IgnoreGameFilesIfGameFolderFilesExist(this),
-                new IncludePropertyFiles(this),
                 //new IncludeSteamWorkshopItems(this),
                 new IgnoreSaveFiles(this),
                 new IgnoreInPath(this, "logs".ToRelativePath()),
@@ -226,12 +225,12 @@ namespace Wabbajack.Compiler
                 new IgnorePathContains(this, "SSEEdit Cache"),
                 new IgnoreOtherProfiles(this),
                 new IgnoreDisabledMods(this),
-                new IgnoreTaggedFiles(this, Consts.WABBAJACK_IGNORE_FILES),
-                new IgnoreTaggedFolders(this,Consts.WABBAJACK_IGNORE),
+                // TODO
+                //new IgnoreTaggedFiles(this, Consts.WABBAJACK_IGNORE_FILES),
+                //new IgnoreTaggedFolders(this,Consts.WABBAJACK_IGNORE),
                 new IncludeThisProfile(this),
                 // Ignore the ModOrganizer.ini file it contains info created by MO2 on startup
                 new IncludeStubbedConfigFiles(this),
-                new IncludeLootFiles(this),
                 new IgnoreInPath(this, Consts.GameFolderFilesDir.Combine("Data")),
                 new IgnoreInPath(this, Consts.GameFolderFilesDir.Combine("Papyrus Compiler")),
                 new IgnoreInPath(this, Consts.GameFolderFilesDir.Combine("Skyrim")),
@@ -246,7 +245,8 @@ namespace Wabbajack.Compiler
                 new IgnoreExtension(this, Ext.Log),
                 new DeconstructBSAs(
                     this), // Deconstruct BSAs before building patches so we don't generate massive patch files
-                new MatchSimilarTextures(this),
+                
+                //new MatchSimilarTextures(this),
                 new IncludePatches(this),
                 new IncludeDummyESPs(this),
 
@@ -265,18 +265,20 @@ namespace Wabbajack.Compiler
                 new IncludeRegex(this, "categories.dat$"),
 
                 new IncludeAllConfigs(this),
-                new zEditIntegration.IncludeZEditPatches(this),
+                // TODO
+                //new zEditIntegration.IncludeZEditPatches(this),
                 new IncludeTaggedMods(this, Consts.WABBAJACK_NOMATCH_INCLUDE),
-                new IncludeTaggedFolders(this,Consts.WABBAJACK_NOMATCH_INCLUDE),
-                new IncludeTaggedFiles(this,Consts.WABBAJACK_NOMATCH_INCLUDE_FILES),
+                // TODO
+                //new IncludeTaggedFolders(this,Consts.WABBAJACK_NOMATCH_INCLUDE),
+                //new IncludeTaggedFiles(this,Consts.WABBAJACK_NOMATCH_INCLUDE_FILES),
                 new IncludeRegex(this, ".*\\.txt"),
                 new IgnorePathContains(this,@"\Edit Scripts\Export\"),
                 new IgnoreExtension(this, new Extension(".CACHE")),
                 new DropAll(this)
             };
 
-            if (DisableTextureResizing)
-                steps = steps.Where(s => !(s is MatchSimilarTextures)).ToList();
+            //if (DisableTextureResizing)
+            //    steps = steps.Where(s => !(s is MatchSimilarTextures)).ToList();
 
             return steps;
         }

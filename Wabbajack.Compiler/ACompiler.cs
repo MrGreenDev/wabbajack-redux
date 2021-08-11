@@ -49,7 +49,7 @@ namespace Wabbajack.Compiler
         public ConcurrentDictionary<PatchedFromArchive, VirtualFile[]> _patchOptions;
         private readonly DownloadDispatcher _dispatcher;
         protected readonly Client _wjClient;
-        protected readonly GameLocator _locator;
+        public readonly GameLocator _locator;
         private readonly DTOSerializer _dtos;
         public readonly IBinaryPatchCache _patchCache;
 
