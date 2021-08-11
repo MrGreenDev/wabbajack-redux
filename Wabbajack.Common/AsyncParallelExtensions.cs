@@ -36,7 +36,7 @@ namespace Wabbajack.Common
             cts.Cancel();
         }
 
-        public static async Task<IList<T>> ToList<T>(this IAsyncEnumerable<T> coll)
+        public static async Task<List<T>> ToList<T>(this IAsyncEnumerable<T> coll)
         {
             List<T> lst = new();
             await foreach (var itm in coll) lst.Add(itm);

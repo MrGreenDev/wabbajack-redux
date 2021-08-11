@@ -36,20 +36,20 @@ namespace Wabbajack.Compiler
 
         public ModList ModList = new();
         public AbsolutePath ModListImage;
-        private readonly ILogger _logger;
+        protected readonly ILogger _logger;
         private readonly FileExtractor.FileExtractor _extractor;
         private readonly FileHashCache _hashCache;
-        private readonly Context _vfs;
+        protected readonly Context _vfs;
         private readonly TemporaryFileManager _manager;
         public readonly CompilerSettings _settings;
         private readonly AbsolutePath _stagingFolder;
-        private readonly IRateLimiter _limiter;
+        protected readonly IRateLimiter _limiter;
 
         private ConcurrentDictionary<Directive, RawSourceFile> _sourceFileLinks;
         private ConcurrentDictionary<PatchedFromArchive, VirtualFile[]> _patchOptions;
         private readonly DownloadDispatcher _dispatcher;
-        private readonly Client _wjClient;
-        private readonly GameLocator _locator;
+        protected readonly Client _wjClient;
+        protected readonly GameLocator _locator;
         private readonly DTOSerializer _dtos;
         private readonly IBinaryPatchCache _patchCache;
 
