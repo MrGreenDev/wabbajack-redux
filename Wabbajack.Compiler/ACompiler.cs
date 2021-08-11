@@ -43,15 +43,15 @@ namespace Wabbajack.Compiler
         private readonly TemporaryFileManager _manager;
         public readonly CompilerSettings _settings;
         private readonly AbsolutePath _stagingFolder;
-        protected readonly IRateLimiter _limiter;
+        public readonly IRateLimiter _limiter;
 
-        private ConcurrentDictionary<Directive, RawSourceFile> _sourceFileLinks;
-        private ConcurrentDictionary<PatchedFromArchive, VirtualFile[]> _patchOptions;
+        public ConcurrentDictionary<Directive, RawSourceFile> _sourceFileLinks;
+        public ConcurrentDictionary<PatchedFromArchive, VirtualFile[]> _patchOptions;
         private readonly DownloadDispatcher _dispatcher;
         protected readonly Client _wjClient;
         protected readonly GameLocator _locator;
         private readonly DTOSerializer _dtos;
-        private readonly IBinaryPatchCache _patchCache;
+        public readonly IBinaryPatchCache _patchCache;
 
         public ACompiler(ILogger logger, FileExtractor.FileExtractor extractor, FileHashCache hashCache, Context vfs, TemporaryFileManager manager, CompilerSettings settings,
             IRateLimiter limiter, DownloadDispatcher dispatcher, Client wjClient, GameLocator locator, DTOSerializer dtos,

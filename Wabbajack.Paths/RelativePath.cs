@@ -164,5 +164,7 @@ namespace Wabbajack.Paths
             var ext = Extension;
             return Parts[^1][..^ext.ToString().Length].ToRelativePath();
         }
+        
+        public RelativePath TopParent => new(Parts[..1]);
     }
 }

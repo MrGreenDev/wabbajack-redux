@@ -39,7 +39,7 @@ namespace Wabbajack.Compiler
             cmd.CommandText = @"INSERT INTO PatchCache (FromHash, ToHash, PatchSize, Patch) 
                   VALUES (@fromHash, @toHash, @patchSize, @patch)";
 
-            xxHashAlgorithm aAl = new(), bAl = new();
+            xxHashAlgorithm aAl = new(0), bAl = new(0);
             
             var dataA = Hash.FromULong(aAl.HashBytes(a));;
             var dataB = Hash.FromULong(bAl.HashBytes(b));;

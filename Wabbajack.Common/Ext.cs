@@ -12,5 +12,7 @@ namespace Wabbajack.Common
         public static Extension Bsa = new(".bsa");
         public static Extension Html = new(".html");
         public static Extension Bin = new(".bin");
+        
+        public static Extension Mohidden = new(".mohidden");
     }
 }

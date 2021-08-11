@@ -41,7 +41,7 @@ namespace Wabbajack.Compiler
 
         public IniData MO2Ini { get; }
 
-        public AbsolutePath MO2ProfileDir => _settings.Source.Combine(Consts.MO2ProfilesFolderName, _mo2Settings.Profile);
+        public AbsolutePath MO2ProfileDir => _settings.Source.Combine(Consts.MO2Profiles, _mo2Settings.Profile);
 
         public ConcurrentBag<Directive> ExtraFiles { get; private set; } = new();
         public Dictionary<AbsolutePath, IniData> ModInis { get; set; } = new();
