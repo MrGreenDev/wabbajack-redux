@@ -264,9 +264,9 @@ namespace Wabbajack.Compiler
                 }
             }
 
-            var toFind = await (_settings.Downloads.EnumerateFiles()
-                    .Where(f => f.Extension != Ext.Meta)
-                    .PMap(_limiter, async f => await HasInvalidMeta(f) ? f : default))
+            var toFind = await _settings.Downloads.EnumerateFiles()
+                .Where(f => f.Extension != Ext.Meta)
+                .PMap(_limiter, async f => await HasInvalidMeta(f) ? f : default)
                 .Where(f => f.FileExists())
                 .ToList();
 

@@ -54,7 +54,7 @@ namespace Wabbajack.Paths
         {
             var parts = new string[Parts.Length];
             Array.Copy(Parts, parts, Parts.Length);
-            parts[-1] = parts[-1] + ext;
+            parts[^1] = parts[^1] + ext;
             return new RelativePath(parts);
         }
 

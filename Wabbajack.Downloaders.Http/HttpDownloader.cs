@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -14,7 +15,7 @@ using Wabbajack.Paths;
 
 namespace Wabbajack.Downloaders.Http
 {
-    public class HttpDownloader : ADownloader<DTOs.DownloadStates.Http>
+    public class HttpDownloader : ADownloader<DTOs.DownloadStates.Http>, IUrlDownloader
     {
         private readonly HttpClient _client;
         private readonly IHttpDownloader _downloader;
@@ -43,6 +44,26 @@ namespace Wabbajack.Downloaders.Http
             }
 
             return await _client.SendAsync(msg, token);
+        }
+
+        public override IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData)
+        {
+            if (iniData.ContainsKey("directURL") && Uri.TryCreate(iniData["directURL"], UriKind.Absolute, out var uri))
+            {
+                var state = new DTOs.DownloadStates.Http
+                {
+                    Url = uri
+                };
+                
+                if (iniData.TryGetValue("directURLHeaders", out var headers))
+                {
+                    state.Headers = headers.Split("|").ToArray();
+                }
+
+                return state;
+            }
+
+            return null;
         }
 
         public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.Http archiveState,
@@ -87,5 +108,17 @@ namespace Wabbajack.Downloaders.Http
                 };
             return new[] { $"directURL={state.Url}" };
         }
+
+        public IDownloadState? Parse(Uri uri)
+        {
+            return new DTOs.DownloadStates.Http { Url = uri };
+        }
+
+        public Uri UnParse(IDownloadState state)
+        {
+            return ((DTOs.DownloadStates.Http)state).Url;
+        }
+        
+        public override Priority Priority => Priority.Low;
     }
 }

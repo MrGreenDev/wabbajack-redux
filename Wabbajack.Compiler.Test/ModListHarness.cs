@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
+using Wabbajack.Downloaders;
 using Wabbajack.DTOs;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
@@ -24,8 +25,10 @@ namespace Wabbajack.Compiler.Test
         private readonly string _profileName;
         private readonly IServiceProvider _serviceProvider;
         private readonly TemporaryPath _outputFolder;
+        private readonly DownloadDispatcher _downloadDispatcher;
 
-        public ModListHarness(ILogger<ModListHarness> logger, TemporaryFileManager manager, FileExtractor.FileExtractor fileExtractor, IServiceProvider serviceProvider)
+        public ModListHarness(ILogger<ModListHarness> logger, TemporaryFileManager manager, FileExtractor.FileExtractor fileExtractor, IServiceProvider serviceProvider,
+            DownloadDispatcher downloadDispatcher)
         {
             _logger = logger;
             _manager = manager;
@@ -38,6 +41,7 @@ namespace Wabbajack.Compiler.Test
             _mods = new Dictionary<RelativePath, Mod>();
             _fileExtractor = fileExtractor;
             _serviceProvider = serviceProvider;
+            _downloadDispatcher = downloadDispatcher;
         }
 
         public Mod AddMod(string? name = null)
@@ -68,6 +72,23 @@ namespace Wabbajack.Compiler.Test
 
             await toPath.WithExtension(Ext.Meta)
                 .WriteAllLinesAsync(new[] { "[General]", $"manualURL={path.FileName}" }, CancellationToken.None);
+        }
+
+        public async Task<Mod> InstallMod(Extension ext, Uri uri)
+        {
+            var state = _downloadDispatcher.Parse(uri);
+            var file = (Guid.NewGuid() + ext.ToString()).ToRelativePath();
+            var archive = new Archive { State = state!, Name = file.ToString() };
+            _logger.LogInformation("Downloading: {uri}", uri);
+            await _downloadDispatcher.Download(archive, file.RelativeTo(_downloadPath), CancellationToken.None);
+            await file.WithExtension(Ext.Meta).RelativeTo(_downloadPath)
+                .WriteAllTextAsync(_downloadDispatcher.MetaIniSection(archive), CancellationToken.None);
+            
+            var mod = AddMod(file.WithoutExtension().ToString());
+            
+            _logger.LogInformation("Extracting: {file}", file);
+            await mod.AddFromArchive(file.RelativeTo(_downloadPath));
+            return mod;
         }
     }
 

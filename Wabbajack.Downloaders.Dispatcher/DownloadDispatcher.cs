@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Wabbajack.Common;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
@@ -15,14 +16,14 @@ namespace Wabbajack.Downloaders
 {
     public class DownloadDispatcher
     {
-        private readonly IEnumerable<IDownloader> _downloaders;
+        private readonly IDownloader[] _downloaders;
         private readonly ILogger<DownloadDispatcher> _logger;
         private readonly Client _wjClient;
 
         public DownloadDispatcher(ILogger<DownloadDispatcher> logger, IEnumerable<IDownloader> downloaders,
             Client wjClient)
         {
-            _downloaders = downloaders;
+            _downloaders = downloaders.OrderBy(d => d.Priority).ToArray();
             _logger = logger;
             _wjClient = wjClient;
         }
@@ -38,7 +39,7 @@ namespace Wabbajack.Downloaders
 
         public async Task<IDownloadState?> ResolveArchive(IReadOnlyDictionary<string, string> ini)
         {
-            throw new NotImplementedException();
+            return _downloaders.Select(downloader => downloader.Resolve(ini)).FirstOrDefault(result => result != null);
         }
 
         public async Task<bool> Verify(Archive a, CancellationToken token)

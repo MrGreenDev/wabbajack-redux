@@ -115,6 +115,13 @@ namespace Wabbajack.Downloaders
             return msg;
         }
 
+        public override IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData)
+        {
+            if (iniData.ContainsKey("directURL") && Uri.TryCreate(iniData["directURL"], UriKind.Absolute, out var uri))
+                return Parse(uri);
+            return null;
+        }
+
         public override async Task<bool> Verify(Archive archive, WabbajackCDN archiveState, CancellationToken token)
         {
             return await GetDefinition(archiveState, token) != null;
@@ -138,5 +145,7 @@ namespace Wabbajack.Downloaders
         {
             return ((WabbajackCDN)state).Url;
         }
+        
+        public override Priority Priority => Priority.Normal;
     }
 }

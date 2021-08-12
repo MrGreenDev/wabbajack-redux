@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Wabbajack.Common;
 using Wabbajack.Paths;
 using Xunit;
 
@@ -22,11 +23,9 @@ namespace Wabbajack.Compiler.Test
         {
             using var scope = _serviceProvider.CreateScope();
             var harness = scope.ServiceProvider.GetService<ModListHarness>();
-            var mod = harness.AddMod();
-            var path = await mod.AddData("foo.pez".ToRelativePath(), "Cheese for Everyone!");
 
-            await harness.AddManualDownload(path);
-            
+            await harness.InstallMod(Ext.Zip,
+                new Uri("https://authored-files.wabbajack.org/Tonal%20Architect_WJ_TEST_FILES.zip_9cb97a01-3354-4077-9e4a-7e808d47794f"));
             Assert.True(await harness.Compile());
         }
     }

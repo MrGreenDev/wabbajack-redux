@@ -92,6 +92,25 @@ namespace Wabbajack.Downloaders
             return await _downloader.Download(response, destination, token);
         }
 
+        public override IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData)
+        {
+            if (iniData.TryGetValue("gameName", out var gameName) &&
+                iniData.TryGetValue("modID", out var modId) &&
+                iniData.TryGetValue("fileID", out var fileId))
+            {
+                return new Nexus
+                {
+                    Game = GameRegistry.GetByMO2ArchiveName(gameName)!.Game,
+                    ModID = long.Parse(modId),
+                    FileID = long.Parse(fileId)
+                };
+            }
+
+            return null;
+        }
+
+        public override Priority Priority => Priority.Normal;
+
         public override async Task<bool> Verify(Archive archive, Nexus state, CancellationToken token)
         {
             var fileInfo = await _api.FileInfo(state.Game.MetaData().NexusName!, state.ModID, state.FileID, token);
