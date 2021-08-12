@@ -38,6 +38,9 @@ namespace Wabbajack.Downloaders.Interfaces
             return MetaIni(a, (T)a.State);
         }
 
+        public abstract IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData);
+        public abstract Priority Priority { get; }
+
         public abstract Task<bool> Verify(Archive archive, T archiveState, CancellationToken token);
         public abstract IEnumerable<string> MetaIni(Archive a, T state);
     }
