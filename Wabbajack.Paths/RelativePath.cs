@@ -73,6 +73,7 @@ namespace Wabbajack.Paths
 
         public override string ToString()
         {
+            if (Parts == null || Parts.Length == 0) return "";
             return string.Join('\\', Parts);
         }
 

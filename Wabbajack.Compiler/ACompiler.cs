@@ -47,7 +47,7 @@ namespace Wabbajack.Compiler
 
         public ConcurrentDictionary<Directive, RawSourceFile> _sourceFileLinks;
         public ConcurrentDictionary<PatchedFromArchive, VirtualFile[]> _patchOptions;
-        private readonly DownloadDispatcher _dispatcher;
+        protected readonly DownloadDispatcher _dispatcher;
         protected readonly Client _wjClient;
         public readonly IGameLocator _locator;
         private readonly DTOSerializer _dtos;
@@ -267,6 +267,7 @@ namespace Wabbajack.Compiler
             var toFind = await _settings.Downloads.EnumerateFiles()
                 .Where(f => f.Extension != Ext.Meta)
                 .PMap(_limiter, async f => await HasInvalidMeta(f) ? f : default)
+                .Where(f => f != default)
                 .Where(f => f.FileExists())
                 .ToList();
 
@@ -329,12 +330,12 @@ namespace Wabbajack.Compiler
             {
                 using var za = new ZipArchive(fs, ZipArchiveMode.Create);
 
-                foreach (var f in _settings.OutputFile.EnumerateFiles())
+                foreach (var f in _stagingFolder.EnumerateFiles())
                 {
                     var ze = za.CreateEntry((string)f.FileName);
                     await using var os = ze.Open();
                     await using var ins = f.Open(FileMode.Open);
-                    await ins.CopyToAsync(os);
+                    await ins.CopyToAsync(os, token);
                 }
 
                 // Copy in modimage

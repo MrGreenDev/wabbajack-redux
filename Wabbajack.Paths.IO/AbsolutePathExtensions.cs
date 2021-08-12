@@ -195,6 +195,7 @@ namespace Wabbajack.Paths.IO
 
         public static bool FileExists(this AbsolutePath path)
         {
+            if (path == default) return false;
             return File.Exists(path.ToNativePath());
         }
 

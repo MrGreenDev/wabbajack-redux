@@ -8,6 +8,7 @@ using Wabbajack.Common;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
@@ -177,6 +178,11 @@ namespace Wabbajack.Downloaders
         public string MetaIniSection(Archive archive)
         {
             return string.Join("\n", new[] { "[General]" }.Concat(MetaIni(archive)));
+        }
+
+        public bool IsAllowed(Archive archive, ServerAllowList allowList)
+        {
+            return Downloader(archive).IsAllowed(allowList, archive.State);
         }
     }
 }

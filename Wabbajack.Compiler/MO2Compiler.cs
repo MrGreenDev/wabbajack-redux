@@ -181,7 +181,16 @@ namespace Wabbajack.Compiler
 
         private async Task RunValidation(ModList modList)
         {
-            throw new NotImplementedException();
+            var allowList = await _wjClient.LoadAllowList();
+            foreach (var archive in modList.Archives)
+            {
+                if (!_dispatcher.IsAllowed(archive, allowList))
+                {
+                    _logger.LogCritical("Archive {name}, {primaryKeyString} is not allowed", archive.Name,
+                        archive.State.PrimaryKeyString);
+                    throw new CompilerException("Cannot download");
+                }
+            }
         }
         
 
