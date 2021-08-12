@@ -54,7 +54,7 @@ namespace Wabbajack.Paths
         {
             var parts = new string[Parts.Length];
             Array.Copy(Parts, parts, Parts.Length);
-            parts[-1] = parts[-1] + ext;
+            parts[^1] = parts[^1] + ext;
             return new RelativePath(parts);
         }
 
@@ -65,9 +65,15 @@ namespace Wabbajack.Paths
             Array.Copy(Parts, 0, newArray, basePath.Parts.Length, Parts.Length);
             return new AbsolutePath(newArray, basePath.PathFormat);
         }
+        
+        public bool InFolder(RelativePath parent)
+        {
+            return ArrayExtensions.AreEqual(parent.Parts, 0, Parts, 0, parent.Parts.Length);
+        }
 
         public override string ToString()
         {
+            if (Parts == null || Parts.Length == 0) return "";
             return string.Join('\\', Parts);
         }
 
@@ -153,5 +159,13 @@ namespace Wabbajack.Paths
                 return new RelativePath(newParts);
             }
         }
+
+        public RelativePath WithoutExtension()
+        {
+            var ext = Extension;
+            return Parts[^1][..^ext.ToString().Length].ToRelativePath();
+        }
+        
+        public RelativePath TopParent => new(Parts[..1]);
     }
 }

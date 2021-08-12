@@ -5,10 +5,10 @@ namespace Wabbajack.DTOs
 {
     public class Archive
     {
-        public Hash Hash { get; init; }
-        public string Meta { get; init; } = "";
-        public string Name { get; init; }
-        public ulong Size { get; init; }
-        public IDownloadState State { get; init; }
+        public Hash Hash { get; set; }
+        public string Meta { get; set; } = "";
+        public string Name { get; set; }
+        public ulong Size { get; set; }
+        public IDownloadState State { get; set; }
     }
 }

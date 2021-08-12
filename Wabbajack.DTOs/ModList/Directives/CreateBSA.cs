@@ -11,7 +11,7 @@ namespace Wabbajack.DTOs.Directives
     public class CreateBSA : Directive
     {
         public RelativePath TempID { get; set; }
-        public IArchive State { get; }
+        public IArchive State { get; set; }
         public AFile[] FileStates { get; set; } = Array.Empty<AFile>();
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,6 +63,18 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
                     new Archive
                     {
                         State = new DTOs.DownloadStates.GoogleDrive { Id = "2grLRTrpHxlg7VPxATTFNfq2OkU_Plvh_" }
+                    }
+                },
+                new object[]
+                {
+                    new Archive
+                    {
+                        Hash = Hash.FromBase64("u7aZhqgDA6Y="),
+                        State = new WabbajackCDN { Url = new Uri("https://authored-files.wabbajack.org/Tonal%20Architect_WJ_TEST_FILES.zip_9cb97a01-3354-4077-9e4a-7e808d47794f") }
+                    },
+                    new Archive
+                    {
+                        State = new WabbajackCDN { Url = new Uri("https://authored-files.wabbajack.org/Tonal%20Architect_WJ_TEST_FILES.zip_9cb97a01-3354-4077-9e4a-7e808d47794fFFOOO") }
                     }
                 }
             };

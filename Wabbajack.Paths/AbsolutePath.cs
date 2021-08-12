@@ -175,5 +175,11 @@ namespace Wabbajack.Paths
             parts[^1] = parts[^1] + ext;
             return new AbsolutePath(parts, PathFormat);
         }
+
+        public AbsolutePath AppendToName(string append)
+        {
+            return Parent.Combine((FileName.WithoutExtension() + append).ToRelativePath()
+                .WithExtension(Extension));
+        }
     }
 }

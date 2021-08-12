@@ -58,6 +58,30 @@ namespace Wabbajack.Paths.IO
         {
             return Encoding.UTF8.GetString(file.ReadAllBytes());
         }
+        
+        public static async IAsyncEnumerable<string> ReadAllLinesAsync(this AbsolutePath file)
+        {
+            await using var fs = file.Open(FileMode.Open);
+            var sr = new StreamReader(fs);
+            while (true)
+            {
+                var line = await sr.ReadLineAsync();
+                if (line == null) break;
+                yield return line;
+            }
+        }
+        
+        public static IEnumerable<string> ReadAllLines(this AbsolutePath file)
+        {
+            using var fs = file.Open(FileMode.Open);
+            var sr = new StreamReader(fs);
+            while (true)
+            {
+                var line = sr.ReadLine();
+                if (line == null) break;
+                yield return line;
+            }
+        }
 
         public static async Task<string> ReadAllTextAsync(this AbsolutePath file)
         {
@@ -171,6 +195,7 @@ namespace Wabbajack.Paths.IO
 
         public static bool FileExists(this AbsolutePath path)
         {
+            if (path == default) return false;
             return File.Exists(path.ToNativePath());
         }
 

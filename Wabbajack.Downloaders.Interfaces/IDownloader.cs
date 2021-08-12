@@ -45,6 +45,10 @@ namespace Wabbajack.Downloaders.Interfaces
 
         public bool IsAllowed(ServerAllowList allowList, IDownloadState state);
         IEnumerable<string> MetaIni(Archive a);
+
+        public IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData);
+        
+        public Priority Priority { get; }
     }
 
     public interface IDownloader<T> : IDownloader

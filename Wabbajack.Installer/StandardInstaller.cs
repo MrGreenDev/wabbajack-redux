@@ -37,6 +37,7 @@ namespace Wabbajack.Installer
             base(logger, config, gameLocator, extractor, jsonSerializer, vfs, fileHashCache, downloadDispatcher,
                 limiter, wjClient)
         {
+         
         }
 
         public override async Task<bool> Begin(CancellationToken token)
@@ -356,12 +357,13 @@ namespace Wabbajack.Installer
                 .OfType<MergedPatch>()
                 .PDo(_limiter, async m =>
                 {
-                    _logger.LogInformation("Generating zEdit merge: {to}}", m.To);
+                    _logger.LogInformation("Generating zEdit merge: {to}", m.To);
 
-                    var srcData = (await Task.WhenAll(m.Sources.Select(async s =>
-                            await _configuration.Install.Combine(s.RelativePath).ReadAllBytesAsync(token))))
+                    var srcData = (await m.Sources.Select(async s =>
+                            await _configuration.Install.Combine(s.RelativePath).ReadAllBytesAsync(token))
+                        .ToReadOnlyCollection())
                         .ConcatArrays();
-
+                    
                     var patchData = await LoadBytesFromPath(m.PatchID);
 
                     await using var fs = _configuration.Install.Combine(m.To)

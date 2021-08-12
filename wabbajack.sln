@@ -70,6 +70,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Installer.Test", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Downloaders.Http", "Wabbajack.Downloaders.Http\Wabbajack.Downloaders.Http.csproj", "{85567764-AA68-481A-9E3F-4EE445CA4CBB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Compiler", "Wabbajack.Compiler\Wabbajack.Compiler.csproj", "{9BFC773E-F973-4B04-80EE-752A135C8703}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Compiler.Test", "Wabbajack.Compiler.Test\Wabbajack.Compiler.Test.csproj", "{EF3C231D-063E-4347-96F5-4E113F58F80E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Downloaders.WabbajackCDN", "Wabbajack.Downloaders.WabbajackCDN\Wabbajack.Downloaders.WabbajackCDN.csproj", "{0210A092-4A69-479F-8FF4-120921B5758E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -216,5 +222,17 @@ Global
 		{85567764-AA68-481A-9E3F-4EE445CA4CBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85567764-AA68-481A-9E3F-4EE445CA4CBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{85567764-AA68-481A-9E3F-4EE445CA4CBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BFC773E-F973-4B04-80EE-752A135C8703}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BFC773E-F973-4B04-80EE-752A135C8703}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BFC773E-F973-4B04-80EE-752A135C8703}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BFC773E-F973-4B04-80EE-752A135C8703}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF3C231D-063E-4347-96F5-4E113F58F80E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF3C231D-063E-4347-96F5-4E113F58F80E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF3C231D-063E-4347-96F5-4E113F58F80E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF3C231D-063E-4347-96F5-4E113F58F80E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0210A092-4A69-479F-8FF4-120921B5758E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0210A092-4A69-479F-8FF4-120921B5758E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0210A092-4A69-479F-8FF4-120921B5758E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0210A092-4A69-479F-8FF4-120921B5758E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

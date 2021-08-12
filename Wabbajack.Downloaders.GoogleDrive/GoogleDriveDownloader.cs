@@ -68,6 +68,13 @@ namespace Wabbajack.Downloaders.GoogleDrive
             return await _downloader.Download(response!, destination, token);
         }
 
+        public override IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData)
+        {
+            if (iniData.ContainsKey("directURL") && Uri.TryCreate(iniData["directURL"], UriKind.Absolute, out var uri))
+                return Parse(uri);
+            return null;
+        }
+
         public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.GoogleDrive state,
             CancellationToken token)
         {
@@ -103,5 +110,7 @@ namespace Wabbajack.Downloaders.GoogleDrive
                 return !response.IsSuccessStatusCode ? null : new HttpRequestMessage(HttpMethod.Get, url);
             }
         }
+        
+        public override Priority Priority => Priority.Normal;
     }
 }

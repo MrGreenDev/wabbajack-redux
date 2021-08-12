@@ -4,9 +4,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Wabbajack.Common;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
@@ -15,14 +17,14 @@ namespace Wabbajack.Downloaders
 {
     public class DownloadDispatcher
     {
-        private readonly IEnumerable<IDownloader> _downloaders;
+        private readonly IDownloader[] _downloaders;
         private readonly ILogger<DownloadDispatcher> _logger;
         private readonly Client _wjClient;
 
         public DownloadDispatcher(ILogger<DownloadDispatcher> logger, IEnumerable<IDownloader> downloaders,
             Client wjClient)
         {
-            _downloaders = downloaders;
+            _downloaders = downloaders.OrderBy(d => d.Priority).ToArray();
             _logger = logger;
             _wjClient = wjClient;
         }
@@ -34,6 +36,11 @@ namespace Wabbajack.Downloaders
             var hash = await Downloader(a).Download(a, dest, token);
             _logger.BeginScope("Completed {hash}", hash);
             return hash;
+        }
+
+        public async Task<IDownloadState?> ResolveArchive(IReadOnlyDictionary<string, string> ini)
+        {
+            return _downloaders.Select(downloader => downloader.Resolve(ini)).FirstOrDefault(result => result != null);
         }
 
         public async Task<bool> Verify(Archive a, CancellationToken token)
@@ -148,6 +155,14 @@ namespace Wabbajack.Downloaders
             throw new NotImplementedException($"No downloader for {archive.State.GetType()}");
         }
 
+        public async Task<Archive> FillInMetadata(Archive a)
+        {
+            var downloader = Downloader(a);
+            if (downloader is IMetaStateDownloader msd)
+                return await msd.FillInMetadata(a);
+            return a;
+        }
+
         public IDownloadState? Parse(Uri url)
         {
             return _downloaders.OfType<IUrlDownloader>()
@@ -158,6 +173,16 @@ namespace Wabbajack.Downloaders
         public IEnumerable<string> MetaIni(Archive archive)
         {
             return Downloader(archive).MetaIni(archive);
+        }
+
+        public string MetaIniSection(Archive archive)
+        {
+            return string.Join("\n", new[] { "[General]" }.Concat(MetaIni(archive)));
+        }
+
+        public bool IsAllowed(Archive archive, ServerAllowList allowList)
+        {
+            return Downloader(archive).IsAllowed(allowList, archive.State);
         }
     }
 }
