@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wabbajack.Downloaders.Http;
+using Wabbajack.DTOs.JsonConverters;
 
 namespace Wabbajack.Downloaders
 {
@@ -10,6 +11,9 @@ namespace Wabbajack.Downloaders
             services.AddGoogleDriveDownloader();
             services.AddNexusDownloader();
             services.AddHttpDownloader();
+            services.AddWabbajackCDNDownloader();
+            services.AddDTOSerializer();
+            services.AddDTOConverters();
             services.AddSingleton<DownloadDispatcher>();
         }
     }
