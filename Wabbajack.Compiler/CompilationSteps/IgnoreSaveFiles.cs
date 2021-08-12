@@ -23,7 +23,7 @@ namespace Wabbajack.Compiler.CompilationSteps
             _includeSaves = _compiler._settings.Source.EnumerateFiles(_tag, true).FirstOrDefault() != default;
 
             _profilePaths =
-                MO2Compiler.SelectedProfiles.Select(p => _compiler._settings.Source.Combine(Consts.MO2Profiles, p, Consts.MO2Saves)).ToArray();
+                MO2Compiler._settings.SelectedProfiles.Select(p => _compiler._settings.Source.Combine(Consts.MO2Profiles, p, Consts.MO2Saves)).ToArray();
         }
 
         public override async ValueTask<Directive?> Run(RawSourceFile source)

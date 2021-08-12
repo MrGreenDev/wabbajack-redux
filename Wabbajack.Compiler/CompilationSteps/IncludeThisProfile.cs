@@ -18,7 +18,7 @@ namespace Wabbajack.Compiler.CompilationSteps
         public IncludeThisProfile(ACompiler compiler) : base(compiler)
         {
             _mo2Compiler = (MO2Compiler) compiler;
-            _correctProfiles = _mo2Compiler.SelectedProfiles.Select(p => _mo2Compiler.MO2ProfileDir.Parent.Combine(p)).ToList();
+            _correctProfiles = _mo2Compiler._settings.SelectedProfiles.Select(p => _mo2Compiler.MO2ProfileDir.Parent.Combine(p)).ToList();
         }
 
         public override async ValueTask<Directive?> Run(RawSourceFile source)

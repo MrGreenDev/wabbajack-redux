@@ -45,10 +45,6 @@ namespace Wabbajack.Compiler
 
         public ConcurrentBag<Directive> ExtraFiles { get; private set; } = new();
         public Dictionary<AbsolutePath, IniData> ModInis { get; set; } = new();
-
-        public HashSet<string> SelectedProfiles { get; set; } = new();
-        public bool DisableTextureResizing { get; set; }
-
         public static AbsolutePath GetTypicalDownloadsFolder(AbsolutePath mo2Folder)
         {
             return mo2Folder.Combine("downloads");
@@ -95,6 +91,10 @@ namespace Wabbajack.Compiler
                 .OrderBy(f => f.NestingFactor)
                 .GroupBy(f => f.Hash)
                 .ToDictionary(f => f.Key, f => f.AsEnumerable());
+            
+            AllFiles = mo2Files
+                .DistinctBy(f => f.Path)
+                .ToList();
             
             var dups = AllFiles.GroupBy(f => f.Path)
                 .Where(fs => fs.Count() > 1)

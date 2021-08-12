@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +8,8 @@ using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
 using Wabbajack.Downloaders;
 using Wabbajack.DTOs;
+using Wabbajack.DTOs.JsonConverters;
+using Wabbajack.Installer;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
 
@@ -26,9 +29,10 @@ namespace Wabbajack.Compiler.Test
         private readonly IServiceProvider _serviceProvider;
         private readonly TemporaryPath _outputFolder;
         private readonly DownloadDispatcher _downloadDispatcher;
+        private readonly DTOSerializer _dtos;
 
         public ModListHarness(ILogger<ModListHarness> logger, TemporaryFileManager manager, FileExtractor.FileExtractor fileExtractor, IServiceProvider serviceProvider,
-            DownloadDispatcher downloadDispatcher)
+            DownloadDispatcher downloadDispatcher, DTOSerializer dtos)
         {
             _logger = logger;
             _manager = manager;
@@ -42,27 +46,41 @@ namespace Wabbajack.Compiler.Test
             _fileExtractor = fileExtractor;
             _serviceProvider = serviceProvider;
             _downloadDispatcher = downloadDispatcher;
+            _dtos = dtos;
         }
 
         public Mod AddMod(string? name = null)
         {
             name ??= Guid.NewGuid().ToString();
-            var mod = new Mod(name.ToRelativePath(), _modsFolder.Combine(name), this);
+            var mod = new Mod(name.ToRelativePath(), _modsFolder.Combine(name), this, new HashSet<string>());
+            _mods[name!.ToRelativePath()] = mod;
             return mod;
         }
 
-        public async Task<bool> Compile()
+        public async Task<ModList?> Compile()
         {
+            _source.Combine(Consts.MO2Profiles, _profileName).CreateDirectory();
             using var scope = _serviceProvider.CreateScope();
             var settings = scope.ServiceProvider.GetService<MO2CompilerSettings>();
             settings.Downloads = _downloadPath;
             settings.Game = Game.SkyrimSpecialEdition;
             settings.Source = _source;
             settings.ModListName = _profileName;
+            settings.SelectedProfiles = new []{_profileName};
+            settings.Profile = _profileName;
             settings.OutputFile = _outputFolder.Path.Combine(_profileName + ".wabbajack");
 
+            var modLines = _mods.Select(
+                m => (m.Value.EnabledIn.Contains(_profileName) ? "+" : "-") + m.Key);
+            await _source.Combine(Consts.MO2Profiles, _profileName, Consts.ModListTxt)
+                .WriteAllLinesAsync(modLines,
+                    CancellationToken.None);
+
             var compiler = scope.ServiceProvider.GetService<MO2Compiler>();
-            return await compiler.Begin(CancellationToken.None);
+            if (!await compiler.Begin(CancellationToken.None))
+                return null;
+
+            return await StandardInstaller.LoadFromFile(_dtos, settings.OutputFile);
         }
 
         public async Task AddManualDownload(AbsolutePath path)
@@ -85,6 +103,7 @@ namespace Wabbajack.Compiler.Test
                 .WriteAllTextAsync(_downloadDispatcher.MetaIniSection(archive), CancellationToken.None);
             
             var mod = AddMod(file.WithoutExtension().ToString());
+            mod.EnabledIn.Add(_profileName);
             
             _logger.LogInformation("Extracting: {file}", file);
             await mod.AddFromArchive(file.RelativeTo(_downloadPath));
@@ -92,7 +111,7 @@ namespace Wabbajack.Compiler.Test
         }
     }
 
-    public record Mod(RelativePath Name, AbsolutePath FullPath, ModListHarness Harness)
+    public record Mod(RelativePath Name, AbsolutePath FullPath, ModListHarness Harness, HashSet<string> EnabledIn)
     {
         public async Task<AbsolutePath> AddFile(AbsolutePath src)
         {

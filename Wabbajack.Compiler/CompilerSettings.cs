@@ -16,12 +16,13 @@ namespace Wabbajack.Compiler
         public bool UseGamePaths { get; set; }
         public Game[] OtherGames { get; set; } = Array.Empty<Game>();
         
-        public TimeSpan MaxVerificationTime { get; set; }
+        public TimeSpan MaxVerificationTime { get; set; } = TimeSpan.FromMinutes(1);
         public string ModListName { get; set; }
         public string ModListAuthor { get; set; }
         public string ModListDescription { get; set; }
         public string ModlistReadme { get; set; }
         public Uri? ModListWebsite { get; set; }
         public Version ModlistVersion { get; set; }
+        public string[] SelectedProfiles { get; set; }
     }
 }

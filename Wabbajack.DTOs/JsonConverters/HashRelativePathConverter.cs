@@ -21,7 +21,7 @@ namespace Wabbajack.DTOs.JsonConverters
         public override void Write(Utf8JsonWriter writer, HashRelativePath value, JsonSerializerOptions options)
         {
             writer.WriteStartArray();
-            Span<byte> temp = stackalloc byte[8];
+            Span<byte> temp = stackalloc byte[12];
             value.Hash.ToBase64(temp);
             writer.WriteStringValue(temp);
 

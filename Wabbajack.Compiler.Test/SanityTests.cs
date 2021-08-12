@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
+using System.Linq;
 using Wabbajack.Paths;
 using Xunit;
 
@@ -26,7 +28,12 @@ namespace Wabbajack.Compiler.Test
 
             await harness.InstallMod(Ext.Zip,
                 new Uri("https://authored-files.wabbajack.org/Tonal%20Architect_WJ_TEST_FILES.zip_9cb97a01-3354-4077-9e4a-7e808d47794f"));
-            Assert.True(await harness.Compile());
+            var modlist =  await harness.Compile();
+            Assert.NotNull(modlist);
+            
+            Assert.NotEmpty(modlist.Directives.Select(d => d.To).ToHashSet());
+            
+            Assert.Equal(4, modlist.Directives.Length);
         }
     }
 }
