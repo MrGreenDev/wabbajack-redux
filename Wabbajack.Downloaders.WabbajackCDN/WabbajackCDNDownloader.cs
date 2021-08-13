@@ -25,7 +25,7 @@ namespace Wabbajack.Downloaders
         private readonly IRateLimiter _limiter;
         private readonly ILogger<WabbajackCDNDownloader> _logger;
         
-        public static Dictionary<string, string> DomainRemaps = new Dictionary<string, string>
+        public static Dictionary<string, string> DomainRemaps = new()
         {
             {"wabbajack.b-cdn.net", "authored-files.wabbajack.org"},
             {"wabbajack-mirror.b-cdn.net", "mirror.wabbajack.org"},

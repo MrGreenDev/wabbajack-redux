@@ -18,6 +18,25 @@ namespace Wabbajack.Hashing.xxHash64.Test
             Assert.Equal(HashOld(data), hash.HashBytes(data));
         }
 
+        [Property(MaxTest = 1024 * 1024)]
+        public void ToFromBase64(ulong hash)
+        {
+            var a = new Hash(hash);
+            var b = Hash.FromBase64(a.ToBase64());
+            Assert.Equal(a, b);
+        }
+        
+        [Property(MaxTest = 1024 * 1024)]
+        public void ToFromBase64Span(ulong hash)
+        {
+            hash = ulong.MaxValue - hash;
+            Span<byte> data = stackalloc byte[12];
+            var a = new Hash(hash);
+            a.ToBase64(data);
+            var b = Hash.FromBase64(data);
+            Assert.Equal(a, b);
+        }
+
         private ulong HashOld(byte[] data)
         {
             var config = new xxHashConfig { HashSizeInBits = 64 };

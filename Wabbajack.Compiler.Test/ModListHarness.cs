@@ -12,6 +12,7 @@ using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Installer;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using Xunit;
 
 namespace Wabbajack.Compiler.Test
 {
@@ -30,6 +31,9 @@ namespace Wabbajack.Compiler.Test
         private readonly TemporaryPath _outputFolder;
         private readonly DownloadDispatcher _downloadDispatcher;
         private readonly DTOSerializer _dtos;
+        private readonly AbsolutePath _installDownloads;
+        private readonly AbsolutePath _outputFile;
+        private readonly AbsolutePath _gameFolder;
 
         public ModListHarness(ILogger<ModListHarness> logger, TemporaryFileManager manager, FileExtractor.FileExtractor fileExtractor, IServiceProvider serviceProvider,
             DownloadDispatcher downloadDispatcher, DTOSerializer dtos)
@@ -46,6 +50,10 @@ namespace Wabbajack.Compiler.Test
             _fileExtractor = fileExtractor;
             _serviceProvider = serviceProvider;
             _downloadDispatcher = downloadDispatcher;
+            _gameFolder = _manager.CreateFolder();
+            _outputFile = _outputFolder.Path.Combine(_profileName + ".wabbajack");
+
+            _installDownloads = _installLocation.Combine("downloads");
             _dtos = dtos;
         }
 
@@ -57,18 +65,26 @@ namespace Wabbajack.Compiler.Test
             return mod;
         }
 
+        public async Task<ModList?> CompileAndInstall()
+        {
+            var modlist = await Compile();
+            await Install();
+
+            return modlist;
+        }
+
         public async Task<ModList?> Compile()
         {
             _source.Combine(Consts.MO2Profiles, _profileName).CreateDirectory();
             using var scope = _serviceProvider.CreateScope();
-            var settings = scope.ServiceProvider.GetService<MO2CompilerSettings>();
+            var settings = scope.ServiceProvider.GetService<MO2CompilerSettings>()!;
             settings.Downloads = _downloadPath;
             settings.Game = Game.SkyrimSpecialEdition;
             settings.Source = _source;
             settings.ModListName = _profileName;
             settings.SelectedProfiles = new []{_profileName};
             settings.Profile = _profileName;
-            settings.OutputFile = _outputFolder.Path.Combine(_profileName + ".wabbajack");
+            settings.OutputFile = _outputFile;
 
             var modLines = _mods.Select(
                 m => (m.Value.EnabledIn.Contains(_profileName) ? "+" : "-") + m.Key);
@@ -80,7 +96,34 @@ namespace Wabbajack.Compiler.Test
             if (!await compiler.Begin(CancellationToken.None))
                 return null;
 
-            return await StandardInstaller.LoadFromFile(_dtos, settings.OutputFile);
+            var modlist = await StandardInstaller.LoadFromFile(_dtos, settings.OutputFile);
+            return modlist;
+        }
+
+        public async Task<bool> Install()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var settings = scope.ServiceProvider.GetService<InstallerConfiguration>()!;
+
+
+            settings.Install = _installLocation;
+            settings.Downloads = _installDownloads;
+            settings.ModList = await StandardInstaller.LoadFromFile(_dtos, _outputFile);
+            settings.ModlistArchive = _outputFile;
+            settings.Game = Game.SkyrimSpecialEdition;
+            settings.GameFolder = _gameFolder;
+            settings.SystemParameters = new SystemParameters
+            {
+                ScreenWidth = 1920,
+                ScreenHeight = 1080,
+                SystemMemorySize = 8L * 1024 * 1024 * 1024,
+                SystemPageSize = 8L * 1024 * 1024 * 1024,
+                VideoMemorySize = 8L * 1024 * 1024 * 1024
+            };
+            
+            var installer = scope.ServiceProvider.GetService<StandardInstaller>()!;
+
+            return await installer.Begin(CancellationToken.None);
         }
 
         public async Task AddManualDownload(AbsolutePath path)
@@ -108,6 +151,14 @@ namespace Wabbajack.Compiler.Test
             _logger.LogInformation("Extracting: {file}", file);
             await mod.AddFromArchive(file.RelativeTo(_downloadPath));
             return mod;
+        }
+
+        public void VerifyInstalledFile(AbsolutePath source)
+        {
+            var dest = source.RelativeTo(_source).RelativeTo(_installLocation);
+            _logger.LogInformation("Verifying {file}", source.RelativeTo(_source));
+            Assert.Equal(source.Size(), dest.Size());
+            
         }
     }
 
