@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.DTOs.Validation;
+using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths.IO;
 using Xunit;
 using YamlDotNet.Serialization;
@@ -14,11 +15,13 @@ namespace Wabbajack.DTOs.Test
     {
         private readonly HttpClient _client;
         private readonly DTOSerializer _serializer;
+        private readonly Client _wjClient;
 
-        public ModListTests(DTOSerializer serializer, HttpClient client)
+        public ModListTests(DTOSerializer serializer, HttpClient client, Client wjClient)
         {
             _serializer = serializer;
             _client = client;
+            _wjClient = wjClient;
         }
 
         [Fact]
@@ -62,6 +65,19 @@ namespace Wabbajack.DTOs.Test
 
             Assert.True(list.GoogleIDs.Length > 1);
             Assert.True(list.AllowedPrefixes.Length > 1);
+        }
+
+        [Fact]
+        public async Task CanGetListStatus()
+        {
+            var statuses = await _wjClient.GetListStatuses();
+            Assert.True(statuses.Length > 10);
+
+            foreach (var status in statuses)
+            {
+                var detailed = await _wjClient.GetDetailedStatus(status.MachineURL);
+                Assert.True(detailed.MachineName == status.MachineURL);
+            }
         }
     }
 }

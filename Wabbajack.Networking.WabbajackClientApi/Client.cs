@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.JsonConverters;
+using Wabbajack.DTOs.ServerResponses;
 using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using YamlDotNet.Serialization;
@@ -91,6 +92,19 @@ namespace Wabbajack.Networking.WabbajackClientApi
             msg.Headers.Add("x-compressed-body", "gzip");
             msg.Content = new StreamContent(fs);
             await _client.SendAsync(msg);
+        }
+
+        public async Task<ModListSummary[]> GetListStatuses()
+        {
+            return await _client.GetFromJsonAsync<ModListSummary[]>(
+                $"{_configuration.BuildServerUrl}lists/status.json", _dtos.Options) ?? Array.Empty<ModListSummary>();
+
+        }
+
+        public async Task<DetailedStatus> GetDetailedStatus(string machineURL)
+        {
+            return (await _client.GetFromJsonAsync<DetailedStatus>(
+                $"{_configuration.BuildServerUrl}lists/status/{machineURL}.json", _dtos.Options))!;
         }
     }
 }
