@@ -16,7 +16,7 @@ namespace Wabbajack.DTOs.JsonConverters
         {
             Span<byte> data = stackalloc byte[12];
             value.ToBase64(data);
-            writer.WriteBase64StringValue(data);
+            writer.WriteStringValue(data);
         }
     }
 }

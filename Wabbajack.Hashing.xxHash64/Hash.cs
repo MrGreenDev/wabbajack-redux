@@ -83,7 +83,7 @@ namespace Wabbajack.Hashing.xxHash64
         {
             unsafe
             {
-                Span<byte> buffer = stackalloc byte[12];
+                Span<byte> buffer = stackalloc byte[8];
                 if (!BitConverter.TryWriteBytes(buffer, _code))
                     throw new Exception("Base64 Encoding error");
                 Base64.EncodeToUtf8(buffer, output, out var consumed, out var written);
