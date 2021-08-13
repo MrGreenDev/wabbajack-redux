@@ -1,9 +1,6 @@
-using System;
 using System.IO;
-using Microsoft.VisualBasic.CompilerServices;
 using Octodiff.Core;
 using Octodiff.Diagnostics;
-using Wabbajack.TaskTracking.Interfaces;
 
 namespace Wabbajack.Compiler.PatchCache
 {

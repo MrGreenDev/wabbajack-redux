@@ -23,7 +23,6 @@ using Wabbajack.Installer;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
-using Wabbajack.TaskTracking.Interfaces;
 using Wabbajack.VFS;
 
 namespace Wabbajack.Compiler
