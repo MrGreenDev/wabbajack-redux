@@ -1,6 +1,8 @@
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Wabbajack.Common;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.DTOs.Validation;
 using Wabbajack.Networking.WabbajackClientApi;
@@ -16,12 +18,16 @@ namespace Wabbajack.DTOs.Test
         private readonly HttpClient _client;
         private readonly DTOSerializer _serializer;
         private readonly Client _wjClient;
+        private readonly ILogger<ModListTests> _logger;
+        private readonly IRateLimiter _limiter;
 
-        public ModListTests(DTOSerializer serializer, HttpClient client, Client wjClient)
+        public ModListTests(ILogger<ModListTests> logger, DTOSerializer serializer, HttpClient client, Client wjClient, IRateLimiter limiter)
         {
             _serializer = serializer;
             _client = client;
             _wjClient = wjClient;
+            _logger = logger;
+            _limiter = limiter;
         }
 
         [Fact]
@@ -73,11 +79,12 @@ namespace Wabbajack.DTOs.Test
             var statuses = await _wjClient.GetListStatuses();
             Assert.True(statuses.Length > 10);
 
-            foreach (var status in statuses)
+            await statuses.PDo(_limiter, async status =>
             {
+                _logger.LogInformation("Loading {machineURL}", status.MachineURL);
                 var detailed = await _wjClient.GetDetailedStatus(status.MachineURL);
                 Assert.True(detailed.MachineName == status.MachineURL);
-            }
+            });
         }
     }
 }
