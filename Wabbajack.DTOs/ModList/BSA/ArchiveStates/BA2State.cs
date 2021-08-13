@@ -9,7 +9,8 @@ namespace Wabbajack.DTOs.BSA.ArchiveStates
         GNMF
     }
 
-    [JsonName("BA2State")]
+    [JsonName("BA2State, Compression.BSA")]
+    [JsonAlias("BA2State")]
     public class BA2State : IArchive
     {
         public bool HasNameTable { get; set; }

@@ -2,7 +2,8 @@ using Wabbajack.DTOs.JsonConverters;
 
 namespace Wabbajack.DTOs.BSA.ArchiveStates
 {
-    [JsonName("BSAState")]
+    [JsonName("BSAState, Compression.BSA")]
+    [JsonAlias("BSAState")]
     public class BSAState : IArchive
     {
         public string Magic { get; set; } = string.Empty;

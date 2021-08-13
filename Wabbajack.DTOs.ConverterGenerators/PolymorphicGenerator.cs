@@ -160,7 +160,7 @@ namespace Wabbajack.DTOs.ConverterGenerators
             }
 
             c.Code("default:");
-            c.Code("  throw new JsonException();");
+            c.Code("  throw new JsonException($\"No Type dispatch for {type}\");");
 
             c.Code("}");
             c.Code("}");
