@@ -212,7 +212,7 @@ namespace Wabbajack.Installer
             foreach (var bsa in bsas)
             {
                 _logger.LogInformation("Building {bsaTo}", bsa.To.FileName);
-                var sourceDir = _configuration.Downloads.Combine(BSACreationDir, bsa.TempID);
+                var sourceDir = _configuration.Install.Combine(BSACreationDir, bsa.TempID);
 
                 var a = BSADispatch.CreateBuilder(bsa.State, _manager);
                 var streams = await bsa.FileStates.PMap(_limiter, async state =>

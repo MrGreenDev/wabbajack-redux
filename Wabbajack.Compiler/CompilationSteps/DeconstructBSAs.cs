@@ -104,6 +104,7 @@ namespace Wabbajack.Compiler.CompilationSteps
                 State = bsa.State,
                 FileStates = bsa.Files.Select(f => f.State).ToArray(),
                 To = source.Path,
+                Hash = source.Hash,
                 TempID = (RelativePath)id,
             };
 

@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
 using System.Linq;
+using System.Threading;
+using Wabbajack.Compression.BSA;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.Directives;
 using Wabbajack.DTOs.Directives;
@@ -23,13 +25,20 @@ namespace Wabbajack.Compiler.Test
         private readonly ModListHarness _harness;
         private Mod _mod;
         private ModList? _modlist;
+        private readonly FileExtractor.FileExtractor _fileExtractor;
+        private readonly TemporaryFileManager _manager;
+        private readonly IRateLimiter _limiter;
 
-        public CompilerSanityTests(ILogger<CompilerSanityTests> logger, IServiceProvider serviceProvider)
+        public CompilerSanityTests(ILogger<CompilerSanityTests> logger, IServiceProvider serviceProvider, FileExtractor.FileExtractor fileExtractor, 
+            TemporaryFileManager manager, IRateLimiter limiter)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
             _scope = _serviceProvider.CreateScope();
             _harness = _scope.ServiceProvider.GetService<ModListHarness>()!;
+            _fileExtractor = fileExtractor;
+            _manager = manager;
+            _limiter = limiter;
 
         }
         
@@ -87,6 +96,40 @@ namespace Wabbajack.Compiler.Test
             await CompileAndValidate(4);
             
             Assert.Single(_modlist.Directives.OfType<PatchedFromArchive>());
+            await InstallAndValidate();
+        }
+        
+        [Fact]
+        public async Task CanExtractBSAs()
+        {
+            var bsa = _mod.FullPath.EnumerateFiles(Ext.Bsa).First();
+            await _fileExtractor.ExtractAll(bsa, _mod.FullPath, CancellationToken.None);
+            bsa.Delete();
+            
+            await CompileAndValidate(39);
+            await InstallAndValidate();
+        }
+        
+        [Fact]
+        public async Task CanRecreateBSAs()
+        {
+            var bsa = _mod.FullPath.EnumerateFiles(Ext.Bsa).First();
+            await _fileExtractor.ExtractAll(bsa, _mod.FullPath, CancellationToken.None);
+
+            var reader = await BSADispatch.Open(bsa);
+            var bsaState = reader.State;
+            var fileStates = reader.Files.Select(f => f.State).ToArray();
+            bsa.Delete();
+
+            var creator = BSADispatch.CreateBuilder(bsaState, _manager);
+            await fileStates.Take(2).PDo(_limiter, async f => await creator.AddFile(f, f.Path.RelativeTo(_mod.FullPath).Open(FileMode.Open),CancellationToken.None));
+            {
+                await using var fs = bsa.Open(FileMode.Create, FileAccess.Write);
+                await creator.Build(fs, CancellationToken.None);
+            }
+
+            await CompileAndValidate(42);
+            Assert.Single(_modlist.Directives.OfType<CreateBSA>());
             await InstallAndValidate();
         }
 
