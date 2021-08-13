@@ -207,6 +207,15 @@ namespace Wabbajack.Paths.IO
                 .Select(file => file.ToAbsolutePath());
         }
 
+        
+        public static IEnumerable<AbsolutePath> EnumerateFiles(this AbsolutePath path, Extension pattern,
+            bool recursive = true)
+        {
+            return Directory.EnumerateFiles(path.ToString(), "*" + pattern,
+                    recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                .Select(file => file.ToAbsolutePath());
+        }
+
 
         public static IEnumerable<AbsolutePath> EnumerateDirectories(this AbsolutePath path, bool recursive = true)
         {

@@ -152,10 +152,10 @@ namespace Wabbajack.Installer
                         {
                             await using var s = await sf.GetStream();
                             s.Position = 0;
-                            var patchDataStream = await InlinedFileStream(pfa.PatchID);
+                            await using var patchDataStream = await InlinedFileStream(pfa.PatchID);
                             var toFile = file.To.RelativeTo(_configuration.Install);
                             {
-                                await using var os = toFile.Open(FileMode.Create, FileAccess.Read, FileShare.None);
+                                await using var os = toFile.Open(FileMode.Create, FileAccess.ReadWrite, FileShare.None);
                                 await BinaryPatching.ApplyPatch(s, patchDataStream, os);
                             }
                         }

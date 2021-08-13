@@ -381,7 +381,7 @@ namespace Wabbajack.Compiler
             _logger.LogInformation("Gathering patch files");
 
             var toBuild = InstallDirectives.OfType<PatchedFromArchive>()
-                .Where(p => _patchOptions[p].Length > 0)
+                .Where(p => _patchOptions.GetValueOrDefault(p, Array.Empty<VirtualFile>()).Length > 0)
                 .SelectMany(p => _patchOptions[p].Select(c => new PatchedFromArchive
                 {
                     To = p.To,
