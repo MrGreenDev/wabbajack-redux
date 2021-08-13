@@ -173,8 +173,7 @@ namespace Wabbajack.Compiler.Test
         
         public async Task AddFromArchive(AbsolutePath src)
         {
-            var dest = FullPath.Combine(src.FileName);
-            await Harness._fileExtractor.ExtractAll(src, dest, CancellationToken.None);
+            await Harness._fileExtractor.ExtractAll(src, FullPath, CancellationToken.None);
         }
 
         public async Task<AbsolutePath> AddData(RelativePath path, string data)

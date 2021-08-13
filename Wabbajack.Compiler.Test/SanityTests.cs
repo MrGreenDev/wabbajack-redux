@@ -132,6 +132,24 @@ namespace Wabbajack.Compiler.Test
             Assert.Single(_modlist.Directives.OfType<CreateBSA>());
             await InstallAndValidate();
         }
+        
+        [Fact]
+        public async Task DuplicateFilesAreCopied()
+        {
+            foreach (var file in _mod.FullPath.EnumerateFiles(Ext.Esp))
+            {
+                var newPath = file.RelativeTo(_mod.FullPath).RelativeTo(_mod.FullPath.Combine("duplicates"));
+                newPath.Parent.CreateDirectory();
+                await file.CopyToAsync(newPath, true, CancellationToken.None);
+            }
+
+            await CompileAndValidate(5);
+
+            foreach (var directive in _modlist!.Directives.OfType<FromArchive>()) 
+                Assert.Equal(_modlist.Archives.First().Hash, directive.ArchiveHashPath.Hash);
+            
+            await InstallAndValidate();
+        }
 
 
     }
