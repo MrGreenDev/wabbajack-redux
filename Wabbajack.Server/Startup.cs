@@ -61,13 +61,10 @@ namespace Wabbajack.Server
             services.AddSingleton<DiscordWebHook>();
             services.AddSingleton<NexusKeyMaintainance>();
             services.AddSingleton<PatchBuilder>();
-            services.AddSingleton<CDNMirrorList>();
-            services.AddSingleton<NexusPermissionsUpdater>();
             services.AddSingleton<MirrorUploader>();
             services.AddSingleton<MirrorQueueService>();
             services.AddSingleton<Watchdog>();
             services.AddSingleton<DiscordFrontend>();
-            services.AddSingleton<AuthoredFilesCleanup>();
             services.AddSingleton<MetricsKeyCache>();
             services.AddResponseCompression(options =>
             {
@@ -120,7 +117,6 @@ namespace Wabbajack.Server
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseNexusPoll();
-            app.UseArchiveMaintainer();
             app.UseModListDownloader();
             app.UseResponseCompression();
             
@@ -130,8 +126,6 @@ namespace Wabbajack.Server
             app.UseService<DiscordWebHook>();
             app.UseService<NexusKeyMaintainance>();
             app.UseService<PatchBuilder>();
-            app.UseService<CDNMirrorList>();
-            app.UseService<NexusPermissionsUpdater>();
             app.UseService<MirrorUploader>();
             //app.UseService<MirrorQueueService>();
             app.UseService<Watchdog>();

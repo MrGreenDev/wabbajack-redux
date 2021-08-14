@@ -84,7 +84,7 @@ namespace Wabbajack.Downloaders.Http
 
             response.Dispose();
             if (archive.Size != 0 && headerContentSize != 0)
-                return archive.Size == headerContentSize;
+                return archive.Size == (long)headerContentSize;
             return true;
         }
 

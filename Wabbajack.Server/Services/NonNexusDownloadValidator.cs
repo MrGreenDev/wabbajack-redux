@@ -2,12 +2,9 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Dapper;
 using Microsoft.Extensions.Logging;
-using Splat;
 using Wabbajack.BuildServer;
 using Wabbajack.Common;
-using Wabbajack.Lib.Downloaders;
 using Wabbajack.Server.DataLayer;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 

@@ -533,7 +533,7 @@ namespace Wabbajack.Compiler
                 State = state,
                 Name = archive.Name ?? "", 
                 Hash = archive.File.Hash, 
-                Size = (ulong)archive.File.Size
+                Size = archive.File.Size
             };
 
             var downloader = _dispatcher.Downloader(result);

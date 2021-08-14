@@ -5,12 +5,10 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic.CompilerServices;
-using OMODFramework;
 using Wabbajack.BuildServer;
-using Wabbajack.Common;
 using Wabbajack.DTOs;
 using Wabbajack.Server.DataLayer;
-using Utils = Wabbajack.Common.Utils;
+using Wabbajack.Server.TokenProviders;
 
 namespace Wabbajack.Server.Services
 {
@@ -23,8 +21,9 @@ namespace Wabbajack.Server.Services
         private SqlService _sql;
         private MetricsKeyCache _keyCache;
         private ListValidator _listValidator;
+        private readonly IDiscordToken _token;
 
-        public DiscordFrontend(ILogger<DiscordFrontend> logger, AppSettings settings, QuickSync quickSync, ListValidator listValidator, SqlService sql, MetricsKeyCache keyCache)
+        public DiscordFrontend(ILogger<DiscordFrontend> logger, AppSettings settings, QuickSync quickSync, ListValidator listValidator, SqlService sql, MetricsKeyCache keyCache, IDiscordToken token)
         {
             _logger = logger;
             _settings = settings;
@@ -39,6 +38,7 @@ namespace Wabbajack.Server.Services
             _sql = sql;
             _keyCache = keyCache;
             _listValidator = listValidator;
+            _token = token;
         }
 
         private async Task MessageReceivedAsync(SocketMessage arg)
@@ -191,10 +191,10 @@ namespace Wabbajack.Server.Services
             }
         }
 
-        public void Start()
+        public async Task Start()
         {
-            _client.LoginAsync(TokenType.Bot, Utils.FromEncryptedJson<string>("discord-key").Result).Wait();
-            _client.StartAsync().Wait();
+            await _client.LoginAsync(TokenType.Bot, await _token.Get());
+            await _client.StartAsync();
         }
         
     }

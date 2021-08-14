@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using Discord.Net;
 using Microsoft.Extensions.Logging;
 using Wabbajack.BuildServer;
-using Wabbajack.Common;
-using Wabbajack.Common.Exceptions;
-using Wabbajack.Lib.NexusApi;
+using Wabbajack.Networking.NexusApi;
+using Wabbajack.Networking.NexusApi.DTOs;
 using Wabbajack.Server.DataLayer;
 
 namespace Wabbajack.Server.Services
@@ -16,12 +18,13 @@ namespace Wabbajack.Server.Services
         private SqlService _sql;
         private string _selfKey;
 
-        public NexusKeyMaintainance(ILogger<NexusKeyMaintainance> logger, AppSettings settings, SqlService sql, QuickSync quickSync) : base(logger, settings, quickSync, TimeSpan.FromHours(4))
+        public NexusKeyMaintainance(ILogger<NexusKeyMaintainance> logger, AppSettings settings, SqlService sql, QuickSync quickSync) 
+            : base(logger, settings, quickSync, TimeSpan.FromHours(4))
         {
             _sql = sql;
         }
 
-        public async Task<NexusApiClient> GetClient()
+        public async Task<NexusApi> GetClient()
         {
             var keys = await _sql.GetNexusApiKeysWithCounts(1500);
             foreach (var key in keys.Where(k => k.Key != _selfKey))
@@ -83,28 +86,23 @@ namespace Wabbajack.Server.Services
         }
     }
 
-    public class TrackingClient : NexusApiClient
+    public class TrackingClient : NexusApi
     {
         private SqlService _sql;
-        public TrackingClient(SqlService sql, (string Key, int Daily, int Hourly) key) : base(key.Key)
+
+
+        protected override async Task<(T data, ResponseMetadata header)> Send<T>(HttpRequestMessage msg, CancellationToken token = default)
         {
-            _sql = sql;
-            DailyRemaining = key.Daily;
-            HourlyRemaining = key.Hourly;
+            var (t, headers) = await base.Send<T>(msg, token);
+
+            await _sql.SetNexusAPIKey(await ApiKey.GetKey(), headers.DailyRemaining, headers.HourlyRemaining);
+            return (t, headers);
         }
 
-        protected override async Task UpdateRemaining(HttpResponseMessage response)
+        public TrackingClient(ApiKey apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo, JsonSerializerOptions jsonOptions, SqlService sql) 
+            : base(apiKey, logger, client, appInfo, jsonOptions)
         {
-            await base.UpdateRemaining(response);
-            try
-            {
-                var dailyRemaining = int.Parse(response.Headers.GetValues("x-rl-daily-remaining").First());
-                var hourlyRemaining = int.Parse(response.Headers.GetValues("x-rl-hourly-remaining").First());
-                await _sql.SetNexusAPIKey(ApiKey, dailyRemaining, hourlyRemaining);
-            }
-            catch (Exception)
-            {
-            }
+            _sql = sql;
         }
     }
 }

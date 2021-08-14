@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.BuildServer;
-using Wabbajack.Common;
-using Wabbajack.Lib.Downloaders;
-using Wabbajack.Lib.NexusApi;
 using Wabbajack.Networking.NexusApi;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;

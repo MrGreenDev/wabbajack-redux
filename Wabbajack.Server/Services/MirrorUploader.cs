@@ -6,15 +6,12 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using FluentFTP;
-using FluentFTP.Helpers;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Utilities.Collections;
 using Wabbajack.BuildServer;
-using Wabbajack.BuildServer.Controllers;
 using Wabbajack.Common;
-using Wabbajack.Lib;
-using Wabbajack.Lib.AuthorApi;
-using Wabbajack.Lib.FileUploader;
+using Wabbajack.Hashing.xxHash64;
+using Wabbajack.Networking.WabbajackClientApi;
+using Wabbajack.Paths;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
 
@@ -145,11 +142,11 @@ namespace Wabbajack.Server.Services
             goto TOP;
         }
 
-        private static async Task<FtpClient> GetClient(BunnyCdnFtpInfo creds = null)
+        private static async Task<FtpClient> GetClient(FtpSite creds = null)
         {
             return await CircuitBreaker.WithAutoRetryAllAsync<FtpClient>(async () =>
             {
-                creds ??= await BunnyCdnFtpInfo.GetCreds(StorageSpace.Mirrors);
+                creds ??= await FtpSite.GetCreds(StorageSpace.Mirrors);
 
                 var ftpClient = new FtpClient(creds.Hostname, new NetworkCredential(creds.Username, creds.Password));
                 ftpClient.DataConnectionType = FtpDataConnectionType.EPSV;
@@ -188,7 +185,7 @@ namespace Wabbajack.Server.Services
             
             foreach (var (hash, _) in fromSql.Where(s => s.Value))
             {
-                Utils.Log($"Removing {hash} from SQL it's no longer in the CDN");
+                _logger.LogInformation("Removing {hash} from SQL it's no longer in the CDN", hash);
                 if (!existingHashes.Contains(hash))
                     await _sql.DeleteMirroredFile(hash);
             }
@@ -200,7 +197,7 @@ namespace Wabbajack.Server.Services
             {
                 await _discord.Send(Channel.Spam,
                     new DiscordMessage {Content = $"Removing mirrored file {hash}, as it's no longer in sql"});
-                Utils.Log($"Removing {hash} from the CDN it's no longer in SQL");
+                _logger.LogInformation("Removing {hash} from the CDN it's no longer in SQL", hash);
                 await client.DeleteDirectoryAsync(hash.ToHex());
             }
         }

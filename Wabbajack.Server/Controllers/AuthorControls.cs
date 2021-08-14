@@ -3,11 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
-using FluentFTP;
 using FluentFTP.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,8 +12,8 @@ using Microsoft.Extensions.Logging;
 using Nettle;
 using Wabbajack.Common;
 using Wabbajack.DTOs.GitHub;
-using Wabbajack.Lib.GitHub;
-using Wabbajack.Lib.ModListRegistry;
+using Wabbajack.DTOs.JsonConverters;
+using Wabbajack.Networking.GitHub;
 using Wabbajack.Paths.IO;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.Services;
@@ -32,14 +29,19 @@ namespace Wabbajack.BuildServer.Controllers
         private readonly QuickSync _quickSync;
         private readonly HttpClient _client;
         private readonly AppSettings _settings;
+        private readonly DTOSerializer _dtos;
+        private readonly Client _gitHubClient;
 
-        public AuthorControls(ILogger<AuthorControls> logger, SqlService sql, QuickSync quickSync, HttpClient client, AppSettings settings)
+        public AuthorControls(ILogger<AuthorControls> logger, SqlService sql, QuickSync quickSync, HttpClient client, AppSettings settings, DTOSerializer dtos,
+            Client gitHubClient)
         {
             _logger = logger;
             _sql = sql;
             _quickSync = quickSync;
             _client = client;
             _settings = settings;
+            _dtos = dtos;
+            _gitHubClient = gitHubClient;
         }
         
         [Route("login/{authorKey}")]
@@ -56,10 +58,9 @@ namespace Wabbajack.BuildServer.Controllers
         {
             var user = User.FindFirstValue(ClaimTypes.Name);
             List<string> lists = new();
-            var client = await Client.Get();
             foreach (var file in Enum.GetValues<List>())
             {
-                lists.AddRange((await client.GetData(file)).Lists.Where(l => l.Maintainers.Contains(user))
+                lists.AddRange((await _client.GetData(file)).Lists.Where(l => l.Maintainers.Contains(user))
                     .Select(lst => lst.Links.MachineURL));
             }
 
@@ -71,11 +72,10 @@ namespace Wabbajack.BuildServer.Controllers
         public async Task<IActionResult> PostDownloadMetadata()
         {
             var user = User.FindFirstValue(ClaimTypes.Name);
-            var data = (await Request.Body.ReadAllTextAsync()).FromJsonString<UpdateRequest>();
-            var client = await Client.Get();
+            var data = await _dtos.DeserializeAsync<UpdateRequest>(Request.Body);
             try
             {
-                await client.UpdateList(user, data);
+                await _client.UpdateList(user, data);
                 await _quickSync.Notify<ModListDownloader>();
             }
             catch (Exception ex)

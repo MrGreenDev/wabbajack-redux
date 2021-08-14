@@ -2,7 +2,9 @@
 using System.Net;
 using System.Threading.Tasks;
 using FluentFTP;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic.CompilerServices;
+using Wabbajack.Common;
 
 namespace Wabbajack.Server.DTOs
 {
@@ -13,20 +15,15 @@ namespace Wabbajack.Server.DTOs
         Mirrors
     }
     
-    public class BunnyCdnFtpInfo
+    public class FtpSite
     {
         public string Username { get; set; }
         public string Password { get; set; }
         public string Hostname { get; set; }
 
-        public static async Task<BunnyCdnFtpInfo> GetCreds(StorageSpace space)
+        public async Task<FtpClient> GetClient(ILogger logger)
         {
-            return (await Utils.FromEncryptedJson<Dictionary<string, BunnyCdnFtpInfo>>("bunnycdn"))[space.ToString()];
-        }
-        
-        public async Task<FtpClient> GetClient()
-        {
-            return await CircuitBreaker.WithAutoRetryAllAsync(async () =>
+            return await CircuitBreaker.WithAutoRetryAllAsync(logger, async () =>
             {
                 var ftpClient = new FtpClient(Hostname, new NetworkCredential(Username, Password));
                 await ftpClient.ConnectAsync();

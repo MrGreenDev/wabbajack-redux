@@ -1,16 +1,10 @@
 ﻿using System;
 using System.IO.Compression;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Wabbajack.BuildServer;
-using Wabbajack.Common;
-using Wabbajack.Lib;
-using Wabbajack.Lib.Downloaders;
-using Wabbajack.Lib.ModListRegistry;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
 

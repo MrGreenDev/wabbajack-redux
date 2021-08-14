@@ -10,14 +10,12 @@ namespace Wabbajack.Server.DataLayer
     public partial class SqlService
     {
         private AppSettings _settings;
-        private Task<BunnyCdnFtpInfo> _mirrorCreds;
         private readonly DTOSerializer _dtos;
         private readonly DownloadDispatcher _dispatcher;
 
         public SqlService(AppSettings settings, DTOSerializer dtos, DownloadDispatcher dispatcher)
         {
             _settings = settings;
-            _mirrorCreds = BunnyCdnFtpInfo.GetCreds(StorageSpace.Mirrors);
             _dtos = dtos;
             _dispatcher = dispatcher;
             // Ugly hack, but the SQL mappers need it
