@@ -2,7 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Wabbajack.Common;
+using Wabbajack.DTOs.JsonConverters;
+using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Server.DataLayer;
 
 namespace Wabbajack.BuildServer.Controllers
@@ -14,18 +15,20 @@ namespace Wabbajack.BuildServer.Controllers
     {
         private SqlService _sql;
         private ILogger<ModFilesForHash> _logger;
+        private readonly DTOSerializer _dtos;
 
-        public ModFilesForHash(ILogger<ModFilesForHash> logger, SqlService sql)
+        public ModFilesForHash(ILogger<ModFilesForHash> logger, SqlService sql, DTOSerializer dtos)
         {
             _logger = logger;
             _sql = sql;
+            _dtos = dtos;
         }
 
         [HttpGet("by_hash/{hashAsHex}")]
         public async Task<IActionResult> GetByHash(string hashAsHex)
         {
             var files = await _sql.ResolveDownloadStatesByHash(Hash.FromHex(hashAsHex));
-            return Ok(files.ToJson());
+            return Ok(_dtos.Serialize(files));
         }
     }
 }

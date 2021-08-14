@@ -1,13 +1,16 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System;
+using Microsoft.Extensions.Configuration;
 using Wabbajack.Paths;
 
 namespace Wabbajack.BuildServer
 {
     public class AppSettings
     {
+        public bool TestMode { get; set; }
         public string AuthorAPIKeyFile { get; set; } = "exported_users";
 
         public string CompressedBodyHeader { get; set; } = "x-compressed-body";
+        public string WabbajackBuildServerUri { get; set; } = "https://build.wabbajack.org/";
 
         public AppSettings(IConfiguration config)
         {

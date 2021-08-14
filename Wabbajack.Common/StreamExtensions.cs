@@ -42,5 +42,11 @@ namespace Wabbajack.Common
 
             await output.FlushAsync(token);
         }
+
+        public static string ReadAllText(this Stream stream)
+        {
+            using var sr = new StreamReader(stream);
+            return sr.ReadToEnd();
+        }
     }
 }

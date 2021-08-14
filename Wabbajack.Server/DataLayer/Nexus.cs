@@ -32,13 +32,13 @@ namespace Wabbajack.Server.DataLayer
             return deleted;
         }
         
-        public async Task<ModInfo> GetNexusModInfoString(Game game, long modId)
+        public async Task<ModInfo?> GetNexusModInfoString(Game game, long modId)
         {
             await using var conn = await Open();
             var result = await conn.QueryFirstOrDefaultAsync<string>(
                 "SELECT Data FROM dbo.NexusModInfos WHERE Game = @Game AND @ModId = ModId",
                 new {Game = game.MetaData().NexusGameId, ModId = modId});
-            return result == null ? null : JsonConvert.DeserializeObject<ModInfo>(result);
+            return result == null ? null : _dtos.Deserialize<ModInfo>(result);
         }
         
         public async Task AddNexusModInfo(Game game, long modId, DateTime lastCheckedUtc, ModInfo data)
@@ -56,7 +56,7 @@ namespace Wabbajack.Server.DataLayer
                     Game = game.MetaData().NexusGameId,
                     ModId = modId,
                     LastChecked = lastCheckedUtc,
-                    Data = JsonConvert.SerializeObject(data)
+                    Data = _dtos.Serialize(data)
                 });
             
         }
@@ -76,7 +76,7 @@ namespace Wabbajack.Server.DataLayer
                     Game = game.MetaData().NexusGameId,
                     ModId = modId,
                     LastChecked = lastCheckedUtc,
-                    Data = JsonConvert.SerializeObject(data)
+                    Data = _dtos.Serialize(data)
                 });
         }
         
@@ -99,13 +99,13 @@ namespace Wabbajack.Server.DataLayer
                 });
         }
         
-        public async Task<ModFiles> GetModFiles(Game game, long modId)
+        public async Task<ModFiles?> GetModFiles(Game game, long modId)
         {
             await using var conn = await Open();
             var result = await conn.QueryFirstOrDefaultAsync<string>(
                 "SELECT Data FROM dbo.NexusModFiles WHERE Game = @Game AND @ModId = ModId",
                 new {Game = game.MetaData().NexusGameId, ModId = modId});
-            return result == null ? null : JsonConvert.DeserializeObject<ModFiles>(result);
+            return result == null ? null : _dtos.Deserialize<ModFiles>(result);
         }
 
         public async Task PurgeNexusCache(long modId)
@@ -130,13 +130,13 @@ namespace Wabbajack.Server.DataLayer
             }
         }
 
-        public async Task<ModFile> GetModFile(Game game, long modId, long fileId)
+        public async Task<ModFile?> GetModFile(Game game, long modId, long fileId)
         {
             await using var conn = await Open();
             var result = await conn.QueryFirstOrDefaultAsync<string>(
                 "SELECT Data FROM dbo.NexusModFile WHERE Game = @Game AND @ModId = ModId AND @FileId = FileId",
                 new {Game = game.MetaData().NexusGameId, ModId = modId, FileId = fileId});
-            return result == null ? null : JsonConvert.DeserializeObject<ModFile>(result);
+            return result == null ? null : _dtos.Deserialize<ModFile>(result);
         }
         
         public async Task AddNexusModFile(Game game, long modId, long fileId, DateTime lastCheckedUtc, ModFile data)
@@ -152,7 +152,7 @@ namespace Wabbajack.Server.DataLayer
                     ModId = modId,
                     FileId = fileId,
                     LastChecked = lastCheckedUtc,
-                    Data = JsonConvert.SerializeObject(data)
+                    Data = _dtos.Serialize(data)
                 });
         }
         

@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Nettle;
@@ -16,8 +12,6 @@ using Wabbajack.Server;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
 using Wabbajack.Server.Services;
-using WebSocketSharp;
-using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Wabbajack.BuildServer.Controllers
 {
@@ -191,8 +185,8 @@ namespace Wabbajack.BuildServer.Controllers
                 {
                     var resource = Assembly.GetExecutingAssembly()
                         .GetManifestResourceStream("Wabbajack.Server.Controllers.Templates.TotalListTemplate.html")!
-                        .ReadAll();
-                    _totalListTemplate = NettleEngine.GetCompiler().Compile(Encoding.UTF8.GetString(resource));
+                        .ReadAllText();
+                    _totalListTemplate = NettleEngine.GetCompiler().Compile(resource);
                 }
 
                 return _totalListTemplate;

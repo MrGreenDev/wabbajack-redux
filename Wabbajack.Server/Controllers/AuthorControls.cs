@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Nettle;
 using Wabbajack.Common;
+using Wabbajack.DTOs.GitHub;
 using Wabbajack.Lib.GitHub;
 using Wabbajack.Lib.ModListRegistry;
 using Wabbajack.Paths.IO;
@@ -30,13 +31,15 @@ namespace Wabbajack.BuildServer.Controllers
         private SqlService _sql;
         private readonly QuickSync _quickSync;
         private readonly HttpClient _client;
+        private readonly AppSettings _settings;
 
-        public AuthorControls(ILogger<AuthorControls> logger, SqlService sql, QuickSync quickSync, HttpClient client)
+        public AuthorControls(ILogger<AuthorControls> logger, SqlService sql, QuickSync quickSync, HttpClient client, AppSettings settings)
         {
             _logger = logger;
             _sql = sql;
             _quickSync = quickSync;
             _client = client;
+            _settings = settings;
         }
         
         [Route("login/{authorKey}")]
@@ -44,7 +47,7 @@ namespace Wabbajack.BuildServer.Controllers
         public async Task<IActionResult> Login(string authorKey)
         {
             Response.Cookies.Append(ApiKeyAuthenticationHandler.ApiKeyHeaderName, authorKey);
-            return Redirect($"{Consts.WabbajackBuildServerUri}author_controls/home");
+            return Redirect($"{_settings.WabbajackBuildServerUri}author_controls/home");
         }
 
         [Route("lists")]
@@ -54,7 +57,7 @@ namespace Wabbajack.BuildServer.Controllers
             var user = User.FindFirstValue(ClaimTypes.Name);
             List<string> lists = new();
             var client = await Client.Get();
-            foreach (var file in Enum.GetValues<Client.List>())
+            foreach (var file in Enum.GetValues<List>())
             {
                 lists.AddRange((await client.GetData(file)).Lists.Where(l => l.Maintainers.Contains(user))
                     .Select(lst => lst.Links.MachineURL));

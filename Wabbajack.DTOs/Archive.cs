@@ -8,7 +8,7 @@ namespace Wabbajack.DTOs
         public Hash Hash { get; set; }
         public string Meta { get; set; } = "";
         public string Name { get; set; }
-        public ulong Size { get; set; }
+        public long Size { get; set; }
         public IDownloadState State { get; set; }
     }
 }

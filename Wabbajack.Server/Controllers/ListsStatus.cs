@@ -7,17 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Nettle;
 using Wabbajack.Common;
-using Wabbajack.Common.Serialization.Json;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.ServerResponses;
-using Wabbajack.Lib;
-using Wabbajack.Lib.ModListRegistry;
 using Wabbajack.Server;
-using Wabbajack.Server.DataLayer;
-using Wabbajack.Server.DTOs;
 using Wabbajack.Server.Services;
-using ArchiveStatus = Wabbajack.Server.DTOs.ArchiveStatus;
-
 namespace Wabbajack.BuildServer.Controllers
 {
     [ApiController]
@@ -172,11 +165,11 @@ namespace Wabbajack.BuildServer.Controllers
         public async Task<IActionResult> HandleGetListJson(string Name)
         {
             var lst = await DetailedStatus(Name);
-            if (lst == null) return NotFound();
-            return Ok(lst.ToJson());
+            if (lst == default) return NotFound();
+            return Ok(lst);
         }
         
-        private async Task<DetailedStatus> DetailedStatus(string Name)
+        private async Task<DetailedStatus?> DetailedStatus(string Name)
         {
             var results = _validator.Summaries
                 .Select(d => d.Detailed)
@@ -190,7 +183,7 @@ namespace Wabbajack.BuildServer.Controllers
                 if (string.IsNullOrWhiteSpace(itm.Archive.Name)) 
                     itm.Archive.Name = itm.Archive.State.PrimaryKeyString;
             });
-            results.Archives = results.Archives.OrderBy(a => a.Name).ToList();
+            results.Archives = results.Archives.OrderBy(a => a.Name).ToArray();
             return results;
         }
 

@@ -3,21 +3,21 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.BuildServer;
 using Wabbajack.Common;
+using Wabbajack.Downloaders;
 using Wabbajack.DTOs;
+using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.ServerResponses;
-using Wabbajack.Lib;
-using Wabbajack.Lib.Downloaders;
-using Wabbajack.Lib.ModListRegistry;
-using Wabbajack.Lib.NexusApi;
+using Wabbajack.Networking.NexusApi;
+using Wabbajack.Networking.NexusApi.DTOs;
 using Wabbajack.Paths;
+using Wabbajack.Paths.IO;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
-using ArchiveStatus = Wabbajack.Server.DTOs.ArchiveStatus;
 
 namespace Wabbajack.Server.Services
 {
@@ -27,42 +27,53 @@ namespace Wabbajack.Server.Services
         private DiscordWebHook _discord;
         private NexusKeyMaintainance _nexus;
         private ArchiveMaintainer _archives;
+        
+        private AsyncLock _healLock = new();
+        private readonly IRateLimiter _limiter;
+        private readonly DownloadDispatcher _dispatcher;
 
         public IEnumerable<(ModListSummary Summary, DetailedStatus Detailed)> Summaries => ValidationInfo.Values.Select(e => (e.Summary, e.Detailed));
         
         public ConcurrentDictionary<string, (ModListSummary Summary, DetailedStatus Detailed, TimeSpan ValidationTime)> ValidationInfo = new();
+        private readonly NexusApi _nexusApi;
 
 
-        public ListValidator(ILogger<ListValidator> logger, AppSettings settings, SqlService sql, DiscordWebHook discord, NexusKeyMaintainance nexus, ArchiveMaintainer archives, QuickSync quickSync) 
+        public ListValidator(ILogger<ListValidator> logger, AppSettings settings, SqlService sql, DiscordWebHook discord, NexusKeyMaintainance nexus, 
+            ArchiveMaintainer archives, QuickSync quickSync, DownloadDispatcher dispatcher, IRateLimiter limiter, NexusApi nexusApi) 
             : base(logger, settings, quickSync, TimeSpan.FromMinutes(5))
         {
             _sql = sql;
             _discord = discord;
             _nexus = nexus;
             _archives = archives;
+            _dispatcher = dispatcher;
+            _limiter = limiter;
+            _nexusApi = nexusApi;
         }
 
         public override async Task<int> Execute()
         {
+            var token = CancellationToken.None;
             var data = await _sql.GetValidationData();
             _logger.LogInformation("Found {count} nexus files", data.NexusFiles.Count);
-
-            using var queue = new WorkQueue();
+            
             var oldSummaries = Summaries;
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            var results = await data.ModLists.Where(m => !m.ForceDown).PMap(queue, async metadata =>
+            var results = await data.ModLists.Where(m => !m.ForceDown)
+                .PMap(_limiter, async metadata =>
             {
                 var timer = new Stopwatch();
                 timer.Start();
                 var oldSummary =
                     oldSummaries.FirstOrDefault(s => s.Summary.MachineURL == metadata.Links.MachineURL);
 
-                var mainFile = await DownloadDispatcher.Infer(new Uri(metadata.Links.Download));
-                var mainArchive = new Archive(mainFile!)
+                var mainFile = _dispatcher.Parse(new Uri(metadata.Links.Download));
+                var mainArchive = new Archive
                 {
+                    State = mainFile!,
                     Size = metadata.DownloadMetadata!.Size, 
                     Hash = metadata.DownloadMetadata!.Hash
                 };
@@ -70,9 +81,9 @@ namespace Wabbajack.Server.Services
 
                 try
                 {
-                    if (mainArchive.State is WabbajackCDNDownloader.State)
+                    if (mainArchive.State is WabbajackCDN)
                     {
-                        if (!await mainArchive.State.Verify(mainArchive))
+                        if (!await _dispatcher.Verify(mainArchive, token))
                         {
                             mainFailed = true;
                         }
@@ -84,7 +95,7 @@ namespace Wabbajack.Server.Services
                 }
 
                 var listArchives = await _sql.ModListArchives(metadata.Links.MachineURL);
-                var archives = await listArchives.PMap(queue, async archive =>
+                var archives = await listArchives.PMap(_limiter, async archive =>
                 {
                     if (mainFailed)
                         return (archive, ArchiveStatus.InValid);
@@ -97,7 +108,7 @@ namespace Wabbajack.Server.Services
                             return (archive, ArchiveStatus.InValid);
                         }
                         
-                        var (_, result) = await ValidateArchive(data, archive);
+                        var (_, result) = await ValidateArchive(data, archive, token);
                         if (result == ArchiveStatus.InValid)
                         {
                             if (data.Mirrors.TryGetValue(archive.Hash, out var done))
@@ -107,9 +118,9 @@ namespace Wabbajack.Server.Services
                                 await _sql.StartMirror((archive.Hash, reason));
                                 return (archive, ArchiveStatus.Updating);
                             }
-                            if (archive.State is NexusDownloader.State)
+                            if (archive.State is Nexus)
                                 return (archive, result);
-                            return await TryToHeal(data, archive, metadata);
+                            return await TryToHeal(data, archive, metadata, token);
                         }
 
 
@@ -118,14 +129,13 @@ namespace Wabbajack.Server.Services
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, $"During Validation of {archive.Hash} {archive.State.PrimaryKeyString}");
-                        Utils.Log($"Exception in validation of {archive.Hash} {archive.State.PrimaryKeyString} " + ex);
                         return (archive, ArchiveStatus.InValid);
                     }
                     finally
                     {
                         ReportEnding(archive.State.PrimaryKeyString);
                     }
-                });
+                }).ToList();
 
                 var failedCount = archives.Count(f => f.Item2 == ArchiveStatus.InValid || f.Item2 == ArchiveStatus.Updating);
                 var passCount = archives.Count(f => f.Item2 == ArchiveStatus.Valid || f.Item2 == ArchiveStatus.Updated);
@@ -156,7 +166,7 @@ namespace Wabbajack.Server.Services
                         Archive = a.Item1, 
                         IsFailing = a.Item2 == ArchiveStatus.InValid,
                         ArchiveStatus = a.Item2
-                    }).ToList()
+                    }).ToArray()
                 };
 
                 if (timer.Elapsed > Delay)
@@ -226,7 +236,7 @@ namespace Wabbajack.Server.Services
                 ValidationInfo[summary.MachineURL] = (summary, detailed, timer.Elapsed);
                 
                 return (summary, detailed);
-            });
+            }).ToList();
             
             stopwatch.Stop();
             _logger.LogInformation($"Finished Validation in {stopwatch.Elapsed}");
@@ -234,8 +244,8 @@ namespace Wabbajack.Server.Services
             return Summaries.Count(s => s.Summary.HasFailures);
         }
 
-        private AsyncLock _healLock = new AsyncLock();
-        private async Task<(Archive, ArchiveStatus)> TryToHeal(ValidationData data, Archive archive, ModlistMetadata modList)
+
+        private async Task<(Archive, ArchiveStatus)> TryToHeal(ValidationData data, Archive archive, ModlistMetadata modList, CancellationToken token)
         {
             try
             {
@@ -259,7 +269,7 @@ namespace Wabbajack.Server.Services
                     if (patch.IsFailed == true)
                         return (archive, ArchiveStatus.InValid);
 
-                    var (_, status) = await ValidateArchive(data, patch.Dest.Archive);
+                    var (_, status) = await ValidateArchive(data, patch.Dest.Archive, token);
                     if (status == ArchiveStatus.Valid)
                         return (archive, ArchiveStatus.Updated);
                 }
@@ -281,16 +291,11 @@ namespace Wabbajack.Server.Services
 
                     return _archives.TryGetPath(foundArchive.Archive.Hash, out var path) ? path : default;
                 };
-
-                if (archive.State is NexusDownloader.State)
-                {
-                    DownloadDispatcher.GetInstance<NexusDownloader>().Client = await _nexus.GetClient();
-                }
-
-                var upgrade = await DownloadDispatcher.FindUpgrade(archive, resolver);
+                
+                var upgrade = await _dispatcher.FindUpgrade(archive, resolver);
 
 
-                if (upgrade == default)
+                if (upgrade.Archive == default)
                 {
                     _logger.Log(LogLevel.Information,
                         $"Cannot heal {archive.State.PrimaryKeyString} because an alternative wasn't found");
@@ -307,9 +312,10 @@ namespace Wabbajack.Server.Services
                 var found = await _sql.GetArchiveDownload(upgrade.Archive.State.PrimaryKeyString, upgrade.Archive.Hash,
                     upgrade.Archive.Size);
                 Guid id;
+                
                 if (found == null)
                 {
-                    if (upgrade.NewFile.Path.Exists)
+                    if (upgrade.NewFile.Path.FileExists())
                         await _archives.Ingest(upgrade.NewFile.Path);
                     id = await _sql.AddKnownDownload(upgrade.Archive, upgradeTime);
                 }
@@ -364,29 +370,27 @@ namespace Wabbajack.Server.Services
             }
         }
 
-        private async Task<(Archive archive, ArchiveStatus)> ValidateArchive(ValidationData data, Archive archive)
+        private async Task<(Archive archive, ArchiveStatus)> ValidateArchive(ValidationData data, Archive archive, CancellationToken token)
         {
             switch (archive.State)
             {
-                case GoogleDriveDownloader.State _:
+                case GoogleDrive _:
                     // Disabled for now due to GDrive rate-limiting the build server
                     return (archive, ArchiveStatus.Valid);
-                case NexusDownloader.State nexusState when data.NexusFiles.TryGetValue(
+                case Nexus nexusState when data.NexusFiles.TryGetValue(
                     (nexusState.Game.MetaData().NexusGameId, nexusState.ModID, nexusState.FileID), out var category):
                     return (archive, category != null ? ArchiveStatus.Valid : ArchiveStatus.InValid);
-                case NexusDownloader.State ns:
-                    return (archive, await FastNexusModStats(ns));
-                case ManualDownloader.State _:
+                case Nexus ns:
+                    return (archive, await FastNexusModStats(ns, token));
+                case Manual _:
                     return (archive, ArchiveStatus.Valid);
-                case ModDBDownloader.State _:
+                case ModDB _:
                     return (archive, ArchiveStatus.Valid);
-                case GameFileSourceDownloader.State _:
+                case GameFileSource _:
                     return (archive, ArchiveStatus.Valid);
-                case MediaFireDownloader.State _:
+                case MediaFire _:
                     return (archive, ArchiveStatus.Valid);
-                case DeprecatedLoversLabDownloader.State _:
-                    return (archive, ArchiveStatus.InValid);
-                case DeprecatedVectorPlexusDownloader.State _:
+                case DeprecatedLoversLab _:
                     return (archive, ArchiveStatus.InValid);
                 default:
                 {
@@ -401,26 +405,25 @@ namespace Wabbajack.Server.Services
             }
         }
         
-        public async Task<ArchiveStatus> FastNexusModStats(NexusDownloader.State ns)
+        public async Task<ArchiveStatus> FastNexusModStats(Nexus ns, CancellationToken token)
         {
             // Check if some other thread has added them
             var file = await _sql.GetModFile(ns.Game, ns.ModID, ns.FileID);
 
+            var queryTime = DateTime.UtcNow;
             if (file == null)
             {
                 try
                 {
-                    NexusApiClient nexusClient = await _nexus.GetClient();
-                    var queryTime = DateTime.UtcNow;
-
                     _logger.Log(LogLevel.Information, "Found missing Nexus file info {Game} {ModID} {FileID}", ns.Game, ns.ModID, ns.FileID);
                     try
                     {
-                        file = await nexusClient.GetModFile(ns.Game, ns.ModID, ns.FileID, false);
+                        var (file2, headers) = await _nexusApi.FileInfo(ns.Game.MetaData().NexusName, ns.ModID, ns.FileID, token);
+                        file = file2;
                     }
                     catch
                     {
-                        file = new NexusFileInfo() {category_name = null};
+                        file = new ModFile {CategoryName = null};
                     }
 
                     try
@@ -438,7 +441,7 @@ namespace Wabbajack.Server.Services
                 }
             }
 
-            return file?.category_name != null ? ArchiveStatus.Valid : ArchiveStatus.InValid;
+            return file?.CategoryName != null ? ArchiveStatus.Valid : ArchiveStatus.InValid;
 
         }
     }

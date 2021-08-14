@@ -2,7 +2,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using FluentFTP;
-using Wabbajack.Common;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace Wabbajack.Server.DTOs
 {

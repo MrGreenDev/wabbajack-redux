@@ -85,7 +85,7 @@ namespace Wabbajack.Server.DataLayer
             {
                 State = t.Item4,
                 Name = string.IsNullOrWhiteSpace(t.Item1) ? t.Item4.PrimaryKeyString : t.Item1, 
-                Size = (ulong)t.Item3, 
+                Size = t.Item3, 
                 Hash = t.Item2
             }).ToList();
         }
@@ -98,7 +98,7 @@ namespace Wabbajack.Server.DataLayer
             {
                 State = t.Item4,
                 Name = string.IsNullOrWhiteSpace(t.Item1) ? t.Item4.PrimaryKeyString : t.Item1, 
-                Size = (ulong)t.Item3, 
+                Size = t.Item3, 
                 Hash = t.Item2
             }).ToList();
         }

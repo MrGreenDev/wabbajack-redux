@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 using Wabbajack.BuildServer;
 using Wabbajack.Common;
+using Wabbajack.DTOs;
 using Wabbajack.Lib.NexusApi;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
@@ -28,42 +29,6 @@ namespace Wabbajack.Server.Services
             _logger = logger;
             _keys = keys;
         }
-
-        public async Task UpdateNexusCacheRSS()
-        {
-            using var _ = _logger.BeginScope("Nexus Update via RSS");
-            _logger.Log(LogLevel.Information, "Starting");
-
-            var results = await NexusUpdatesFeeds.GetUpdates();
-            long updated = 0;
-            foreach (var result in results)
-            {
-                try
-                {
-                    var purgedMods =
-                        await _sql.DeleteNexusModFilesUpdatedBeforeDate(result.Game, result.ModId, result.TimeStamp);
-                    var purgedFiles =
-                        await _sql.DeleteNexusModInfosUpdatedBeforeDate(result.Game, result.ModId, result.TimeStamp);
-
-                    var totalPurged = purgedFiles + purgedMods;
-                    if (totalPurged > 0)
-                        _logger.Log(LogLevel.Information, $"Purged {totalPurged} cache items {result.Game} {result.ModId} {result.TimeStamp}");
-
-                    updated += totalPurged;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Failed Nexus update for {result.Game} - {result.ModId} - {result.TimeStamp}");
-                }
-
-            }
-
-            if (updated > 0) 
-                _logger.Log(LogLevel.Information, $"RSS Purged {updated} nexus cache entries");
-
-            _globalInformation.LastNexusSyncUTC = DateTime.UtcNow;
-        }
-
         public async Task UpdateNexusCacheAPI()
         {
             using var _ = _logger.BeginScope("Nexus Update via API");
@@ -72,6 +37,7 @@ namespace Wabbajack.Server.Services
             
             var gameTasks = GameRegistry.Games.Values
                 .Where(game => game.NexusName != null)
+                .PMap(_limiter, async game => )
                 .Select(async game =>
                 {
                     var mods = await api.Get<List<NexusUpdateEntry>>(
@@ -92,7 +58,7 @@ namespace Wabbajack.Server.Services
                 .ToList();
 
             _logger.Log(LogLevel.Information, $"Found {purge.Count} updated mods in the last month");
-            using var queue = new WorkQueue();
+            
             var collected = purge.Select(d =>
             {
                 var a = d.mod.LatestFileUpdate.AsUnixTime();

@@ -2,11 +2,16 @@
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
+using Wabbajack.Downloaders;
+using Wabbajack.DTOs.JsonConverters;
+using Wabbajack.DTOs.ServerResponses;
+using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Lib;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
@@ -24,8 +29,11 @@ namespace Wabbajack.BuildServer.Controllers
         private QuickSync _quickSync;
         private Task<BunnyCdnFtpInfo> _creds;
         private Task<BunnyCdnFtpInfo> _mirrorCreds;
+        private readonly DTOSerializer _dtos;
+        private readonly DownloadDispatcher _dispatcher;
 
-        public ModUpgrade(ILogger<ModUpgrade> logger, SqlService sql, DiscordWebHook discord, QuickSync quickSync, AppSettings settings)
+        public ModUpgrade(ILogger<ModUpgrade> logger, SqlService sql, DiscordWebHook discord, QuickSync quickSync, AppSettings settings, DTOSerializer dtos,
+            DownloadDispatcher dispatcher)
         {
             _logger = logger;
             _sql = sql;
@@ -34,18 +42,20 @@ namespace Wabbajack.BuildServer.Controllers
             _quickSync = quickSync;
             _creds = BunnyCdnFtpInfo.GetCreds(StorageSpace.Patches);
             _mirrorCreds = BunnyCdnFtpInfo.GetCreds(StorageSpace.Mirrors);
+            _dtos = dtos;
+            _dispatcher = dispatcher;
         }
         
         [HttpPost]
         [Authorize(Roles = "User")]
         [Route("/mod_upgrade")]
-        public async Task<IActionResult> PostModUpgrade()
+        public async Task<IActionResult> PostModUpgrade(CancellationToken token)
         {
             var isAuthor = User.Claims.Any(c => c.Type == ClaimTypes.Role && c.Value == "Author");
-            var request = (await Request.Body.ReadAllTextAsync()).FromJsonString<ModUpgradeRequest>();
+            var request = await _dtos.DeserializeAsync<ModUpgradeRequest>(Request.Body);
             if (!isAuthor)
             {
-                var srcDownload = await _sql.GetArchiveDownload(request.OldArchive.State.PrimaryKeyString,
+                var srcDownload = await _sql.GetArchiveDownload(request!.OldArchive.State.PrimaryKeyString,
                     request.OldArchive.Hash, request.OldArchive.Size);
                 var destDownload = await _sql.GetArchiveDownload(request.NewArchive.State.PrimaryKeyString,
                     request.NewArchive.Hash, request.NewArchive.Size);
@@ -53,7 +63,7 @@ namespace Wabbajack.BuildServer.Controllers
                 if (srcDownload == default || destDownload == default ||
                     await _sql.FindPatch(srcDownload.Id, destDownload.Id) == default)
                 {
-                    if (!await request.IsValid())
+                    if (!await _dispatcher.IsAllowed(request, token))
                     {
                         _logger.Log(LogLevel.Information,
                             $"Upgrade requested from {request.OldArchive.Hash} to {request.NewArchive.Hash} rejected as upgrade is invalid");
@@ -73,7 +83,7 @@ namespace Wabbajack.BuildServer.Controllers
 
             try
             {
-                if (await request.OldArchive.State.Verify(request.OldArchive))
+                if (await _dispatcher.Verify(request!.OldArchive, token))
                 {
                     //_logger.LogInformation(
                     //    $"Refusing to upgrade ({request.OldArchive.State.PrimaryKeyString}), old archive is valid");
@@ -135,7 +145,7 @@ namespace Wabbajack.BuildServer.Controllers
             var hash = Hash.FromHex(hashAsHex);
 
             var patches = await _sql.PatchesForSource(hash);
-            return Ok(patches.Select(p => p.Dest.Archive).ToList().ToJson());
+            return Ok(_dtos.Serialize(patches.Select(p => p.Dest.Archive).ToArray()));
         }
 
         [HttpGet]

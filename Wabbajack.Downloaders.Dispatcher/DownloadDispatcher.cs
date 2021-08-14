@@ -8,10 +8,12 @@ using Wabbajack.Common;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
+using Wabbajack.DTOs.ServerResponses;
 using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
+using Wabbajack.Paths.IO;
 
 namespace Wabbajack.Downloaders
 {
@@ -183,6 +185,16 @@ namespace Wabbajack.Downloaders
         public bool IsAllowed(Archive archive, ServerAllowList allowList)
         {
             return Downloader(archive).IsAllowed(allowList, archive.State);
+        }
+
+        public async Task<bool> IsAllowed(ModUpgradeRequest request, CancellationToken allowList)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<(Archive? Archive, TemporaryPath NewFile)> FindUpgrade(Archive archive, Func<Archive,Task<AbsolutePath>> resolver)
+        {
+            throw new NotImplementedException();
         }
     }
 }
