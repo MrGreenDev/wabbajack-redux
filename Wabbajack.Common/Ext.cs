@@ -15,5 +15,6 @@ namespace Wabbajack.Common
         
         public static Extension Mohidden = new(".mohidden");
         public static Extension Zip = new(".zip");
+        public static Extension Wabbajack = new(".wabbajack");
     }
 }
