@@ -1,6 +1,4 @@
-﻿using Wabbajack.Common.Serialization.Json;
-
-namespace Wabbajack.Server
+﻿namespace Wabbajack.Server
 {
     public class Badge
     {

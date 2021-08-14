@@ -8,6 +8,8 @@ using Microsoft.Extensions.Logging;
 using Nettle;
 using Wabbajack.Common;
 using Wabbajack.Common.Serialization.Json;
+using Wabbajack.DTOs;
+using Wabbajack.DTOs.ServerResponses;
 using Wabbajack.Lib;
 using Wabbajack.Lib.ModListRegistry;
 using Wabbajack.Server;

@@ -29,11 +29,12 @@ namespace Wabbajack.BuildServer.Controllers
         private ILogger<MetricsController> _logger;
         private MetricsKeyCache _keyCache;
 
-        public MetricsController(ILogger<MetricsController> logger, SqlService sql, MetricsKeyCache keyCache)
+        public MetricsController(ILogger<MetricsController> logger, SqlService sql, MetricsKeyCache keyCache, AppSettings settings)
         {
             _sql = sql;
             _logger = logger;
             _keyCache = keyCache;
+            _settings = settings;
         }
 
         [HttpGet]
@@ -41,7 +42,7 @@ namespace Wabbajack.BuildServer.Controllers
         public async Task<Result> LogMetricAsync(string subject, string value)
         {
             var date = DateTime.UtcNow;
-            var metricsKey = Request.Headers[Consts.MetricsKeyHeader].FirstOrDefault();
+            var metricsKey = Request.Headers[_settings.MetricsKeyHeader].FirstOrDefault();
             if (metricsKey != null)
                 await _keyCache.AddKey(metricsKey);
             
@@ -179,6 +180,7 @@ namespace Wabbajack.BuildServer.Controllers
         }
 
         private static Func<object, string> _totalListTemplate;
+        private readonly AppSettings _settings;
 
 
         private static Func<object, string> TotalListTemplate

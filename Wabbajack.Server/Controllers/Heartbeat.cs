@@ -2,14 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Nettle;
-using Wabbajack.Common;
-using Wabbajack.Common.StatusFeed;
 using Wabbajack.Server;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
@@ -45,16 +41,6 @@ namespace Wabbajack.BuildServer.Controllers
         private GlobalInformation _globalInformation;
         private SqlService _sql;
         private ILogger<Heartbeat> _logger;
-
-        public static void AddToLog(IStatusMessage msg)
-        {
-            lock (Log)
-            {
-                Log.Add(msg.ToString());
-                if (Log.Count > MAX_LOG_SIZE)
-                    Log.RemoveAt(0);
-            }
-        }
 
         [HttpGet]
         public async Task<IActionResult> GetHeartbeat()
