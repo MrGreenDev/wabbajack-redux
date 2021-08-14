@@ -106,6 +106,13 @@ namespace Wabbajack.Common
                 yield return await fn(itm);
         }
         
+        public static async IAsyncEnumerable<TOut> SelectMany<TIn, TOut>(this IEnumerable<TIn> coll, Func<TIn, ValueTask<IEnumerable<TOut>>> fn)
+        {
+            foreach (var itm in coll)
+                foreach (var inner in await fn(itm)) 
+                    yield return inner;
+        }
+        
         public static async IAsyncEnumerable<TOut> Select<TIn, TOut>(this IAsyncEnumerable<TIn> coll, Func<TIn, ValueTask<TOut>> fn)
         {
             await foreach (var itm in coll)

@@ -1,15 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 using Wabbajack.BuildServer;
 using Wabbajack.Common;
 using Wabbajack.DTOs;
-using Wabbajack.Lib.NexusApi;
+using Wabbajack.Networking.NexusApi;
 using Wabbajack.Server.DataLayer;
-using Wabbajack.Server.DTOs;
 
 namespace Wabbajack.Server.Services
 {
@@ -20,63 +19,47 @@ namespace Wabbajack.Server.Services
         private GlobalInformation _globalInformation;
         private ILogger<NexusPoll> _logger;
         private NexusKeyMaintainance _keys;
+        private readonly IRateLimiter _limiter;
+        private readonly NexusApi _api;
 
-        public NexusPoll(ILogger<NexusPoll> logger, AppSettings settings, SqlService service, GlobalInformation globalInformation, NexusKeyMaintainance keys)
+        public NexusPoll(ILogger<NexusPoll> logger, AppSettings settings, SqlService service, GlobalInformation globalInformation, IRateLimiter limiter, NexusApi api)
         {
             _sql = service;
             _settings = settings;
             _globalInformation = globalInformation;
             _logger = logger;
-            _keys = keys;
+            _limiter = limiter;
+            _api = api;
         }
-        public async Task UpdateNexusCacheAPI()
+        public async Task UpdateNexusCacheAPI(CancellationToken token)
         {
             using var _ = _logger.BeginScope("Nexus Update via API");
             _logger.Log(LogLevel.Information, "Starting Nexus Update via API");
-            var api = await _keys.GetClient();
             
-            var gameTasks = GameRegistry.Games.Values
+            var purged  = await GameRegistry.Games.Values
                 .Where(game => game.NexusName != null)
-                .PMap(_limiter, async game => )
-                .Select(async game =>
+                .SelectMany(async game =>
                 {
-                    var mods = await api.Get<List<NexusUpdateEntry>>(
-                        $"https://api.nexusmods.com/v1/games/{game.NexusName}/mods/updated.json?period=1m");
+                    var (mods, _) = await _api.GetUpdates(game.Game, token);
 
-                    return (game, mods);
+                    return mods.Select(mod => new { Game = game, Mod = mod });
                 })
-                .Select(async rTask =>
+                .Select(async row =>
                 {
-                    var (game, mods) = await rTask;
-                    return mods.Select(mod => new { game = game, mod = mod });
-                }).ToList();
+                    var a = row.Mod.LatestFileUpdate.AsUnixTime();
+                    // Mod activity could hide files
+                    var b = row.Mod.LastestModActivity.AsUnixTime();
 
-            _logger.Log(LogLevel.Information, $"Getting update list for {gameTasks.Count} games");
-
-            var purge = (await Task.WhenAll(gameTasks))
-                .SelectMany(i => i)
-                .ToList();
-
-            _logger.Log(LogLevel.Information, $"Found {purge.Count} updated mods in the last month");
-            
-            var collected = purge.Select(d =>
-            {
-                var a = d.mod.LatestFileUpdate.AsUnixTime();
-                // Mod activity could hide files
-                var b = d.mod.LastestModActivity.AsUnixTime();
-
-                return new {Game = d.game.Game, Date = (a > b) ? a : b, ModId = d.mod.ModId};
-            });
+                    var t = (a > b) ? a : b;
                     
-            var purged = await collected.PMap(queue, async t =>
-            {
-                long purgeCount = 0;
-                purgeCount += await _sql.DeleteNexusModInfosUpdatedBeforeDate(t.Game, t.ModId, t.Date);
-                purgeCount += await _sql.DeleteNexusModFilesUpdatedBeforeDate(t.Game, t.ModId, t.Date);
-                return purgeCount;
-            });
-
-            _logger.Log(LogLevel.Information, $"Purged {purged.Sum()} cache entries");
+                    long purgeCount = 0;
+                    purgeCount += await _sql.DeleteNexusModInfosUpdatedBeforeDate(row.Game.Game, row.Mod.ModId, t.Date);
+                    purgeCount += await _sql.DeleteNexusModFilesUpdatedBeforeDate(row.Game.Game, row.Mod.ModId, t.Date);
+                    return purgeCount;
+                })
+                .SumAsync<long>(x => x);
+            
+            _logger.Log(LogLevel.Information, "Purged {count} cache entries", purged);
             _globalInformation.LastNexusSyncUTC = DateTime.UtcNow;
 
         }
@@ -84,30 +67,14 @@ namespace Wabbajack.Server.Services
         public void Start()
         {
             if (!_settings.RunBackEndJobs) return;
-            /*
+
             Task.Run(async () =>
             {
                 while (true)
                 {
                     try
                     {
-                        await UpdateNexusCacheRSS();
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error polling from Nexus");
-                    }
-                    await Task.Delay(_globalInformation.NexusRSSPollRate);
-                }
-            });
-*/
-            Task.Run(async () =>
-            {
-                while (true)
-                {
-                    try
-                    {
-                        await UpdateNexusCacheAPI();
+                        await UpdateNexusCacheAPI(CancellationToken.None);
                     }
                     catch (Exception ex)
                     {

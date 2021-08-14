@@ -4,9 +4,11 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic.CompilerServices;
 using OMODFramework;
 using Wabbajack.BuildServer;
 using Wabbajack.Common;
+using Wabbajack.DTOs;
 using Wabbajack.Server.DataLayer;
 using Utils = Wabbajack.Common.Utils;
 

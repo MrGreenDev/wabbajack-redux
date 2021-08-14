@@ -445,6 +445,19 @@ namespace Wabbajack.DTOs
 
             return int.TryParse(someName, out int id) ? GetBySteamID(id) : null;
         }
+        
+        public static bool TryGetByFuzzyName(string someName, out GameMetaData gameMetaData)
+        {
+            var result = TryGetByFuzzyName(someName);
+            if (result == null)
+            {
+                gameMetaData = Games.Values.First();
+                return false;
+            }
+
+            gameMetaData = result;
+            return true;
+        }
 
         public static GameMetaData MetaData(this Game game)
         {

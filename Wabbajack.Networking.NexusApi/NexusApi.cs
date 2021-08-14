@@ -1,12 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Wabbajack.DTOs;
 using Wabbajack.Networking.NexusApi.DTOs;
+using Wabbajack.Server.DTOs;
 
 namespace Wabbajack.Networking.NexusApi
 {
@@ -139,6 +143,12 @@ namespace Wabbajack.Networking.NexusApi
             msg.Headers.Add("apikey", await _apiKey.GetKey());
             msg.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             return msg;
+        }
+
+        public async Task<(UpdateEntry[], ResponseMetadata headers)> GetUpdates(Game game, CancellationToken token)
+        {
+            var msg = await GenerateMessage(HttpMethod.Get, Endpoints.Updates, game.MetaData().NexusName, "1m");
+            return await Send<UpdateEntry[]>(msg, token);
         }
     }
 }
