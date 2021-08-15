@@ -9,6 +9,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Wabbajack.Paths\Wabbajack.Paths.csproj"/>
+        <ProjectReference Include="..\Wabbajack.Paths\Wabbajack.Paths.csproj" />
     </ItemGroup>
 </Project>

@@ -6,14 +6,17 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using FluentFTP;
+using FluentFTP.Helpers;
 using Microsoft.Extensions.Logging;
 using Wabbajack.BuildServer;
 using Wabbajack.Common;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
+using Wabbajack.Paths.IO;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
+using Wabbajack.Server.TokenProviders;
 
 namespace Wabbajack.Server.Services
 {
@@ -22,15 +25,20 @@ namespace Wabbajack.Server.Services
         private SqlService _sql;
         private ArchiveMaintainer _archives;
         private DiscordWebHook _discord;
+        private readonly IFtpSiteCredentials _credentials;
+        private readonly Client _wjClient;
 
         public bool ActiveFileSyncEnabled { get; set; } = true;
 
-        public MirrorUploader(ILogger<MirrorUploader> logger, AppSettings settings, SqlService sql, QuickSync quickSync, ArchiveMaintainer archives, DiscordWebHook discord)
+        public MirrorUploader(ILogger<MirrorUploader> logger, AppSettings settings, SqlService sql, QuickSync quickSync, ArchiveMaintainer archives,
+            DiscordWebHook discord, IFtpSiteCredentials credentials, Client wjClient)
             : base(logger, settings, quickSync, TimeSpan.FromHours(1))
         {
             _sql = sql;
             _archives = archives;
             _discord = discord;
+            _credentials = credentials;
+            _wjClient = wjClient;
         }
 
         public override async Task<int> Execute()
@@ -51,12 +59,11 @@ namespace Wabbajack.Server.Services
 
             try
             {
-                var creds = await BunnyCdnFtpInfo.GetCreds(StorageSpace.Mirrors);
-
-                using var queue = new WorkQueue();
+                var creds = (await _credentials.Get())[StorageSpace.Mirrors];
+                
                 if (_archives.TryGetPath(toUpload.Hash, out var path))
                 {
-                    _logger.LogInformation($"Uploading mirror file {toUpload.Hash} {path.Size.FileSizeToString()}");
+                    _logger.LogInformation($"Uploading mirror file {toUpload.Hash} {path.Size().FileSizeToString()}");
 
                     bool exists = false;
                     using (var client = await GetClient(creds))
@@ -77,7 +84,7 @@ namespace Wabbajack.Server.Services
                             Content = $"Uploading {toUpload.Hash} - {toUpload.Created} because {toUpload.Rationale}"
                         });
 
-                    var definition = await Client.GenerateFileDefinition(queue, path, (s, percent) => { });
+                    var definition = await _wjClient.GenerateFileDefinition(path, (s, percent) => { });
 
                     using (var client = await GetClient(creds))
                     {

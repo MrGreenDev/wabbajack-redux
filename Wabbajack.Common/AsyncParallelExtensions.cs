@@ -43,6 +43,13 @@ namespace Wabbajack.Common
             return lst;
         }
         
+        public static async Task<T[]> ToArray<T>(this IAsyncEnumerable<T> coll)
+        {
+            List<T> lst = new();
+            await foreach (var itm in coll) lst.Add(itm);
+            return lst.ToArray();
+        }
+        
         public static async Task<IReadOnlyCollection<T>> ToReadOnlyCollection<T>(this IAsyncEnumerable<T> coll)
         {
             List<T> lst = new();

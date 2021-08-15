@@ -14,6 +14,7 @@ using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
 using Wabbajack.Server.Services;
+using Wabbajack.Server.TokenProviders;
 
 namespace Wabbajack.BuildServer.Controllers
 {
@@ -22,24 +23,20 @@ namespace Wabbajack.BuildServer.Controllers
     {
         private ILogger<ModUpgrade> _logger;
         private SqlService _sql;
-        private DiscordWebHook _discord;
         private AppSettings _settings;
         private QuickSync _quickSync;
-        private Task<BunnyCdnFtpInfo> _creds;
-        private Task<BunnyCdnFtpInfo> _mirrorCreds;
         private readonly DTOSerializer _dtos;
         private readonly DownloadDispatcher _dispatcher;
+        private readonly IFtpSiteCredentials _ftpSite;
 
         public ModUpgrade(ILogger<ModUpgrade> logger, SqlService sql, DiscordWebHook discord, QuickSync quickSync, AppSettings settings, DTOSerializer dtos,
-            DownloadDispatcher dispatcher)
+            DownloadDispatcher dispatcher, IFtpSiteCredentials ftp)
         {
             _logger = logger;
             _sql = sql;
-            _discord = discord;
             _settings = settings;
             _quickSync = quickSync;
-            _creds = BunnyCdnFtpInfo.GetCreds(StorageSpace.Patches);
-            _mirrorCreds = BunnyCdnFtpInfo.GetCreds(StorageSpace.Mirrors);
+            _ftpSite = ftp;
             _dtos = dtos;
             _dispatcher = dispatcher;
         }
@@ -110,7 +107,7 @@ namespace Wabbajack.BuildServer.Controllers
                 if (patch.PatchSize != 0)
                 {
                     //_logger.Log(LogLevel.Information, $"Upgrade requested from {oldDownload.Archive.Hash} to {newDownload.Archive.Hash} patch Found");
-                    var host = (await _creds).Username == "wabbajacktest" ? "test-files" : "patches";
+                    var host = (await _ftpSite.Get())[StorageSpace.Patches].Username == "wabbajacktest" ? "test-files" : "patches";
                     await _sql.MarkPatchUsage(oldDownload.Id, newDownload.Id);
                     return
                         Ok(
@@ -163,7 +160,7 @@ namespace Wabbajack.BuildServer.Controllers
         public async Task<IActionResult> HaveHash(string hashAsHex)
         {
             var result = await _sql.HaveMirror(Hash.FromHex(hashAsHex));
-            if (result) return Ok($"https://{(await _mirrorCreds).Username}.b-cdn.net/{hashAsHex}");
+            if (result) return Ok($"https://{(await _ftpSite.Get())[StorageSpace.Mirrors].Username}.b-cdn.net/{hashAsHex}");
             return NotFound("Not Mirrored");
         }
       

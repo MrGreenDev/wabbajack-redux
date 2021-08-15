@@ -1,16 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Wabbajack.Common;
 using Wabbajack.DTOs;
+using Wabbajack.DTOs.CDN;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.DTOs.ServerResponses;
 using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
+using Wabbajack.Paths;
+using Wabbajack.Paths.IO;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -18,20 +25,24 @@ namespace Wabbajack.Networking.WabbajackClientApi
 {
     public class Client
     {
+        public static readonly long UploadedFileBlockSize = (long)1024 * 1024 * 2;
+        
         private readonly HttpClient _client;
 
         private readonly Configuration _configuration;
         private readonly ILogger<Client> _logger;
-        private readonly DTOSerializer _dtos
-            ;
+        private readonly DTOSerializer _dtos;
 
-        public Client(ILogger<Client> logger, HttpClient client, Configuration configuration, DTOSerializer dtos)
+        private readonly IRateLimiter _limiter;
+
+        public Client(ILogger<Client> logger, HttpClient client, Configuration configuration, DTOSerializer dtos, IRateLimiter limiter)
         {
             _configuration = configuration;
             _client = client;
             _logger = logger;
             _logger.LogInformation("File hash check (-42) {key}", _configuration.MetricsKey);
             _dtos = dtos;
+            _limiter = limiter;
         }
 
         public async Task SendMetric(string action, string subject)
@@ -105,6 +116,43 @@ namespace Wabbajack.Networking.WabbajackClientApi
         {
             return (await _client.GetFromJsonAsync<DetailedStatus>(
                 $"{_configuration.BuildServerUrl}lists/status/{machineURL}.json", _dtos.Options))!;
+        }
+
+        public async Task<FileDefinition> GenerateFileDefinition(AbsolutePath path)
+        {
+            IEnumerable<PartDefinition> Blocks(AbsolutePath path)
+            {
+                var size = path.Size();
+                for (long block = 0; block * UploadedFileBlockSize < size; block ++)
+                    yield return new PartDefinition
+                    {
+                        Index = block,
+                        Size = Math.Min(UploadedFileBlockSize, size - block * UploadedFileBlockSize),
+                        Offset = block * UploadedFileBlockSize
+                    };
+            }
+            
+            var parts = Blocks(path).ToArray();
+            var definition = new FileDefinition
+            {
+                OriginalFileName = path.FileName, 
+                Size = path.Size(), 
+                Hash = await path.Hash(),
+                Parts = await parts.PMap(_limiter, async part =>
+                {
+                    var buffer = new byte[part.Size];
+                    await using (var fs = path.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        fs.Position = part.Offset;
+                        await fs.ReadAsync(buffer);
+                    }
+                    part.Hash = await buffer.Hash();
+                    return part;
+                }).ToArray()
+            };
+
+            return definition;
+
         }
     }
 }
