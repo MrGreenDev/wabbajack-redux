@@ -17,6 +17,7 @@ using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
 using Wabbajack.Server.Services;
+using Wabbajack.Server.TokenProviders;
 
 namespace Wabbajack.BuildServer.Controllers
 {
@@ -29,17 +30,21 @@ namespace Wabbajack.BuildServer.Controllers
         private AppSettings _settings;
         private DiscordWebHook _discord;
         
+        private readonly IFtpSiteCredentials _ftpCreds;
+
+        
         private readonly DTOSerializer _dtos;
 
 
         public AuthoredFiles(ILogger<AuthoredFiles> logger, SqlService sql, AppSettings settings, DiscordWebHook discord, 
-            DTOSerializer dtos)
+            DTOSerializer dtos, IFtpSiteCredentials ftpCreds)
         {
             _sql = sql;
             _logger = logger;
             _settings = settings;
             _discord = discord;
             _dtos = dtos;
+            _ftpCreds = ftpCreds;
         }
 
         [HttpPut]
@@ -123,7 +128,7 @@ namespace Wabbajack.BuildServer.Controllers
 
         private async Task<FtpClient> GetBunnyCdnFtpClient()
         {
-            var info = await BunnyCdnFtpInfo.GetCreds(StorageSpace.AuthoredFiles);
+            var info = (await _ftpCreds.Get())[StorageSpace.AuthoredFiles];
             var client = new FtpClient(info.Hostname) {Credentials = new NetworkCredential(info.Username, info.Password)};
             await client.ConnectAsync();
             return client;
@@ -174,7 +179,6 @@ namespace Wabbajack.BuildServer.Controllers
                 </table>
             </body></html>
         ");
-
 
 
         [HttpGet]

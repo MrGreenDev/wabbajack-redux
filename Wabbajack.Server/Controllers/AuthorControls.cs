@@ -60,7 +60,7 @@ namespace Wabbajack.BuildServer.Controllers
             List<string> lists = new();
             foreach (var file in Enum.GetValues<List>())
             {
-                lists.AddRange((await _client.GetData(file)).Lists.Where(l => l.Maintainers.Contains(user))
+                lists.AddRange((await _gitHubClient.GetData(file)).Lists.Where(l => l.Maintainers.Contains(user))
                     .Select(lst => lst.Links.MachineURL));
             }
 
@@ -75,7 +75,7 @@ namespace Wabbajack.BuildServer.Controllers
             var data = await _dtos.DeserializeAsync<UpdateRequest>(Request.Body);
             try
             {
-                await _client.UpdateList(user, data);
+                await _gitHubClient.UpdateList(user, data);
                 await _quickSync.Notify<ModListDownloader>();
             }
             catch (Exception ex)

@@ -15,6 +15,7 @@ using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
+using Wabbajack.Server.TokenProviders;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Wabbajack.Server.Services
@@ -25,14 +26,16 @@ namespace Wabbajack.Server.Services
         private SqlService _sql;
         private ArchiveMaintainer _maintainer;
         private readonly TemporaryFileManager _manager;
+        private readonly IFtpSiteCredentials _ftpCreds;
 
         public PatchBuilder(ILogger<PatchBuilder> logger, SqlService sql, AppSettings settings, ArchiveMaintainer maintainer,
-            DiscordWebHook discordWebHook, QuickSync quickSync, TemporaryFileManager manager) : base(logger, settings, quickSync, TimeSpan.FromMinutes(1))
+            DiscordWebHook discordWebHook, QuickSync quickSync, TemporaryFileManager manager, IFtpSiteCredentials ftpCreds) : base(logger, settings, quickSync, TimeSpan.FromMinutes(1))
         {
             _discordWebHook = discordWebHook;
             _sql = sql;
             _maintainer = maintainer;
             _manager = manager;
+            _ftpCreds = ftpCreds;
         }
         
         public bool NoCleaning { get; set; }
@@ -76,11 +79,11 @@ namespace Wabbajack.Server.Services
 
                     await using var sigFile = _manager.CreateFile();
                     await using var patchFile = _manager.CreateFile();
-                    await using var srcStream = await srcPath.OpenShared();
-                    await using var destStream = await destPath.OpenShared();
+                    await using var srcStream = srcPath.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
+                    await using var destStream = destPath.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
                     await using var sigStream = sigFile.Path.Open(FileMode.Create, FileAccess.ReadWrite);
                     await using var patchOutput = patchFile.Path.Open(FileMode.Create, FileAccess.ReadWrite);
-                    OctoDiff.Create(destStream, srcStream, sigStream, patchOutput, new OctoDiff.ProgressReporter(TimeSpan.FromSeconds(1), (s, p) => _logger.LogInformation($"Patch Builder: {p} {s}")));
+                    OctoDiff.Create(destStream, srcStream, sigStream, patchOutput);
                     await patchOutput.DisposeAsync();
                     var size = patchFile.Path.Size();
 
@@ -235,7 +238,7 @@ namespace Wabbajack.Server.Services
 
         private async Task<FtpClient> GetBunnyCdnFtpClient()
         {
-            var info = await BunnyCdnFtpInfo.GetCreds(StorageSpace.Patches);
+            var info = (await _ftpCreds.Get())[StorageSpace.Patches];
             var client = new FtpClient(info.Hostname) {Credentials = new NetworkCredential(info.Username, info.Password)};
             await client.ConnectAsync();
             return client;

@@ -196,5 +196,11 @@ namespace Wabbajack.Downloaders
         {
             throw new NotImplementedException();
         }
+
+        public async Task PrepareAll(IEnumerable<IDownloadState> downloadStates)
+        {
+            foreach (var d in downloadStates.Select(d => Downloader(new Archive { State = d })).Distinct())
+                await d.Prepare();
+        }
     }
 }

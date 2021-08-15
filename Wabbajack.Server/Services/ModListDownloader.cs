@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Wabbajack.BuildServer;
+using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
 
@@ -15,8 +16,10 @@ namespace Wabbajack.Server.Services
         private ArchiveMaintainer _maintainer;
         private SqlService _sql;
         private DiscordWebHook _discord;
+        private readonly Client _wjClient;
 
-        public ModListDownloader(ILogger<ModListDownloader> logger, AppSettings settings, ArchiveMaintainer maintainer, SqlService sql, DiscordWebHook discord, QuickSync quickSync)
+        public ModListDownloader(ILogger<ModListDownloader> logger, AppSettings settings, ArchiveMaintainer maintainer, 
+            SqlService sql, DiscordWebHook discord, QuickSync quickSync, Client wjClient)
         : base(logger, settings, quickSync, TimeSpan.FromMinutes(1))
         {
             _logger = logger;
@@ -24,14 +27,15 @@ namespace Wabbajack.Server.Services
             _maintainer = maintainer;
             _sql = sql;
             _discord = discord;
+            _wjClient = wjClient;
         }
 
 
         public override async Task<int> Execute()
         {
             int downloaded = 0;
-            var lists = (await ModlistMetadata.LoadFromGithub())
-                .Concat(await ModlistMetadata.LoadUnlistedFromGithub()).ToList();
+            var lists = (await _wjClient.())
+                .Concat(await _wjClient.LoadUnlistedFromGithub()).ToList();
             
             foreach (var list in lists)
             {
