@@ -25,7 +25,6 @@ namespace Wabbajack.Server.Services
     {
         private SqlService _sql;
         private DiscordWebHook _discord;
-        private NexusKeyMaintainance _nexus;
         private ArchiveMaintainer _archives;
         
         private AsyncLock _healLock = new();
@@ -38,13 +37,12 @@ namespace Wabbajack.Server.Services
         private readonly NexusApi _nexusApi;
 
 
-        public ListValidator(ILogger<ListValidator> logger, AppSettings settings, SqlService sql, DiscordWebHook discord, NexusKeyMaintainance nexus, 
+        public ListValidator(ILogger<ListValidator> logger, AppSettings settings, SqlService sql, DiscordWebHook discord, 
             ArchiveMaintainer archives, QuickSync quickSync, DownloadDispatcher dispatcher, IRateLimiter limiter, NexusApi nexusApi) 
             : base(logger, settings, quickSync, TimeSpan.FromMinutes(5))
         {
             _sql = sql;
             _discord = discord;
-            _nexus = nexus;
             _archives = archives;
             _dispatcher = dispatcher;
             _limiter = limiter;

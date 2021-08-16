@@ -5,8 +5,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
@@ -152,6 +150,19 @@ namespace Wabbajack.Networking.WabbajackClientApi
             };
 
             return definition;
+
+        }
+
+        public async Task<ModlistMetadata[]> LoadLists(bool includeUnlisted = false)
+        {
+            var lists = (new[] {"https://raw.githubusercontent.com/wabbajack-tools/mod-lists/master/modlists.json",
+                "https://raw.githubusercontent.com/wabbajack-tools/mod-lists/master/utility_modlists.json",
+                "https://raw.githubusercontent.com/wabbajack-tools/mod-lists/master/unlisted_modlists.json"})
+                .Take(includeUnlisted ? 3 : 2);
+
+            return await lists.PMap(_limiter, async url => await _client.GetFromJsonAsync<ModlistMetadata[]>(url)!)
+                .SelectMany(x => x)
+                .ToArray();
 
         }
     }

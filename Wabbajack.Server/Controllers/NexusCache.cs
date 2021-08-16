@@ -21,15 +21,13 @@ namespace Wabbajack.BuildServer.Controllers
         private AppSettings _settings;
         private SqlService _sql;
         private ILogger<NexusCache> _logger;
-        private NexusKeyMaintainance _keys;
         private readonly NexusApi _api;
 
-        public NexusCache(ILogger<NexusCache> logger, SqlService sql, AppSettings settings, NexusKeyMaintainance keys, NexusApi api)
+        public NexusCache(ILogger<NexusCache> logger, SqlService sql, AppSettings settings, NexusApi api)
         {
             _settings = settings;
             _sql = sql;
             _logger = logger;
-            _keys = keys;
             _api = api;
         }
 

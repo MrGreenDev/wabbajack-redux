@@ -10,6 +10,7 @@ using FluentFTP.Helpers;
 using Microsoft.Extensions.Logging;
 using Wabbajack.BuildServer;
 using Wabbajack.Common;
+using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
@@ -27,11 +28,15 @@ namespace Wabbajack.Server.Services
         private DiscordWebHook _discord;
         private readonly IFtpSiteCredentials _credentials;
         private readonly Client _wjClient;
+        private readonly IRateLimiter _limiter;
+        private readonly DTOSerializer _dtos;
+        private readonly IFtpSiteCredentials _ftpCreds;
 
         public bool ActiveFileSyncEnabled { get; set; } = true;
 
         public MirrorUploader(ILogger<MirrorUploader> logger, AppSettings settings, SqlService sql, QuickSync quickSync, ArchiveMaintainer archives,
-            DiscordWebHook discord, IFtpSiteCredentials credentials, Client wjClient)
+            DiscordWebHook discord, IFtpSiteCredentials credentials, Client wjClient, IRateLimiter limiter, DTOSerializer dtos,
+            IFtpSiteCredentials ftpCreds)
             : base(logger, settings, quickSync, TimeSpan.FromHours(1))
         {
             _sql = sql;
@@ -39,6 +44,9 @@ namespace Wabbajack.Server.Services
             _discord = discord;
             _credentials = credentials;
             _wjClient = wjClient;
+            _limiter = limiter;
+            _dtos = dtos;
+            _ftpCreds = ftpCreds;
         }
 
         public override async Task<int> Execute()
@@ -84,7 +92,7 @@ namespace Wabbajack.Server.Services
                             Content = $"Uploading {toUpload.Hash} - {toUpload.Created} because {toUpload.Rationale}"
                         });
 
-                    var definition = await _wjClient.GenerateFileDefinition(path, (s, percent) => { });
+                    var definition = await _wjClient.GenerateFileDefinition(path);
 
                     using (var client = await GetClient(creds))
                     {
@@ -97,18 +105,18 @@ namespace Wabbajack.Server.Services
                         return $"{definition.Hash.ToHex()}/parts/{idx}";
                     }
 
-                    await definition.Parts.PMap(queue, async part =>
+                    await definition.Parts.PDo(_limiter, async part =>
                     {
-                        _logger.LogInformation($"Uploading mirror part ({part.Index}/{definition.Parts.Length})");
+                        _logger.LogInformation("Uploading mirror part ({index}/{length})", part.Index, definition.Parts.Length);
 
                         var buffer = new byte[part.Size];
-                        await using (var fs = await path.OpenShared())
+                        await using (var fs = path.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
                         {
                             fs.Position = part.Offset;
                             await fs.ReadAsync(buffer);
                         }
                         
-                        await CircuitBreaker.WithAutoRetryAllAsync(async () =>{
+                        await CircuitBreaker.WithAutoRetryAllAsync(_logger, async () =>{
                             using var client = await GetClient(creds);
                             var name = MakePath(part.Index);
                             await client.UploadAsync(new MemoryStream(buffer), name);
@@ -116,7 +124,7 @@ namespace Wabbajack.Server.Services
 
                     });
 
-                    await CircuitBreaker.WithAutoRetryAllAsync(async () =>
+                    await CircuitBreaker.WithAutoRetryAllAsync(_logger, async () =>
                     {
                         using var client = await GetClient(creds);
                         _logger.LogInformation($"Finishing mirror upload");
@@ -125,7 +133,7 @@ namespace Wabbajack.Server.Services
                         await using var ms = new MemoryStream();
                         await using (var gz = new GZipStream(ms, CompressionLevel.Optimal, true))
                         {
-                            definition.ToJson(gz);
+                            await _dtos.Serialize(definition, gz);
                         }
 
                         ms.Position = 0;
@@ -149,11 +157,11 @@ namespace Wabbajack.Server.Services
             goto TOP;
         }
 
-        private static async Task<FtpClient> GetClient(FtpSite creds = null)
+        private async Task<FtpClient> GetClient(FtpSite? creds = null)
         {
-            return await CircuitBreaker.WithAutoRetryAllAsync<FtpClient>(async () =>
+            return await CircuitBreaker.WithAutoRetryAllAsync(_logger, async () =>
             {
-                creds ??= await FtpSite.GetCreds(StorageSpace.Mirrors);
+                creds ??= (await _ftpCreds.Get())[StorageSpace.Mirrors];
 
                 var ftpClient = new FtpClient(creds.Hostname, new NetworkCredential(creds.Username, creds.Password));
                 ftpClient.DataConnectionType = FtpDataConnectionType.EPSV;

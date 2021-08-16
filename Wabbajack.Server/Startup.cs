@@ -59,7 +59,6 @@ namespace Wabbajack.Server
             services.AddSingleton<ListValidator>();
             services.AddSingleton<ArchiveDownloader>();
             services.AddSingleton<DiscordWebHook>();
-            services.AddSingleton<NexusKeyMaintainance>();
             services.AddSingleton<PatchBuilder>();
             services.AddSingleton<MirrorUploader>();
             services.AddSingleton<MirrorQueueService>();
@@ -92,7 +91,7 @@ namespace Wabbajack.Server
                 app.UseDeveloperExceptionPage();
             }
 
-            if (!(this is TestStartup)) 
+            if (this is not TestStartup) 
                 app.UseHttpsRedirection();
             
             app.UseDeveloperExceptionPage();
@@ -104,14 +103,6 @@ namespace Wabbajack.Server
             provider.Mappings[".wabbajack"] = "application/zip";
             app.UseStaticFiles();
 
-            /*
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Wabbajack Build API");
-                c.RoutePrefix = string.Empty;
-            }); */
-            
             app.UseRouting();
 
             app.UseAuthentication();
@@ -124,14 +115,10 @@ namespace Wabbajack.Server
             app.UseService<ListValidator>();
             app.UseService<ArchiveDownloader>();
             app.UseService<DiscordWebHook>();
-            app.UseService<NexusKeyMaintainance>();
             app.UseService<PatchBuilder>();
             app.UseService<MirrorUploader>();
-            //app.UseService<MirrorQueueService>();
             app.UseService<Watchdog>();
             app.UseService<DiscordFrontend>();
-            // Don't enable Author Files Cleanup
-            //app.UseService<AuthoredFilesCleanup>();
             app.UseService<MetricsKeyCache>();
 
             app.Use(next =>

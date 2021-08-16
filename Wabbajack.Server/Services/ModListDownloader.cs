@@ -1,11 +1,19 @@
 ﻿using System;
+using System.IO;
 using System.IO.Compression;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Wabbajack.BuildServer;
+using Wabbajack.Common;
+using Wabbajack.Downloaders;
+using Wabbajack.DTOs;
+using Wabbajack.DTOs.JsonConverters;
+using Wabbajack.Installer;
 using Wabbajack.Networking.WabbajackClientApi;
+using Wabbajack.Paths.IO;
 using Wabbajack.Server.DataLayer;
 using Wabbajack.Server.DTOs;
 
@@ -17,9 +25,13 @@ namespace Wabbajack.Server.Services
         private SqlService _sql;
         private DiscordWebHook _discord;
         private readonly Client _wjClient;
+        private readonly TemporaryFileManager _manager;
+        private readonly DownloadDispatcher _dispatcher;
+        private readonly DTOSerializer _dtos;
 
         public ModListDownloader(ILogger<ModListDownloader> logger, AppSettings settings, ArchiveMaintainer maintainer, 
-            SqlService sql, DiscordWebHook discord, QuickSync quickSync, Client wjClient)
+            SqlService sql, DiscordWebHook discord, QuickSync quickSync, Client wjClient, TemporaryFileManager manager,
+            DownloadDispatcher dispatcher, DTOSerializer dtos)
         : base(logger, settings, quickSync, TimeSpan.FromMinutes(1))
         {
             _logger = logger;
@@ -28,14 +40,16 @@ namespace Wabbajack.Server.Services
             _sql = sql;
             _discord = discord;
             _wjClient = wjClient;
+            _manager = manager;
+            _dispatcher = dispatcher;
+            _dtos = dtos;
         }
 
 
         public override async Task<int> Execute()
         {
             int downloaded = 0;
-            var lists = (await _wjClient.())
-                .Concat(await _wjClient.LoadUnlistedFromGithub()).ToList();
+            var lists = await _wjClient.LoadLists();
             
             foreach (var list in lists)
             {
@@ -54,8 +68,8 @@ namespace Wabbajack.Server.Services
                             {
                                 Content = $"Downloading {list.Links.MachineURL} - {list.DownloadMetadata.Hash}"
                             });
-                        var tf = new TempFile();
-                        var state = DownloadDispatcher.ResolveArchive(list.Links.Download);
+                        var tf = _manager.CreateFile();
+                        var state = _dispatcher.Parse(new Uri(list.Links.Download));
                         if (state == null)
                         {
                             _logger.Log(LogLevel.Error,
@@ -64,8 +78,8 @@ namespace Wabbajack.Server.Services
                         }
 
                         downloaded += 1;
-                        await state.Download(new Archive(state) {Name = $"{list.Links.MachineURL}.wabbajack"}, tf.Path);
-                        var hash = await tf.Path.FileHashAsync();
+                        await _dispatcher.Download(new Archive{State = state, Name = $"{list.Links.MachineURL}.wabbajack"}, tf.Path, CancellationToken.None);
+                        var hash = await tf.Path.Hash();
                         if (hash != list.DownloadMetadata.Hash)
                         {
                             _logger.Log(LogLevel.Error,
@@ -79,36 +93,8 @@ namespace Wabbajack.Server.Services
 
                     _maintainer.TryGetPath(list.DownloadMetadata.Hash, out var modlistPath);
                     ModList modlist;
-                    await using (var fs = await modlistPath.OpenRead())
-                    using (var zip = new ZipArchive(fs, ZipArchiveMode.Read))
-                    await using (var entry = zip.GetEntry("modlist")?.Open())
-                    {
-                        if (entry == null)
-                        {
-                            _logger.LogWarning($"Bad Modlist {list.Links.MachineURL}");
-                            await _discord.Send(Channel.Ham,
-                                new DiscordMessage
-                                {
-                                    Content = $"Bad Modlist  {list.Links.MachineURL} - {list.DownloadMetadata.Hash}"
-                                });
-                            continue;
-                        }
 
-                        try
-                        {
-                            modlist = entry.FromJson<ModList>();
-                        }
-                        catch (JsonReaderException)
-                        {
-                            _logger.LogWarning($"Bad Modlist {list.Links.MachineURL}");
-                            await _discord.Send(Channel.Ham,
-                                new DiscordMessage
-                                {
-                                    Content = $"Bad Modlist  {list.Links.MachineURL} - {list.DownloadMetadata.Hash}"
-                                });
-                            continue;
-                        }
-                    }
+                    modlist = await StandardInstaller.LoadFromFile(_dtos, modlistPath);
 
                     await _discord.Send(Channel.Ham,
                         new DiscordMessage

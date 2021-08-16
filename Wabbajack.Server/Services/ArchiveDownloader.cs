@@ -19,25 +19,22 @@ namespace Wabbajack.Server.Services
         private ArchiveMaintainer _archiveMaintainer;
         private NexusApi _nexusClient;
         private DiscordWebHook _discord;
-        private NexusKeyMaintainance _nexus;
         private readonly DownloadDispatcher _dispatcher;
         private readonly TemporaryFileManager _manager;
 
         public ArchiveDownloader(ILogger<ArchiveDownloader> logger, AppSettings settings, SqlService sql, ArchiveMaintainer archiveMaintainer, 
-            DiscordWebHook discord, QuickSync quickSync, NexusKeyMaintainance nexus, DownloadDispatcher dispatcher, TemporaryFileManager manager) 
+            DiscordWebHook discord, QuickSync quickSync, DownloadDispatcher dispatcher, TemporaryFileManager manager) 
             : base(logger, settings, quickSync, TimeSpan.FromMinutes(10))
         {
             _sql = sql;
             _archiveMaintainer = archiveMaintainer;
             _discord = discord;
-            _nexus = nexus;
             _dispatcher = dispatcher;
             _manager = manager;
         }
 
         public override async Task<int> Execute()
         {
-            _nexusClient ??= await _nexus.GetClient();
             int count = 0;
 
             while (true)

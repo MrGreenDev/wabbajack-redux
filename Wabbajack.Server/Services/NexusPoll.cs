@@ -18,7 +18,6 @@ namespace Wabbajack.Server.Services
         private AppSettings _settings;
         private GlobalInformation _globalInformation;
         private ILogger<NexusPoll> _logger;
-        private NexusKeyMaintainance _keys;
         private readonly IRateLimiter _limiter;
         private readonly NexusApi _api;
 

@@ -125,5 +125,12 @@ namespace Wabbajack.Common
             await foreach (var itm in coll)
                 yield return await fn(itm);
         }
+        
+        public static async IAsyncEnumerable<TOut> SelectMany<TIn, TOut>(this IAsyncEnumerable<TIn> coll, Func<TIn, IEnumerable<TOut>> fn)
+        {
+            await foreach (var itm in coll)
+                foreach (var inner in fn(itm))
+                    yield return inner;
+        }
     }
 }
