@@ -1,18 +1,22 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Wabbajack.DTOs;
 using Wabbajack.Networking.NexusApi.DTOs;
+using Wabbajack.Server.DTOs;
 
 namespace Wabbajack.Networking.NexusApi
 {
     public class NexusApi
     {
-        private readonly ApiKey _apiKey;
+        protected readonly ApiKey ApiKey;
         private readonly ApplicationInfo _appInfo;
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _jsonOptions;
@@ -21,7 +25,7 @@ namespace Wabbajack.Networking.NexusApi
         public NexusApi(ApiKey apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo,
             JsonSerializerOptions jsonOptions)
         {
-            _apiKey = apiKey;
+            ApiKey = apiKey;
             _logger = logger;
             _client = client;
             _appInfo = appInfo;
@@ -136,9 +140,15 @@ namespace Wabbajack.Networking.NexusApi
             msg.RequestUri = new Uri($"https://api.nexusmods.com/{string.Format(uri, parameters)}");
             msg.Headers.Add("Application-Name", _appInfo.AppName);
             msg.Headers.Add("Application-Version", _appInfo.AppVersion.ToString());
-            msg.Headers.Add("apikey", await _apiKey.GetKey());
+            msg.Headers.Add("apikey", await ApiKey.GetKey());
             msg.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             return msg;
+        }
+
+        public async Task<(UpdateEntry[], ResponseMetadata headers)> GetUpdates(Game game, CancellationToken token)
+        {
+            var msg = await GenerateMessage(HttpMethod.Get, Endpoints.Updates, game.MetaData().NexusName, "1m");
+            return await Send<UpdateEntry[]>(msg, token);
         }
     }
 }

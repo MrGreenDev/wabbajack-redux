@@ -11,7 +11,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Wabbajack.Common\Wabbajack.Common.csproj"/>
         <ProjectReference Include="..\Wabbajack.DTOs\Wabbajack.DTOs.csproj"/>
-        <ProjectReference Include="..\Wabbajack.TaskTracking.Interfaces\Wabbajack.TaskTracking.Interfaces.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

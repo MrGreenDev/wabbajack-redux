@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,6 +42,30 @@ namespace Wabbajack.Common
             }
 
             await output.FlushAsync(token);
+        }
+
+        public static async Task<byte[]> ReadAllAsync(this Stream stream)
+        {
+            var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            return ms.ToArray();
+        }
+
+        public static string ReadAllText(this Stream stream)
+        {
+            using var sr = new StreamReader(stream);
+            return sr.ReadToEnd();
+        }
+        
+        public static async IAsyncEnumerable<string> ReadLinesAsync(this Stream stream)
+        {
+            using var sr = new StreamReader(stream);
+            while (true)
+            {
+                var data = await sr.ReadLineAsync();
+                if (data == null) break;
+                yield return data!;
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Wabbajack.Paths;
@@ -404,6 +405,58 @@ namespace Wabbajack.DTOs
         {
             return Games.Values
                 .FirstOrDefault(g => g.SteamIDs.Length > 0 && g.SteamIDs.Any(i => i == id));
+        }
+        
+        /// <summary>
+        /// Parse game data from an arbitrary string. Tries first via parsing as a game Enum, then by Nexus name.
+        /// <param nambe="someName">Name to query</param>
+        /// <returns>GameMetaData found</returns>
+        /// <exception cref="ArgumentNullException">If string could not be translated to a game</exception>
+        /// </summary>
+        public static GameMetaData GetByFuzzyName(string someName)
+        {
+            return TryGetByFuzzyName(someName) ?? throw new ArgumentNullException(nameof(someName), $"\"{someName}\" could not be translated to a game!");
+        }
+        
+        private static GameMetaData? GetByMO2Name(string gameName)
+        {
+            gameName = gameName.ToLower();
+            return Games.Values.FirstOrDefault(g => g.MO2Name?.ToLower() == gameName);
+        }
+        
+        /// <summary>
+        /// Tries to parse game data from an arbitrary string. Tries first via parsing as a game Enum, then by Nexus name.
+        /// <param nambe="someName">Name to query</param>
+        /// <returns>GameMetaData if found, otherwise null</returns>
+        /// </summary>
+        public static GameMetaData? TryGetByFuzzyName(string someName)
+        {
+            if (Enum.TryParse(typeof(Game), someName, true, out var metadata)) return ((Game)metadata!).MetaData();
+
+            var result = GetByNexusName(someName);
+            if (result != null) return result;
+
+            result = GetByMO2ArchiveName(someName);
+            if (result != null) return result;
+
+            result = GetByMO2Name(someName);
+            if (result != null) return result;
+
+
+            return int.TryParse(someName, out int id) ? GetBySteamID(id) : null;
+        }
+        
+        public static bool TryGetByFuzzyName(string someName, out GameMetaData gameMetaData)
+        {
+            var result = TryGetByFuzzyName(someName);
+            if (result == null)
+            {
+                gameMetaData = Games.Values.First();
+                return false;
+            }
+
+            gameMetaData = result;
+            return true;
         }
 
         public static GameMetaData MetaData(this Game game)

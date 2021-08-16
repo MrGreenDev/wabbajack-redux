@@ -7,6 +7,10 @@ namespace Wabbajack.Hashing.xxHash64
 {
     public static class StreamExtensions
     {
+        public static async Task<Hash> Hash(this Stream stream, CancellationToken token)
+        {
+            return await stream.HashingCopy(Stream.Null, token);
+        }
         public static async Task<Hash> HashingCopy(this Stream inputStream, Stream outputStream,
             CancellationToken token)
         {

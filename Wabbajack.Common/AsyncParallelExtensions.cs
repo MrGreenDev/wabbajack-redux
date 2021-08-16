@@ -43,6 +43,13 @@ namespace Wabbajack.Common
             return lst;
         }
         
+        public static async Task<T[]> ToArray<T>(this IAsyncEnumerable<T> coll)
+        {
+            List<T> lst = new();
+            await foreach (var itm in coll) lst.Add(itm);
+            return lst.ToArray();
+        }
+        
         public static async Task<IReadOnlyCollection<T>> ToReadOnlyCollection<T>(this IAsyncEnumerable<T> coll)
         {
             List<T> lst = new();
@@ -106,10 +113,24 @@ namespace Wabbajack.Common
                 yield return await fn(itm);
         }
         
+        public static async IAsyncEnumerable<TOut> SelectMany<TIn, TOut>(this IEnumerable<TIn> coll, Func<TIn, ValueTask<IEnumerable<TOut>>> fn)
+        {
+            foreach (var itm in coll)
+                foreach (var inner in await fn(itm)) 
+                    yield return inner;
+        }
+        
         public static async IAsyncEnumerable<TOut> Select<TIn, TOut>(this IAsyncEnumerable<TIn> coll, Func<TIn, ValueTask<TOut>> fn)
         {
             await foreach (var itm in coll)
                 yield return await fn(itm);
+        }
+        
+        public static async IAsyncEnumerable<TOut> SelectMany<TIn, TOut>(this IAsyncEnumerable<TIn> coll, Func<TIn, IEnumerable<TOut>> fn)
+        {
+            await foreach (var itm in coll)
+                foreach (var inner in fn(itm))
+                    yield return inner;
         }
     }
 }
