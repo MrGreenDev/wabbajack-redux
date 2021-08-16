@@ -49,9 +49,9 @@ namespace Wabbajack.Compiler.Test
                 new Uri("https://authored-files.wabbajack.org/Tonal%20Architect_WJ_TEST_FILES.zip_9cb97a01-3354-4077-9e4a-7e808d47794f"));
         }
         
-        private async Task CompileAndValidate(int expectedDirectives)
+        private async Task CompileAndValidate(int expectedDirectives, Action<MO2CompilerSettings>? configureSettings = null)
         {
-            _modlist = await _harness.Compile();
+            _modlist = await _harness.Compile(configureSettings);
             Assert.NotNull(_modlist);
             Assert.Single(_modlist!.Archives);
 
@@ -150,6 +150,32 @@ namespace Wabbajack.Compiler.Test
             
             await InstallAndValidate();
         }
+        
+        [Fact]
+        public async Task NoMatchIncludeIncludesNonMatchingFiles()
+        {
+            var someFile = _mod.FullPath.Combine("some folder", "some file.pex");
+            someFile.Parent.CreateDirectory();
+            await someFile.WriteAllTextAsync("Cheese for Everyone!");
+            
+            var someFile2 = _mod.FullPath.Combine("some folder2", "some other folder", "some file.pex");
+            someFile2.Parent.CreateDirectory();
+            await someFile2.WriteAllTextAsync("More Cheese for Everyone!");
+            
+            await CompileAndValidate(6, settings =>
+            {
+                settings.NoMatchInclude = new[]
+                {
+                    someFile.RelativeTo(_harness._source),
+                    someFile2.RelativeTo(_harness._source)
+                };
+            });
+
+            Assert.Equal(3, _modlist!.Directives.OfType<InlineFile>().Count());
+            
+            await InstallAndValidate();
+        }
+        
 
 
     }

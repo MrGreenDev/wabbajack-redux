@@ -20,7 +20,7 @@ namespace Wabbajack.Compiler.Test
     {
         private readonly ILogger<ModListHarness> _logger;
         private readonly TemporaryFileManager _manager;
-        private readonly AbsolutePath _source;
+        public readonly AbsolutePath _source;
         private readonly AbsolutePath _downloadPath;
         private readonly AbsolutePath _installLocation;
         private readonly AbsolutePath _modsFolder;
@@ -65,16 +65,18 @@ namespace Wabbajack.Compiler.Test
             return mod;
         }
 
-        public async Task<ModList?> CompileAndInstall()
+        public async Task<ModList?> CompileAndInstall(Action<MO2CompilerSettings>? configureSettings = null)
         {
-            var modlist = await Compile();
+            var modlist = await Compile(configureSettings);
             await Install();
 
             return modlist;
         }
 
-        public async Task<ModList?> Compile()
+        public async Task<ModList?> Compile(Action<MO2CompilerSettings>? configureSettings = null)
         {
+            configureSettings ??= x => {};
+            
             _source.Combine(Consts.MO2Profiles, _profileName).CreateDirectory();
             using var scope = _serviceProvider.CreateScope();
             var settings = scope.ServiceProvider.GetService<MO2CompilerSettings>()!;
@@ -85,6 +87,7 @@ namespace Wabbajack.Compiler.Test
             settings.SelectedProfiles = new []{_profileName};
             settings.Profile = _profileName;
             settings.OutputFile = _outputFile;
+            configureSettings(settings);
 
             var modLines = _mods.Select(
                 m => (m.Value.EnabledIn.Contains(_profileName) ? "+" : "-") + m.Key);

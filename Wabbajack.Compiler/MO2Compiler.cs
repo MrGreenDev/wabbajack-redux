@@ -247,7 +247,7 @@ namespace Wabbajack.Compiler
                 new IncludeRegex(this, "^[^\\\\]*\\.bat$"),
                 new IncludeModIniData(this),
                 new DirectMatch(this),
-                new IncludeTaggedMods(this, Consts.WABBAJACK_INCLUDE),
+                new IncludeTaggedFiles(this, _settings.Include),
                 // TODO: rework tagged files
                 // new IncludeTaggedFolders(this, Consts.WABBAJACK_INCLUDE),
                 new IgnoreExtension(this, Ext.Pyc),
@@ -276,10 +276,8 @@ namespace Wabbajack.Compiler
                 new IncludeAllConfigs(this),
                 // TODO
                 //new zEditIntegration.IncludeZEditPatches(this),
-                new IncludeTaggedMods(this, Consts.WABBAJACK_NOMATCH_INCLUDE),
-                // TODO
-                //new IncludeTaggedFolders(this,Consts.WABBAJACK_NOMATCH_INCLUDE),
-                //new IncludeTaggedFiles(this,Consts.WABBAJACK_NOMATCH_INCLUDE_FILES),
+                
+                new IncludeTaggedFiles(this, _settings.NoMatchInclude),
                 new IncludeRegex(this, ".*\\.txt"),
                 new IgnorePathContains(this,@"\Edit Scripts\Export\"),
                 new IgnoreExtension(this, new Extension(".CACHE")),
