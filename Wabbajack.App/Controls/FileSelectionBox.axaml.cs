@@ -15,6 +15,45 @@ namespace Wabbajack.App.Controls
         public FileSelectionBox()
         {
             InitializeComponent();
+            
+            this.WhenActivated(dispose =>
+            {
+                this.WhenAnyValue(x => x.SelectedPath)
+                    .Where(x => x != default)
+                    .Select(t => t.ToString())
+                    .BindTo(TextBox, t => t.Text)
+                    .DisposeWith(dispose);
+                
+
+                SelectButton.Command = ReactiveCommand.Create(async () =>
+                {
+                    if (SelectFolder)
+                    {
+                        var dialog = new OpenFolderDialog()
+                        {
+                            Title = "Select a folder",
+                        };
+                        var result = await dialog.ShowAsync(App.MainWindow);
+                        if (result != null)
+                            SelectedPath = result.ToAbsolutePath();
+                    }
+                    else 
+                    {
+                        var dialog = new OpenFileDialog
+                        {
+                            AllowMultiple = false,
+                            Title = "Select a file",
+                            Filters = new()
+                            {
+                                new FileDialogFilter { Extensions = AllowedExtensions.Split("|").ToList(), Name = "*" }
+                            }
+                        };
+                        var results = await dialog.ShowAsync(App.MainWindow);
+                        if (results != null)
+                            SelectedPath = results!.First().ToAbsolutePath();
+                    }
+                }).DisposeWith(dispose);
+            });
         }
 
         public static readonly DirectProperty<FileSelectionBox, AbsolutePath> SelectedPathProperty =
@@ -44,49 +83,6 @@ namespace Wabbajack.App.Controls
         {
             get => GetValue(SelectFolderProperty);
             set => SetValue(SelectFolderProperty, value);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-            this.WhenActivated(dispose =>
-            {
-                this.WhenAnyValue(x => x.SelectedPath)
-                    .Where(x => x != default)
-                    .Select(t => t.ToString())
-                    .BindTo(this.FindControl<TextBox>("TextBox"), t => t.Text)
-                    .DisposeWith(dispose);
-                
-                this.FindControl<Button>("SelectButton")
-                    .Command = ReactiveCommand.Create(async () =>
-                {
-                    if (SelectFolder)
-                    {
-                        var dialog = new OpenFolderDialog()
-                        {
-                            Title = "Select a folder",
-                        };
-                        var result = await dialog.ShowAsync(App.MainWindow);
-                        if (result != null)
-                            SelectedPath = result.ToAbsolutePath();
-                    }
-                    else 
-                    {
-                        var dialog = new OpenFileDialog
-                        {
-                            AllowMultiple = false,
-                            Title = "Select a file",
-                            Filters = new()
-                            {
-                                new FileDialogFilter { Extensions = AllowedExtensions.Split("|").ToList(), Name = "*" }
-                            }
-                        };
-                        var results = await dialog.ShowAsync(App.MainWindow);
-                        if (results != null)
-                            SelectedPath = results!.First().ToAbsolutePath();
-                    }
-                }).DisposeWith(dispose);
-            });
         }
     }
 }

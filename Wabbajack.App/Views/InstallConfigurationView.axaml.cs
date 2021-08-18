@@ -1,3 +1,4 @@
+using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
@@ -6,11 +7,12 @@ using Avalonia.Markup.Xaml;
 using Avalonia.ReactiveUI;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
+using Wabbajack.App.Interfaces;
 using Wabbajack.App.ViewModels;
 
 namespace Wabbajack.App.Views
 {
-    public partial class InstallConfigurationView : ReactiveUserControl<InstallConfigurationViewModel>
+    public partial class InstallConfigurationView : ReactiveUserControl<InstallConfigurationViewModel>, IScreenView
     {
         public InstallConfigurationView()
         {
@@ -19,11 +21,24 @@ namespace Wabbajack.App.Views
 
             this.WhenActivated(disposables =>
             {
+
                 this.WhenAnyValue(x => x.ModListFile.SelectedPath)
-                    .Where(x => x != default)
                     .BindTo(ViewModel, vm => vm!.ModListPath)
                     .DisposeWith(disposables);
+                
+                this.WhenAnyValue(x => x.DownloadPath.SelectedPath)
+                    .BindTo(ViewModel, vm => vm!.Download)
+                    .DisposeWith(disposables);
+                
+                this.WhenAnyValue(x => x.InstallPath.SelectedPath)
+                    .BindTo(ViewModel, vm => vm!.Install)
+                    .DisposeWith(disposables);
 
+                ViewModel.WhenAnyValue(x => x.BeginCommand)
+                    .Where(x => x != default)
+                    .BindTo(BeginInstall, x => x.Button.Command)
+                    .DisposeWith(disposables);
+                
                 ViewModel.WhenAnyValue(x => x.ModList)
                     .Where(x => x != default)
                     .Select(x => x.Name)
@@ -37,5 +52,6 @@ namespace Wabbajack.App.Views
             });
         }
 
+        public Type ViewModelType => typeof(InstallConfigurationViewModel);
     }
 }

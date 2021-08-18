@@ -5,6 +5,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Wabbajack.App.Interfaces;
 using Wabbajack.App.ViewModels;
 using Wabbajack.App.Views;
 using Wabbajack.DTOs.JsonConverters;
@@ -35,16 +36,18 @@ namespace Wabbajack.App
                     services.AddSingleton<InstallConfigurationViewModel>();
                     services.AddDTOConverters();
                     services.AddDTOSerializer();
+                    services.AddSingleton<MainWindowViewModel>();
+                    services.AddSingleton<RouterViewModel>();
+                    services.AddSingleton<ModeSelectionViewModel>();
+                    services.AddSingleton<IScreenView, ModeSelectionView>();
+                    services.AddSingleton<IScreenView, InstallConfigurationView>();
 
                 }).Build();
             Services = host.Services;
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                desktop.MainWindow = new MainWindow
-                {
-                    DataContext = new MainWindowViewModel(),
-                };
+                desktop.MainWindow = new MainWindow();
                 MainWindow = desktop.MainWindow;
             }
 
