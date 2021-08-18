@@ -24,6 +24,10 @@ namespace Wabbajack.App.Views
             {
                 CloseButton.Command = ReactiveCommand.Create(() => Environment.Exit(0)).DisposeWith(dispose);
                 MinimizeButton.Command = ReactiveCommand.Create(() => WindowState = WindowState.Minimized).DisposeWith(dispose);
+                BackButton.Command = ReactiveCommand.Create(() =>
+                {
+                    App.Services.GetService<RouterViewModel>()!.Back();
+                });
 
 
                 ViewModel.WhenAnyValue(vm => vm.CurrentScreen)
