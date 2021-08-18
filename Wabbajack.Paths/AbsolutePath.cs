@@ -106,6 +106,7 @@ namespace Wabbajack.Paths
         {
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (other.Parts == null) return other.Parts == Parts;
+            if (Parts == null) return false;
             if (Parts.Length != other.Parts.Length) return false;
             for (var idx = 0; idx < Parts.Length; idx++)
                 if (!Parts[idx].Equals(other.Parts[idx], StringComparison.InvariantCultureIgnoreCase))
