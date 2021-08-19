@@ -6,10 +6,12 @@ using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Wabbajack.App.Interfaces;
+using Wabbajack.App.Models;
 using Wabbajack.App.ViewModels;
 using Wabbajack.App.Views;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Networking.NexusApi;
+using Wabbajack.Services.OSIntegrated;
 
 namespace Wabbajack.App
 {
@@ -41,6 +43,8 @@ namespace Wabbajack.App
                     services.AddSingleton<ModeSelectionViewModel>();
                     services.AddSingleton<IScreenView, ModeSelectionView>();
                     services.AddSingleton<IScreenView, InstallConfigurationView>();
+                    services.AddSingleton<InstallationStateManager>();
+                    services.AddOSIntegrated();
 
                 }).Build();
             Services = host.Services;

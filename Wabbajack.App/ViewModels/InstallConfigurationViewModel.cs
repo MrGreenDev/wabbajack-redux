@@ -14,9 +14,11 @@ using ReactiveUI.Validation.Extensions;
 using ReactiveUI.Validation.Helpers;
 using Wabbajack.App.Extensions;
 using Wabbajack.App.Interfaces;
+using Wabbajack.App.Models;
 using Wabbajack.Common;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.JsonConverters;
+using Wabbajack.DTOs.SavedSettings;
 using Wabbajack.Installer;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
@@ -26,7 +28,8 @@ namespace Wabbajack.App.ViewModels
     public class InstallConfigurationViewModel : ReactiveValidationObject, IActivatableViewModel
     {
         private readonly DTOSerializer _dtos;
-        
+        private readonly InstallationStateManager _stateManager;
+
         [Reactive]
         public AbsolutePath ModListPath { get; set; }
         
@@ -50,8 +53,10 @@ namespace Wabbajack.App.ViewModels
         
         
 
-        public InstallConfigurationViewModel(DTOSerializer dtos)
+        public InstallConfigurationViewModel(DTOSerializer dtos, InstallationStateManager stateManager)
         {
+            _stateManager = stateManager;
+
             _dtos = dtos;
             Activator = new ViewModelActivator();
             this.WhenActivated(disposables =>
@@ -61,7 +66,7 @@ namespace Wabbajack.App.ViewModels
                 this.ValidationRule(x => x.Install, p => p.DirectoryExists(), "Install folder file must exist");
                 this.ValidationRule(x => x.Download, p => p != default, "Download folder must be set");
                 
-                BeginCommand = ReactiveCommand.Create(() => StartInstall(), this.IsValid());
+                BeginCommand = ReactiveCommand.Create(StartInstall, this.IsValid());
                 
 
                 this.WhenAnyValue(t => t.ModListPath)
@@ -83,6 +88,12 @@ namespace Wabbajack.App.ViewModels
 
         private void StartInstall()
         {
+            _stateManager.SetLastState(new InstallationConfigurationSetting
+            {
+                ModList = ModListPath,
+                Downloads = Download,
+                Install = Install
+            }).FireAndForget();
             throw new System.NotImplementedException();
         }
 
@@ -99,6 +110,11 @@ namespace Wabbajack.App.ViewModels
         { 
             var definition= await StandardInstaller.LoadFromFile(_dtos, modlist);
             return definition;
+        }
+
+        private async Task SaveState()
+        {
+            
         }
 
         public ViewModelActivator Activator { get; }

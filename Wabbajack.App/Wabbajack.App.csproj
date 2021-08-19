@@ -24,5 +24,6 @@
     <ProjectReference Include="..\Wabbajack.DTOs\Wabbajack.DTOs.csproj" />
     <ProjectReference Include="..\Wabbajack.Installer\Wabbajack.Installer.csproj" />
     <ProjectReference Include="..\Wabbajack.Paths\Wabbajack.Paths.csproj" />
+    <ProjectReference Include="..\Wabbajack.Services.OSIntegrated\Wabbajack.Services.OSIntegrated.csproj" />
   </ItemGroup>
 </Project>
