@@ -3,7 +3,7 @@ using ReactiveUI.Fody.Helpers;
 
 namespace Wabbajack.App.ViewModels
 {
-    public class ModeSelectionViewModel : ReactiveObject
+    public class ModeSelectionViewModel : ViewModelBase
     {
         public ModeSelectionViewModel()
         {

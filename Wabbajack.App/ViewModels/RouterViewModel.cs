@@ -1,19 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using Wabbajack.App.Interfaces;
+using Wabbajack.Common;
 
 namespace Wabbajack.App.ViewModels
 {
     public class RouterViewModel : ReactiveObject
     {
-        public Dictionary<Type, Control> _screens = new();
+        public readonly Dictionary<Type, Control> _screens = new();
 
-        private Stack<Type> _breadCrumbs = new();
-        private readonly Dictionary<Control,Type> _screensReversed;
+        private readonly Stack<Type> _breadCrumbs = new();
 
         [Reactive]
         public Control CurrentScreen { get; set; }
@@ -24,7 +25,6 @@ namespace Wabbajack.App.ViewModels
         public RouterViewModel(IEnumerable<IScreenView> screens)
         {
             _screens = screens.ToDictionary(s => s.ViewModelType, s => (Control)s);
-            _screensReversed = screens.ToDictionary(s => (Control)s, s => s.ViewModelType);
             var (key, value) = _screens.First();
             CurrentScreen = value;
             CurrentType = key;
@@ -35,6 +35,13 @@ namespace Wabbajack.App.ViewModels
             _breadCrumbs.Push(CurrentType);
             CurrentScreen = _screens[typeof(T)];
             CurrentType = typeof(T);
+        }
+
+        public void NavigateTo<TVM, TParam>(TParam param)
+        {
+            var vm = _screens[typeof(TVM)];
+            NavigateTo<TVM>();
+            ((INavigationParameter<TParam>)vm).NavigatedTo(param).FireAndForget();
         }
 
         public void Back()

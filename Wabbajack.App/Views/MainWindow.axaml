@@ -47,7 +47,7 @@
             </Button>
             
         </Grid>
-        <ContentControl Grid.Row="1" x:Name="Content"></ContentControl>
+        <ContentControl Grid.Row="1" x:Name="Contents"></ContentControl>
         
     </Grid>
 

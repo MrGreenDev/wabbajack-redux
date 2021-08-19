@@ -91,7 +91,7 @@ namespace Wabbajack.App.ViewModels
             await using var fs = path.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
             using var ar = new ZipArchive(fs, ZipArchiveMode.Read);
             var entry = ar.GetEntry("modlist-image.png");
-            await using var stream = entry.Open();
+            await using var stream = entry!.Open();
             return new Bitmap(new MemoryStream(await stream.ReadAllAsync()));
         }
 

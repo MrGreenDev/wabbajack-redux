@@ -33,7 +33,7 @@ namespace Wabbajack.App.Views
                 this.WhenAnyValue(x => x.InstallPath.SelectedPath)
                     .BindTo(ViewModel, vm => vm!.Install)
                     .DisposeWith(disposables);
-
+                
                 ViewModel.WhenAnyValue(x => x.BeginCommand)
                     .Where(x => x != default)
                     .BindTo(BeginInstall, x => x.Button.Command)
@@ -41,7 +41,7 @@ namespace Wabbajack.App.Views
                 
                 ViewModel.WhenAnyValue(x => x.ModList)
                     .Where(x => x != default)
-                    .Select(x => x.Name)
+                    .Select(x => x!.Name)
                     .BindTo(ModListName, x => x.Text)
                     .DisposeWith(disposables);
                 

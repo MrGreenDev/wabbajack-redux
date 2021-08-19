@@ -80,6 +80,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Networking.GitHub
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.App", "Wabbajack.App\Wabbajack.App.csproj", "{FBAFB70D-F811-4653-B443-1044A852586A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Services.OSIntegrated", "Wabbajack.Services.OSIntegrated\Wabbajack.Services.OSIntegrated.csproj", "{45E48012-6C58-4C3D-843F-C6EED02868B7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -246,5 +248,9 @@ Global
 		{FBAFB70D-F811-4653-B443-1044A852586A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FBAFB70D-F811-4653-B443-1044A852586A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FBAFB70D-F811-4653-B443-1044A852586A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45E48012-6C58-4C3D-843F-C6EED02868B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45E48012-6C58-4C3D-843F-C6EED02868B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45E48012-6C58-4C3D-843F-C6EED02868B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45E48012-6C58-4C3D-843F-C6EED02868B7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

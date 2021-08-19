@@ -32,7 +32,7 @@ namespace Wabbajack.App.Views
 
                 ViewModel.WhenAnyValue(vm => vm.CurrentScreen)
                     .Where(s => s != default)
-                    .BindTo(Content, c => c.Content)
+                    .BindTo(Contents, c => c.Content)
                     .DisposeWith(dispose);
 
             });

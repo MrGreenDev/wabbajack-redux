@@ -15,8 +15,8 @@ namespace Wabbajack.App
 {
     public class App : Application
     {
-        public static IServiceProvider Services { get; private set; }
-        public static Window MainWindow { get; set; }
+        public static IServiceProvider Services { get; private set; } = null!;
+        public static Window? MainWindow { get; set; }
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
