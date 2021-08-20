@@ -9,10 +9,11 @@ using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using Wabbajack.App.Interfaces;
 using Wabbajack.App.ViewModels;
+using Wabbajack.Interfaces;
 
 namespace Wabbajack.App.Views
 {
-    public partial class InstallConfigurationView : ReactiveUserControl<InstallConfigurationViewModel>, IScreenView
+    public partial class InstallConfigurationView : ReactiveUserControl<InstallConfigurationViewModel>, IScreenView, ISingletonService
     {
         public InstallConfigurationView()
         {
@@ -22,18 +23,16 @@ namespace Wabbajack.App.Views
             this.WhenActivated(disposables =>
             {
 
-                this.WhenAnyValue(x => x.ModListFile.SelectedPath)
-                    .BindTo(ViewModel, vm => vm!.ModListPath)
+                this.Bind(ViewModel, x => x.ModListPath,
+                        view => view.ModListFile.SelectedPath)
                     .DisposeWith(disposables);
-                
-                this.WhenAnyValue(x => x.DownloadPath.SelectedPath)
-                    .BindTo(ViewModel, vm => vm!.Download)
+                this.Bind(ViewModel, x => x.Download,
+                        view => view.DownloadPath.SelectedPath)
                     .DisposeWith(disposables);
-                
-                this.WhenAnyValue(x => x.InstallPath.SelectedPath)
-                    .BindTo(ViewModel, vm => vm!.Install)
+                this.Bind(ViewModel, x => x.Install,
+                        view => view.InstallPath.SelectedPath)
                     .DisposeWith(disposables);
-                
+
                 ViewModel.WhenAnyValue(x => x.BeginCommand)
                     .Where(x => x != default)
                     .BindTo(BeginInstall, x => x.Button.Command)

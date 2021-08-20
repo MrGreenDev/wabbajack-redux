@@ -1,38 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
-using System.Reactive.Linq;
-using System.Text;
 using Avalonia.Controls;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using ReactiveUI.Validation.Helpers;
 using Wabbajack.App.Interfaces;
+using Wabbajack.App.Messages;
+using Wabbajack.Interfaces;
 
 namespace Wabbajack.App.ViewModels
 {
-    public class MainWindowViewModel : ReactiveValidationObject, IActivatableViewModel
+    public class MainWindowViewModel : ReactiveValidationObject, IActivatableViewModel, IReceiver<NavigateTo>, ISingletonService
     {
-        private readonly RouterViewModel _router;
+        private readonly IEnumerable<IScreenView> _screens;
 
         [Reactive]
         public Control CurrentScreen { get; set; }
-        public MainWindowViewModel(RouterViewModel router)
+        
+        [Reactive]
+        public ReactiveCommand<Unit, Unit> BackButton { get; set; }
+        
+        public MainWindowViewModel(IEnumerable<IScreenView> screens)
         {
-            _router = router;
+            _screens = screens;
             Activator = new ViewModelActivator();
             this.WhenActivated(disposables =>
             {
-                _router.WhenAnyValue(r => r.CurrentScreen)
-                    .Where(c => c != default)
-                    .BindTo(this, t => t.CurrentScreen)
-                    .DisposeWith(disposables);
+                BackButton = ReactiveCommand.Create(() => {}).DisposeWith(disposables);
             });
+            
+            Receive(new NavigateTo(typeof(ModeSelectionViewModel)));
 
         }
-
         public ViewModelActivator Activator { get; }
+        public void Receive(NavigateTo val)
+        {
+            CurrentScreen = (Control)_screens.First(s => s.ViewModelType == val.ViewModel);
+        }
     }
 }

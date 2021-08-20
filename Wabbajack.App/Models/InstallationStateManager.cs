@@ -5,12 +5,13 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.DTOs.SavedSettings;
+using Wabbajack.Interfaces;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
 
 namespace Wabbajack.App.Models
 {
-    public class InstallationStateManager
+    public class InstallationStateManager : ISingletonService
     {
         private static AbsolutePath Path => KnownFolders.WabbajackAppLocal.Combine("install-configuration-state.json");
         private readonly DTOSerializer _dtos;

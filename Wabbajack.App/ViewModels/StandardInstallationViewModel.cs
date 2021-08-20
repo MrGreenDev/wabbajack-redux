@@ -3,12 +3,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wabbajack.App.Interfaces;
+using Wabbajack.App.Messages;
 using Wabbajack.DTOs;
 using Wabbajack.Installer;
+using Wabbajack.Interfaces;
 
 namespace Wabbajack.App.ViewModels
 {
-    public class StandardInstallationViewModel : ViewModelBase, INavigationParameter<InstallerConfiguration>
+    public class StandardInstallationViewModel : ViewModelBase, IReceiver<StartInstallation>, ISingletonService
     {
         private readonly IServiceProvider _provider;
         private readonly GameLocator _locator;
@@ -23,15 +25,18 @@ namespace Wabbajack.App.ViewModels
             _locator = locator;
             _logger = logger;
         }
-        public async Task NavigatedTo(InstallerConfiguration param)
+        
+        public void Receive(StartInstallation msg)
         {
+            MessageBus.Instance.Send(new NavigateTo(GetType()));
+            
             _scope = _provider.CreateScope();
             _config = _provider.GetService<InstallerConfiguration>()!;
-            _config.Downloads = param.Downloads;
-            _config.ModList = param.ModList;
-            _config.Install = param.Install;
-            _config.ModlistArchive = param.ModlistArchive;
-            _config.Game = param.ModList.GameType;
+            _config.Downloads = msg.Download;
+            _config.ModList = msg.ModList;
+            _config.Install = msg.Install;
+            _config.ModlistArchive = msg.ModListPath;
+            _config.Game = msg.ModList.GameType;
 
             if (_config.GameFolder == default)
             {

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wabbajack.Common;
 using Wabbajack.Downloaders;
+using Wabbajack.Installer;
 using Wabbajack.Paths.IO;
 using Wabbajack.VFS;
 
@@ -19,6 +20,7 @@ namespace Wabbajack.Services.OSIntegrated
             service.AddSingleton(new VFSCache(KnownFolders.EntryPoint.Combine("GlobalVFSCache3.sqlite")));
             service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(2));
             service.AddDownloadDispatcher();
+            service.AddSingleton<GameLocator>();
             return service;
 
         }

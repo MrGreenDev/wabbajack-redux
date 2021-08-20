@@ -14,18 +14,20 @@ using ReactiveUI.Validation.Extensions;
 using ReactiveUI.Validation.Helpers;
 using Wabbajack.App.Extensions;
 using Wabbajack.App.Interfaces;
+using Wabbajack.App.Messages;
 using Wabbajack.App.Models;
 using Wabbajack.Common;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.DTOs.SavedSettings;
 using Wabbajack.Installer;
+using Wabbajack.Interfaces;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
 
 namespace Wabbajack.App.ViewModels
 {
-    public class InstallConfigurationViewModel : ReactiveValidationObject, IActivatableViewModel
+    public class InstallConfigurationViewModel : ViewModelBase, IActivatableViewModel, ISingletonService
     {
         private readonly DTOSerializer _dtos;
         private readonly InstallationStateManager _stateManager;
@@ -58,7 +60,6 @@ namespace Wabbajack.App.ViewModels
             _stateManager = stateManager;
 
             _dtos = dtos;
-            Activator = new ViewModelActivator();
             this.WhenActivated(disposables =>
             {
 
@@ -82,8 +83,22 @@ namespace Wabbajack.App.ViewModels
                     .SelectAsync(disposables, async x => await LoadModListImage(x))
                     .ObserveOn(AvaloniaScheduler.Instance)
                     .BindTo(this, t => t.ModListImage)
-                    .DisposeWith(disposables);                    
+                    .DisposeWith(disposables);  
+                
+                SetupDefaults().FireAndForget();
             });
+
+
+        }
+
+        private async Task SetupDefaults()
+        {
+            var lastState = await _stateManager.GetLastState();
+            if (!lastState.ModList.FileExists()) return;
+            await Task.Delay(250); // Ugly hack
+            ModListPath = lastState.ModList;
+            Install = lastState.Install;
+            Download = lastState.Downloads;
         }
 
         private void StartInstall()
@@ -94,7 +109,8 @@ namespace Wabbajack.App.ViewModels
                 Downloads = Download,
                 Install = Install
             }).FireAndForget();
-            throw new System.NotImplementedException();
+            
+            MessageBus.Instance.Send(new StartInstallation(ModListPath, Install, Download, ModList!));
         }
 
         private async Task<IBitmap> LoadModListImage(AbsolutePath path)
@@ -111,12 +127,7 @@ namespace Wabbajack.App.ViewModels
             var definition= await StandardInstaller.LoadFromFile(_dtos, modlist);
             return definition;
         }
-
-        private async Task SaveState()
-        {
-            
-        }
-
+        
         public ViewModelActivator Activator { get; }
     }
 }

@@ -30,6 +30,7 @@ namespace Wabbajack.Paths
 
         private static AbsolutePath Parse(string path)
         {
+            if (string.IsNullOrWhiteSpace(path)) return default;
             var parts = path.Split(StringSplits, StringSplitOptions.RemoveEmptyEntries);
             return new AbsolutePath(parts, DetectPathType(path));
         }
@@ -81,6 +82,7 @@ namespace Wabbajack.Paths
 
         public override string ToString()
         {
+            if (Parts == default) return "";
             if (PathFormat == PathFormat.Windows)
                 return string.Join('\\', Parts);
             return '/' + string.Join('/', Parts);

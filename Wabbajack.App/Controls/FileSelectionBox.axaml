@@ -33,7 +33,7 @@
     </UserControl.Styles>
     
     <Grid ColumnDefinitions="*, 30" Height="30">
-        <TextBox Grid.Column="0" Name="Path" Height="30" x:Name="TextBox"></TextBox>
+        <TextBox Grid.Column="0" Name="Path" Height="30" x:Name="TextBox" IsEnabled="False"></TextBox>
         <Button Grid.Column="1" Name="SelectButton" Height="30">
             <i:MaterialIcon Kind="Search"></i:MaterialIcon>
         </Button>

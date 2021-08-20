@@ -3,11 +3,12 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Wabbajack.Hashing.xxHash64;
+using Wabbajack.Interfaces;
 using Wabbajack.Paths;
 
 namespace Wabbajack.DTOs.JsonConverters
 {
-    public class HashRelativePathConverter : JsonConverter<HashRelativePath>
+    public class HashRelativePathConverter : JsonConverter<HashRelativePath>, ISingletonService
     {
         public override HashRelativePath Read(ref Utf8JsonReader reader, Type typeToConvert,
             JsonSerializerOptions options)
