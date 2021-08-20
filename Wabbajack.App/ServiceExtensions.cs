@@ -7,7 +7,6 @@ using Wabbajack.App.Models;
 using Wabbajack.App.ViewModels;
 using Wabbajack.App.Views;
 using Wabbajack.DTOs.JsonConverters;
-using Wabbajack.Interfaces;
 using Wabbajack.Networking.NexusApi;
 using Wabbajack.Services.OSIntegrated;
 
@@ -22,18 +21,7 @@ namespace Wabbajack.App
                 AppName = "Wabbajack",
                 AppVersion = new Version(1, 0)
             });
-
-            services.Scan(scan => scan
-                .FromApplicationDependencies(a => a.FullName?.StartsWith("Wabbajack.") ?? false)
-                .AddClasses(classes => classes.AssignableTo<ISingletonService>())
-                  .AsSelfWithInterfaces()
-                  .WithSingletonLifetime()
-                .AddClasses(classes => classes.AssignableTo<IScopedService>())
-                  .AsSelfWithInterfaces()
-                  .WithScopedLifetime()
-                .AddClasses(classes => classes.AssignableTo<ITransientService>())
-                  .AsSelfWithInterfaces()
-                  .WithTransientLifetime());
+            
             
             /*
             

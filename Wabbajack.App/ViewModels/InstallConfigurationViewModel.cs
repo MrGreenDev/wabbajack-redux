@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.IO.Compression;
 using System.Reactive;
@@ -7,13 +6,10 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
-using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using ReactiveUI.Validation.Extensions;
-using ReactiveUI.Validation.Helpers;
 using Wabbajack.App.Extensions;
-using Wabbajack.App.Interfaces;
 using Wabbajack.App.Messages;
 using Wabbajack.App.Models;
 using Wabbajack.Common;
@@ -21,13 +17,12 @@ using Wabbajack.DTOs;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.DTOs.SavedSettings;
 using Wabbajack.Installer;
-using Wabbajack.Interfaces;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
 
 namespace Wabbajack.App.ViewModels
 {
-    public class InstallConfigurationViewModel : ViewModelBase, IActivatableViewModel, ISingletonService
+    public class InstallConfigurationViewModel : ViewModelBase, IActivatableViewModel
     {
         private readonly DTOSerializer _dtos;
         private readonly InstallationStateManager _stateManager;

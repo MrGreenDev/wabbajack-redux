@@ -6,15 +6,16 @@ namespace Wabbajack.Downloaders
 {
     public static class ServiceExtensions
     {
-        public static void AddDownloadDispatcher(this IServiceCollection services)
+        public static IServiceCollection AddDownloadDispatcher(this IServiceCollection services)
         {
-            services.AddGoogleDriveDownloader();
-            services.AddNexusDownloader();
-            services.AddHttpDownloader();
-            services.AddWabbajackCDNDownloader();
-            services.AddDTOSerializer();
-            services.AddDTOConverters();
-            services.AddSingleton<DownloadDispatcher>();
+            return services
+                .AddDTOConverters()
+                .AddDTOSerializer()
+                .AddGoogleDriveDownloader()
+                .AddHttpDownloader()
+                .AddNexusDownloader()
+                .AddWabbajackCDNDownloader()
+                .AddSingleton<DownloadDispatcher>();
         }
     }
 }

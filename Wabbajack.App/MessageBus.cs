@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Wabbajack.App.Messages;
-using Wabbajack.Interfaces;
 
 namespace Wabbajack.App
 {
-    public class MessageBus : ISingletonService
+    public class MessageBus
     {
         public static MessageBus Instance { get; private set; }
         private readonly IReceiverMarker[] _receivers;

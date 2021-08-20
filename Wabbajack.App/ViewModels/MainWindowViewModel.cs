@@ -8,11 +8,10 @@ using ReactiveUI.Fody.Helpers;
 using ReactiveUI.Validation.Helpers;
 using Wabbajack.App.Interfaces;
 using Wabbajack.App.Messages;
-using Wabbajack.Interfaces;
 
 namespace Wabbajack.App.ViewModels
 {
-    public class MainWindowViewModel : ReactiveValidationObject, IActivatableViewModel, IReceiver<NavigateTo>, ISingletonService
+    public class MainWindowViewModel : ReactiveValidationObject, IActivatableViewModel, IReceiver<NavigateTo>
     {
         private readonly IEnumerable<IScreenView> _screens;
 

@@ -1,16 +1,13 @@
 using System;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Wabbajack.App.Interfaces;
 using Wabbajack.App.Messages;
 using Wabbajack.DTOs;
 using Wabbajack.Installer;
-using Wabbajack.Interfaces;
 
 namespace Wabbajack.App.ViewModels
 {
-    public class StandardInstallationViewModel : ViewModelBase, IReceiver<StartInstallation>, ISingletonService
+    public class StandardInstallationViewModel : ViewModelBase, IReceiver<StartInstallation>
     {
         private readonly IServiceProvider _provider;
         private readonly GameLocator _locator;

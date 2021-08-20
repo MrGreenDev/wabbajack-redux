@@ -1,18 +1,15 @@
 using System;
 using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using Avalonia.ReactiveUI;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using Wabbajack.App.ViewModels;
-using Wabbajack.Interfaces;
 
 namespace Wabbajack.App.Views
 {
-    public partial class MainWindow : ReactiveWindow<MainWindowViewModel>, ISingletonService
+    public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
 
         public MainWindow()

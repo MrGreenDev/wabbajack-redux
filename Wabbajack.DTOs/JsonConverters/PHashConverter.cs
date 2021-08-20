@@ -3,11 +3,10 @@ using System.Buffers.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Wabbajack.DTOs.Texture;
-using Wabbajack.Interfaces;
 
 namespace Wabbajack.DTOs.JsonConverters
 {
-    public class PHashConverter : JsonConverter<PHash>, ISingletonService
+    public class PHashConverter : JsonConverter<PHash>
     {
         public override PHash Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {

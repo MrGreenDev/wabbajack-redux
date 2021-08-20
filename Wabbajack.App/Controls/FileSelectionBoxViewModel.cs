@@ -7,12 +7,11 @@ using Avalonia.Controls;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using Wabbajack.App.ViewModels;
-using Wabbajack.Interfaces;
 using Wabbajack.Paths;
 
 namespace Wabbajack.App.Controls
 {
-    public class FileSelectionBoxViewModel : ViewModelBase, ITransientService
+    public class FileSelectionBoxViewModel : ViewModelBase
     {
         [Reactive] public AbsolutePath Path { get; set; }
 

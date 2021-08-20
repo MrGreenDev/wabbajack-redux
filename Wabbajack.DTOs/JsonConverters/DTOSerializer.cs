@@ -4,11 +4,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Wabbajack.Interfaces;
 
 namespace Wabbajack.DTOs.JsonConverters
 {
-    public class DTOSerializer : ISingletonService
+    public class DTOSerializer
     {
         public readonly JsonSerializerOptions Options;
 

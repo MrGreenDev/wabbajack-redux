@@ -1,11 +1,10 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Wabbajack.Interfaces;
 
 namespace Wabbajack.DTOs.JsonConverters
 {
-    public class VersionConverter : JsonConverter<Version>, ISingletonService
+    public class VersionConverter : JsonConverter<Version>
     {
         public override Version? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {

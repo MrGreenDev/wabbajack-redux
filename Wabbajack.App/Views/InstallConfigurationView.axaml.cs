@@ -1,19 +1,15 @@
 using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using Avalonia.ReactiveUI;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using Wabbajack.App.Interfaces;
 using Wabbajack.App.ViewModels;
-using Wabbajack.Interfaces;
 
 namespace Wabbajack.App.Views
 {
-    public partial class InstallConfigurationView : ReactiveUserControl<InstallConfigurationViewModel>, IScreenView, ISingletonService
+    public partial class InstallConfigurationView : ReactiveUserControl<InstallConfigurationViewModel>, IScreenView
     {
         public InstallConfigurationView()
         {

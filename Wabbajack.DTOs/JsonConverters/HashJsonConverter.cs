@@ -2,11 +2,10 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Wabbajack.Hashing.xxHash64;
-using Wabbajack.Interfaces;
 
 namespace Wabbajack.DTOs.JsonConverters
 {
-    public class HashJsonConverter : JsonConverter<Hash>, ISingletonService 
+    public class HashJsonConverter : JsonConverter<Hash> 
     {
         public override Hash Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
