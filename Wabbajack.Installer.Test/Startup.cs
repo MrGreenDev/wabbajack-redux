@@ -7,6 +7,7 @@ using Wabbajack.Common;
 using Wabbajack.Downloaders;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Networking.Http;
+using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi;
 using Wabbajack.Networking.NexusApi.Test.Helpers;
 using Wabbajack.Networking.WabbajackClientApi;
@@ -28,7 +29,7 @@ namespace Wabbajack.Installer.Test
             service.AddSingleton<HttpClient>();
             service.AddHttpDownloader();
             service.AddNexusApi();
-            service.AddSingleton<ApiKey, StaticApiKey>(p =>
+            service.AddSingleton<ITokenProvider<string>, StaticApiKey>(p =>
                 new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
             service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(2));
             service.AddSingleton<FileExtractor.FileExtractor>();
