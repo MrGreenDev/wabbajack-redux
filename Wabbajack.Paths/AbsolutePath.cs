@@ -30,6 +30,7 @@ namespace Wabbajack.Paths
 
         private static AbsolutePath Parse(string path)
         {
+            if (string.IsNullOrWhiteSpace(path)) return default;
             var parts = path.Split(StringSplits, StringSplitOptions.RemoveEmptyEntries);
             return new AbsolutePath(parts, DetectPathType(path));
         }
@@ -81,6 +82,7 @@ namespace Wabbajack.Paths
 
         public override string ToString()
         {
+            if (Parts == default) return "";
             if (PathFormat == PathFormat.Windows)
                 return string.Join('\\', Parts);
             return '/' + string.Join('/', Parts);
@@ -106,6 +108,7 @@ namespace Wabbajack.Paths
         {
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (other.Parts == null) return other.Parts == Parts;
+            if (Parts == null) return false;
             if (Parts.Length != other.Parts.Length) return false;
             for (var idx = 0; idx < Parts.Length; idx++)
                 if (!Parts[idx].Equals(other.Parts[idx], StringComparison.InvariantCultureIgnoreCase))

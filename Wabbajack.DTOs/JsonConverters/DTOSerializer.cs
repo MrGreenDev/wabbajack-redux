@@ -41,9 +41,18 @@ namespace Wabbajack.DTOs.JsonConverters
             return JsonSerializer.Serialize(data, options);
         }
 
-        public async Task Serialize<T>(T data, Stream of)
+        public async Task Serialize<T>(T data, Stream of, bool writeIndented = false)
         {
-            await JsonSerializer.SerializeAsync(of, data, Options);
+            var options = Options;
+            if (writeIndented)
+            {
+                options = new JsonSerializerOptions(Options)
+                {
+                    WriteIndented = true
+                };
+            }
+
+            await JsonSerializer.SerializeAsync(of, data, options);
         }
     }
 }

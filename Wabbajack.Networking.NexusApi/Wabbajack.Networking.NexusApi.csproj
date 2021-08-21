@@ -14,5 +14,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Wabbajack.DTOs\Wabbajack.DTOs.csproj" />
+      <ProjectReference Include="..\Wabbajack.Networking.Http.Interfaces\Wabbajack.Networking.Http.Interfaces.csproj" />
     </ItemGroup>
 </Project>

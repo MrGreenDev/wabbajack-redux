@@ -17,7 +17,7 @@ namespace Wabbajack.VFS.Test
             service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(2));
             service.AddSingleton(new FileHashCache(KnownFolders.EntryPoint.Combine("hashcache.sqlite")));
             service.AddSingleton(new VFSCache(KnownFolders.EntryPoint.Combine("vfscache.sqlite")));
-            service.AddSingleton<Context>();
+            service.AddTransient<Context>();
             service.AddSingleton<FileExtractor.FileExtractor>();
         }
 

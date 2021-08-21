@@ -1654,6 +1654,8 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                           return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2File>(ref reader, options)!;
                                                         case "BA2FileEntryState, Compression.BSA":
                                                           return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2File>(ref reader, options)!;
+                                                        case "BSAFileState, Compression.BSA":
+                                                          return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BSAFile>(ref reader, options)!;
                                                         case "BSAFile":
                                                           return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BSAFile>(ref reader, options)!;
                                                         case "TES3File":
@@ -1918,7 +1920,7 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                           }
                                                           public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.BSAFile value, JsonSerializerOptions options) {
                                                             writer.WriteStartObject();
-                                                            writer.WriteString("$type", "BSAFile");
+                                                            writer.WriteString("$type", "BSAFileState, Compression.BSA");
                                                             writer.WritePropertyName("FlipCompression");
                                                             JsonSerializer.Serialize<System.Boolean>(writer, value.FlipCompression, options);
                                                             writer.WritePropertyName("Index");

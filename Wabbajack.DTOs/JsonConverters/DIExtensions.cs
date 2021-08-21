@@ -5,7 +5,7 @@ namespace Wabbajack.DTOs.JsonConverters
 {
     public static class DIExtensions
     {
-        public static void AddDTOConverters(this IServiceCollection services)
+        public static IServiceCollection AddDTOConverters(this IServiceCollection services)
         {
             Wabbajack_DTOs_DownloadStates_IDownloadStateConverter.ConfigureServices(services);
             Wabbajack_DTOs_DirectiveConverter.ConfigureServices(services);
@@ -16,12 +16,16 @@ namespace Wabbajack.DTOs.JsonConverters
             services.AddSingleton<JsonConverter, HashRelativePathConverter>();
             services.AddSingleton<JsonConverter, PHashConverter>();
             services.AddSingleton<JsonConverter, RelativePathConverter>();
+            services.AddSingleton<JsonConverter, AbsolutePathConverter>();
             services.AddSingleton<JsonConverter, VersionConverter>();
+            return services;
         }
 
-        public static void AddDTOSerializer(this IServiceCollection services)
+        public static IServiceCollection AddDTOSerializer(this IServiceCollection services)
         {
             services.AddSingleton<DTOSerializer>();
+            services.AddSingleton(s => s.GetService<DTOSerializer>()!.Options);
+            return services;
         }
     }
 }

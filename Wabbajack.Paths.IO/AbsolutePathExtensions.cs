@@ -190,7 +190,7 @@ namespace Wabbajack.Paths.IO
 
         public static bool DirectoryExists(this AbsolutePath path)
         {
-            return Directory.Exists(path.ToNativePath());
+            return path != default && Directory.Exists(path.ToNativePath());
         }
 
         public static bool FileExists(this AbsolutePath path)

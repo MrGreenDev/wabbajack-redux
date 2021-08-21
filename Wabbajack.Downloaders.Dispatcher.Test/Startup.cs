@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
 using Wabbajack.Networking.Http;
+using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi;
 using Wabbajack.Networking.NexusApi.Test.Helpers;
 using Wabbajack.Networking.WabbajackClientApi;
@@ -26,7 +27,7 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
             service.AddSingleton<Configuration>();
             service.AddDownloadDispatcher();
             service.AddHttpDownloader();
-            service.AddSingleton<ApiKey, StaticApiKey>(p =>
+            service.AddSingleton<ITokenProvider<string>, StaticApiKey>(p =>
                 new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
             service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(Environment.ProcessorCount));
             service.AddSingleton(new ApplicationInfo

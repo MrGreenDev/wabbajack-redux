@@ -11,7 +11,7 @@ namespace Wabbajack.Networking.NexusApi.Test.Helpers
             _key = key;
         }
 
-        public ValueTask<string> GetKey()
+        public ValueTask<string> Get()
         {
             return new ValueTask<string>(_key);
         }

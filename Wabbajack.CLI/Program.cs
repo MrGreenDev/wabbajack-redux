@@ -54,6 +54,7 @@ namespace Wabbajack.CLI
                     services.AddTransient<Context>();
                     services.AddSingleton<IVerb, HashFile>();
                     services.AddSingleton<IVerb, VFSIndexFolder>();
+                    services.AddSingleton<IVerb, Encrypt>();
                 }).Build();
 
             var service = host.Services.GetService<CommandLineBuilder>();

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.DTOs;
+using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi.DTOs;
 using Wabbajack.Server.DTOs;
 
@@ -16,13 +17,13 @@ namespace Wabbajack.Networking.NexusApi
 {
     public class NexusApi
     {
-        protected readonly ApiKey ApiKey;
+        protected readonly ITokenProvider<string> ApiKey;
         private readonly ApplicationInfo _appInfo;
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly ILogger<NexusApi> _logger;
 
-        public NexusApi(ApiKey apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo,
+        public NexusApi(ITokenProvider<string> apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo,
             JsonSerializerOptions jsonOptions)
         {
             ApiKey = apiKey;
@@ -140,7 +141,7 @@ namespace Wabbajack.Networking.NexusApi
             msg.RequestUri = new Uri($"https://api.nexusmods.com/{string.Format(uri, parameters)}");
             msg.Headers.Add("Application-Name", _appInfo.AppName);
             msg.Headers.Add("Application-Version", _appInfo.AppVersion.ToString());
-            msg.Headers.Add("apikey", await ApiKey.GetKey());
+            msg.Headers.Add("apikey", await ApiKey.Get());
             msg.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             return msg;
         }

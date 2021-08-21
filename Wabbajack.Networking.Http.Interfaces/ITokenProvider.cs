@@ -8,6 +8,6 @@ namespace Wabbajack.Networking.Http.Interfaces
     /// <typeparam name="T"></typeparam>
     public interface ITokenProvider<T>
     {
-        public ValueTask<T> Get();
+        public ValueTask<T?> Get();
     }
 }
