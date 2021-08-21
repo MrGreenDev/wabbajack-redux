@@ -104,9 +104,6 @@ namespace Wabbajack.Hashing.PHash
             };
             var file = await encoder.EncodeToDdsAsync(data, token: token);
             file.Write(output);
-            await using var tfsp = (Guid.NewGuid() + ".dds").ToRelativePath().RelativeTo(@"c:\tmp".ToAbsolutePath())
-                .Open(FileMode.Create, FileAccess.Write);
-            file.Write(tfsp);
 
             if (!leaveOpen)
                 await output.DisposeAsync();
