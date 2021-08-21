@@ -7,10 +7,13 @@ using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
 using System.Linq;
 using System.Threading;
+using Compression.BSA;
 using Wabbajack.Compression.BSA;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.Directives;
 using Wabbajack.DTOs.Directives;
+using Wabbajack.DTOs.Texture;
+using Wabbajack.Hashing.PHash;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
 using Xunit;
@@ -174,6 +177,49 @@ namespace Wabbajack.Compiler.Test
             Assert.Equal(3, _modlist!.Directives.OfType<InlineFile>().Count());
             
             await InstallAndValidate();
+        }
+
+        [Fact]
+
+        public async Task CanDetectSimilarUnpackedTextures()
+        {
+            foreach (var bsa in _mod.FullPath.EnumerateFiles(Ext.Bsa))
+            {
+                await _fileExtractor.ExtractAll(bsa, _mod.FullPath, CancellationToken.None, p => p.Extension == Ext.Dds);
+                bsa.Delete();
+            }
+
+            foreach (var file in _mod.FullPath.EnumerateFiles().Where(p => p.Extension != Ext.Dds || !p.FileName.FileNameStartsWith("mrkinn")))
+            {
+                file.Delete();
+            }
+            
+            foreach (var file in _mod.FullPath.EnumerateFiles())
+            {
+                var oldState = await ImageLoader.Load(file);
+                Assert.NotEqual(DXGI_FORMAT.UNKNOWN, oldState.Format);
+                _logger.LogInformation("Recompressing {file}", file.FileName);
+                await ImageLoader.Recompress(file, 512, 512, DXGI_FORMAT.BC7_UNORM, file, CancellationToken.None);
+
+                var state = await ImageLoader.Load(file);
+                Assert.Equal(DXGI_FORMAT.BC7_UNORM, state.Format);
+            }
+            
+            await CompileAndValidate(3);
+
+            Assert.Equal(2, _modlist!.Directives.OfType<TransformedTexture>().Count());
+
+            foreach (var directive in _modlist!.Directives.OfType<TransformedTexture>())
+            {
+                _logger.LogInformation("For file {name} {format}", directive.To.FileName, directive.ImageState.Format);
+                Assert.Equal(directive.To.FileName, directive.ArchiveHashPath.Parts[^1].FileName);
+                Assert.Equal(512, directive.ImageState.Height);
+                Assert.Equal(512, directive.ImageState.Width);
+                Assert.Equal(DXGI_FORMAT.BC7_UNORM, directive.ImageState.Format);
+            }
+            
+            await InstallAndValidate();
+
         }
         
 
