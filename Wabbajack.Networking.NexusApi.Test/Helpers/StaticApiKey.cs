@@ -1,8 +1,9 @@
 using System.Threading.Tasks;
+using Wabbajack.Networking.Http.Interfaces;
 
 namespace Wabbajack.Networking.NexusApi.Test.Helpers
 {
-    public class StaticApiKey : ApiKey
+    public class StaticApiKey : ITokenProvider<string>
     {
         private readonly string _key;
 
