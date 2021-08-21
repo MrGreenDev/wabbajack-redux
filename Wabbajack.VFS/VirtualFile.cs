@@ -36,7 +36,7 @@ namespace Wabbajack.VFS
         public FullPath FullPath { get; private set; }
 
         public Hash Hash { get; internal set; }
-        public ImageState ImageState { get; internal set; }
+        public ImageState? ImageState { get; internal set; }
         public long Size { get; internal set; }
 
         public ulong LastModified { get; internal set; }

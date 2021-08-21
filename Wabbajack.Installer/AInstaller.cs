@@ -13,6 +13,7 @@ using Wabbajack.DTOs;
 using Wabbajack.DTOs.Directives;
 using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.JsonConverters;
+using Wabbajack.Hashing.PHash;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Installer.Utilities;
 using Wabbajack.Networking.WabbajackClientApi;
@@ -164,9 +165,10 @@ namespace Wabbajack.Installer
 
                         case TransformedTexture tt:
                         {
-                            throw new NotImplementedException();
-                            //await using var s = await sf.GetStream();
-                            //await ImageState.ConvertImage(s, tt.ImageState, tt.To.Extension, directive.Directive.To.RelativeTo(_configuration.Install));
+                            await using var s = await sf.GetStream();
+                            await using var of = directive.Directive.To.RelativeTo(_configuration.Install)
+                                .Open(FileMode.Create, FileAccess.Write);
+                            await ImageLoader.Recompress(s, tt.ImageState.Width, tt.ImageState.Height, tt.ImageState.Format, of, token);
                         }
                             break;
 

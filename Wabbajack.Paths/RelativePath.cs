@@ -167,5 +167,16 @@ namespace Wabbajack.Paths
         }
         
         public RelativePath TopParent => new(Parts[..1]);
+        public RelativePath FileNameWithoutExtension => Parts[^1][..Extension.ToString().Length].ToRelativePath();
+
+        public bool EndsWith(string postfix)
+        {
+            return Parts[^1].EndsWith(postfix);
+        }
+
+        public bool FileNameStartsWith(string mrkinn)
+        {
+            return Parts[^1].StartsWith(mrkinn);
+        }
     }
 }

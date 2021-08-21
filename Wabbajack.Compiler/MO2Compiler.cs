@@ -255,7 +255,7 @@ namespace Wabbajack.Compiler
                 new DeconstructBSAs(
                     this), // Deconstruct BSAs before building patches so we don't generate massive patch files
                 
-                //new MatchSimilarTextures(this),
+                new MatchSimilarTextures(this),
                 new IncludePatches(this),
                 new IncludeDummyESPs(this),
 

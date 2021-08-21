@@ -1,6 +1,9 @@
+using System.Text.Json.Serialization;
+
 namespace Wabbajack.DTOs.Texture
 {
-    public enum DXGI_FORMAT
+    [JsonConverter(typeof(JsonStringEnumConverter))] 
+    public enum DXGI_FORMAT : uint
     {
         UNKNOWN = 0,
         R32G32B32A32_TYPELESS = 1,

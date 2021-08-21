@@ -35,7 +35,7 @@ namespace Wabbajack.Compiler
 
         public ModList ModList = new();
         public AbsolutePath ModListImage;
-        protected readonly ILogger _logger;
+        protected internal readonly ILogger _logger;
         private readonly FileExtractor.FileExtractor _extractor;
         private readonly FileHashCache _hashCache;
         protected readonly Context _vfs;

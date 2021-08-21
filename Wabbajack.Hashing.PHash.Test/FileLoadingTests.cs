@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Shipwreck.Phash;
+using Wabbajack.DTOs.Texture;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
 using Xunit;
@@ -19,6 +20,8 @@ namespace Wabbajack.Hashing.PHash.Test
                 await ImageLoader.Load("TestData/test-dxt5.dds".ToRelativePath().RelativeTo(KnownFolders.EntryPoint));
             var state = await ImageLoader.Load("TestData".ToRelativePath().Combine(file)
                 .RelativeTo(KnownFolders.EntryPoint));
+            
+            Assert.NotEqual(DXGI_FORMAT.UNKNOWN, baseState.Format);
 
             Assert.Equal(difference,
                 ImagePhash.GetCrossCorrelation(

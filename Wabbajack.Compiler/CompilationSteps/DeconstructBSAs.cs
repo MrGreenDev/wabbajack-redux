@@ -37,7 +37,7 @@ namespace Wabbajack.Compiler.CompilationSteps
             _microstack = bsa => new List<ICompilationStep>
             {
                 new DirectMatch(_mo2Compiler),
-                //new MatchSimilarTextures(_mo2Compiler),
+                new MatchSimilarTextures(_mo2Compiler),
                 new IncludePatches(_mo2Compiler, bsa),
                 new DropAll(_mo2Compiler)
             };
@@ -45,7 +45,7 @@ namespace Wabbajack.Compiler.CompilationSteps
             _microstackWithInclude = bsa => new List<ICompilationStep>
             {
                 new DirectMatch(_mo2Compiler),
-                //new MatchSimilarTextures(_mo2Compiler),
+                new MatchSimilarTextures(_mo2Compiler),
                 new IncludePatches(_mo2Compiler, bsa),
                 new IncludeAll(_mo2Compiler)
             };

@@ -288,9 +288,10 @@ namespace Wabbajack.FileExtractor
             }
         }
 
-        public async Task ExtractAll(AbsolutePath src, AbsolutePath dest, CancellationToken token)
+        public async Task ExtractAll(AbsolutePath src, AbsolutePath dest, CancellationToken token, Predicate<RelativePath>? filterFn = null)
         {
-            await GatheringExtract(new NativeFileStreamFactory(src), _ => true, async (path, factory) =>
+            filterFn ??= _ => true;
+            await GatheringExtract(new NativeFileStreamFactory(src), filterFn, async (path, factory) =>
             {
                 var abs = path.RelativeTo(dest);
                 abs.Parent.CreateDirectory();
