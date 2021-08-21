@@ -55,6 +55,7 @@ namespace Wabbajack.App.ViewModels
             _stateManager = stateManager;
 
             _dtos = dtos;
+            Activator = new ViewModelActivator();
             this.WhenActivated(disposables =>
             {
 

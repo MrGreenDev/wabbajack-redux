@@ -7,6 +7,7 @@ namespace Wabbajack.App.ViewModels
     {
         public ModeSelectionViewModel()
         {
+            Activator = new ViewModelActivator();
 
         }
     }

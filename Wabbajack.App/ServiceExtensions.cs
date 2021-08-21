@@ -6,6 +6,7 @@ using Wabbajack.App.Messages;
 using Wabbajack.App.Models;
 using Wabbajack.App.ViewModels;
 using Wabbajack.App.Views;
+using Wabbajack.DTOs;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.Networking.NexusApi;
 using Wabbajack.Services.OSIntegrated;
@@ -21,28 +22,24 @@ namespace Wabbajack.App
                 AppName = "Wabbajack",
                 AppVersion = new Version(1, 0)
             });
-            
-            
-            /*
-            
+
+
+            services.AddSingleton<MessageBus>();
             services.AddSingleton<MainWindow>();
             services.AddSingleton<InstallConfigurationViewModel>();
             services.AddDTOConverters();
             services.AddDTOSerializer();
-            services.AddSingleton<MainWindowViewModel>();
             services.AddSingleton<ModeSelectionViewModel>();
             services.AddTransient<FileSelectionBoxViewModel>();
             services.AddSingleton<IScreenView, ModeSelectionView>();
             services.AddSingleton<IScreenView, InstallConfigurationView>();
             services.AddSingleton<IScreenView, StandardInstallationView>();
-            services.AddSingleton<StandardInstallationViewModel>();
             services.AddSingleton<InstallationStateManager>();
 
-            services.AddSingleton<IReceiverMarker, StandardInstallationViewModel>();
-            //services.AddSingleton<IReceiverMarker, MainWindowViewModel>();
+            services.AddAllSingleton<IReceiverMarker, StandardInstallationViewModel>();
+            services.AddAllSingleton<IReceiverMarker, MainWindowViewModel>();
             
             services.AddOSIntegrated();
-            */
             return services;
         }
     }

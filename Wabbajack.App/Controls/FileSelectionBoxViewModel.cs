@@ -25,6 +25,7 @@ namespace Wabbajack.App.Controls
         public FileSelectionBoxViewModel()
         {
 
+            Activator = new ViewModelActivator();
             this.WhenActivated(disposables =>
             {
                 BrowseCommand = ReactiveCommand.Create(async () =>

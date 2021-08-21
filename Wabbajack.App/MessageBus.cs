@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Disposables;
+using System.Threading.Tasks;
+using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using Wabbajack.App.Messages;
 
@@ -19,20 +22,25 @@ namespace Wabbajack.App
             _logger = logger;
         }
 
-        public void Send<T>(T msg)
+        public void Send<T>(T message)
         {
-            foreach (var receiver in _receivers.OfType<IReceiver<T>>())
+            AvaloniaScheduler.Instance.Schedule(message, TimeSpan.FromMilliseconds(100), (_, msg) =>
             {
-                _logger.LogInformation("Sending {msg} to {receiver}", msg, receiver);
-                try
+                foreach (var receiver in _receivers.OfType<IReceiver<T>>())
                 {
-                    receiver.Receive(msg);
+                    _logger.LogInformation("Sending {msg} to {receiver}", msg, receiver);
+                    try
+                    {
+                        receiver.Receive(msg);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogCritical(ex, "Failed sending {msg} to {receiver}", msg, receiver);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogCritical(ex, "Failed sending {msg} to {receiver}", msg, receiver);
-                }
-            }
+
+                return Disposable.Empty;
+            });
         }
     }
 }
