@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.Directives;
 using Wabbajack.Hashing.PHash;
@@ -29,6 +30,7 @@ namespace Wabbajack.Compiler.CompilationSteps
         {
             if (source.File.Name.FileName.Extension == DDS && source.File.ImageState != null)
             {
+                _compiler._logger.LogInformation("Looking for texture match for {source}", source.File.FullPath);
                 (float Similarity, VirtualFile File) found = _byName[source.Path.FileNameWithoutExtension]
                     .Select(f => (ImageLoader.ComputeDifference(f.ImageState!.PerceptualHash, source.File.ImageState.PerceptualHash), f))
                     .Select(f =>
@@ -63,6 +65,12 @@ namespace Wabbajack.Compiler.CompilationSteps
                             where foundFile != null
                         select (similarity, postfix, mainFile, mainMatch, foundFile);
 
+                    foreach (var record in r)
+                    {
+                        _compiler._logger.LogInformation("Found Match for {source} {data}", source.File.Name, record.foundFile.ImageState);
+                        
+                    }
+
                     var foundRec = r.FirstOrDefault();
                     if (foundRec == default)
                     {
@@ -71,10 +79,12 @@ namespace Wabbajack.Compiler.CompilationSteps
 
                     found = (foundRec.similarity, foundRec.foundFile);
                 }
+                
+                _compiler._logger.LogInformation("Found Match for {source} {sourceData} {destData}", source.File.Name, source.File.ImageState, found.File.ImageState);
 
                 var rv = source.EvolveTo<TransformedTexture>();
                 rv.ArchiveHashPath = found.File.MakeRelativePaths();
-                rv.ImageState = found.File.ImageState!;
+                rv.ImageState = source.File.ImageState!;
                 
                 return rv;
             }

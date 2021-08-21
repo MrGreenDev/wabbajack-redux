@@ -219,7 +219,6 @@ namespace Wabbajack.Compiler.Test
             }
             
             await InstallAndValidate();
-
         }
         
 
