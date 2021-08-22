@@ -13,7 +13,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Wabbajack.Hashing.xxHash64\Wabbajack.Hashing.xxHash64.csproj" />
-        <ProjectReference Include="..\Wabbajack.Interfaces\Wabbajack.Interfaces.csproj" />
         <ProjectReference Include="..\Wabbajack.Paths\Wabbajack.Paths.csproj" />
     </ItemGroup>
 

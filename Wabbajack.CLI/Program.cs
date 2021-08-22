@@ -11,6 +11,7 @@ using Wabbajack.CLI.TypeConverters;
 using Wabbajack.CLI.Verbs;
 using Wabbajack.Common;
 using Wabbajack.Downloaders;
+using Wabbajack.Networking.GitHub;
 using Wabbajack.Networking.Http;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi;
@@ -50,11 +51,13 @@ namespace Wabbajack.CLI
                     services.AddSingleton(new VFSCache(KnownFolders.EntryPoint.Combine("vfscache.sqlite")));
                     services.AddSingleton(new FileHashCache(KnownFolders.EntryPoint.Combine("filehashpath.sqlite")));
                     services.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(Environment.ProcessorCount));
+                    services.AddSingleton<Client>();
 
                     services.AddTransient<Context>();
                     services.AddSingleton<IVerb, HashFile>();
                     services.AddSingleton<IVerb, VFSIndexFolder>();
                     services.AddSingleton<IVerb, Encrypt>();
+                    services.AddSingleton<IVerb, ValidateLists>();
                 }).Build();
 
             var service = host.Services.GetService<CommandLineBuilder>();
