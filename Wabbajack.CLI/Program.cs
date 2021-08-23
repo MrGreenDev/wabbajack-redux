@@ -7,17 +7,20 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Octokit;
 using Wabbajack.CLI.TypeConverters;
 using Wabbajack.CLI.Verbs;
 using Wabbajack.Common;
 using Wabbajack.Downloaders;
-using Wabbajack.Networking.GitHub;
+using Wabbajack.DTOs.GitHub;
 using Wabbajack.Networking.Http;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi;
+using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
 using Wabbajack.VFS;
+using Client = Wabbajack.Networking.GitHub.Client;
 
 namespace Wabbajack.CLI
 {
@@ -27,6 +30,8 @@ namespace Wabbajack.CLI
         {
             TypeDescriptor.AddAttributes(typeof(AbsolutePath),
                 new TypeConverterAttribute(typeof(AbsolutePathTypeConverter)));
+            TypeDescriptor.AddAttributes(typeof(List),
+                new TypeConverterAttribute(typeof(ModListCategoryConverter)));
 
             var host = Host.CreateDefaultBuilder(Array.Empty<string>())
                 .ConfigureServices((host, services) =>
@@ -52,7 +57,15 @@ namespace Wabbajack.CLI
                     services.AddSingleton(new FileHashCache(KnownFolders.EntryPoint.Combine("filehashpath.sqlite")));
                     services.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(Environment.ProcessorCount));
                     services.AddSingleton<Client>();
+                    services.AddSingleton<Networking.WabbajackClientApi.Client>();
+                    services.AddSingleton<Configuration>();
+                    services.AddSingleton<GitHubClient>(s => new GitHubClient(new ProductHeaderValue("wabbajack")));
 
+                    services.AddDownloadDispatcher();
+                    services.AddSingleton<ITokenProvider<string>, StaticApiKey>(p =>
+                        new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
+                    
+                    
                     services.AddTransient<Context>();
                     services.AddSingleton<IVerb, HashFile>();
                     services.AddSingleton<IVerb, VFSIndexFolder>();
