@@ -11,6 +11,7 @@ using Wabbajack.Networking.NexusApi;
 using Wabbajack.Networking.NexusApi.Test.Helpers;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths.IO;
+using Wabbajack.Services.OSIntegrated;
 using Xunit.DependencyInjection;
 using Xunit.DependencyInjection.Logging;
 
@@ -20,22 +21,7 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
     {
         public void ConfigureServices(IServiceCollection service)
         {
-            service.AddNexusApi();
-            service.AddSingleton<HttpClient, HttpClient>();
-            service.AddSingleton<TemporaryFileManager, TemporaryFileManager>();
-            service.AddSingleton<Client>();
-            service.AddSingleton<Configuration>();
-            service.AddDownloadDispatcher();
-            service.AddHttpDownloader();
-            service.AddSingleton<ITokenProvider<string>, StaticApiKey>(p =>
-                new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
-            service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(Environment.ProcessorCount));
-            service.AddSingleton(new ApplicationInfo
-            {
-                AppName = "Wabbajack.Networking.NexusApi.Test",
-                AppVersion = new Version(1, 0)
-            });
-            service.AddSingleton(new JsonSerializerOptions());
+            service.AddOSIntegrated();
         }
 
         public void Configure(ILoggerFactory loggerFactory, ITestOutputHelperAccessor accessor)

@@ -57,5 +57,12 @@ namespace Wabbajack.CLI.Services
             path = ArchivePath(hash);
             return path.FileExists();
         }
+
+        public AbsolutePath GetPath(Hash hash)
+        {
+            if (!TryGetPath(hash, out var path))
+                throw new FileNotFoundException($"Cannot find file for hash {hash}");
+            return path;
+        }
     }
 }

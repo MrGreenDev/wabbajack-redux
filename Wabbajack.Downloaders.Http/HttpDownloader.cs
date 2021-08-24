@@ -39,8 +39,10 @@ namespace Wabbajack.Downloaders.Http
             var msg = new HttpRequestMessage(HttpMethod.Get, state.Url);
             foreach (var header in state.Headers)
             {
-                var kw = header.Split(":").Select(s => s.Trim()).ToArray();
-                msg.Headers.Add(kw[0], kw[1]);
+                var idx = header.IndexOf(':');
+                var k = header[..idx];
+                var v = header[(idx + 1)..];
+                msg.Headers.Add(k, v);
             }
 
             return await _client.SendAsync(msg, token);

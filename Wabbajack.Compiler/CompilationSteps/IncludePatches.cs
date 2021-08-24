@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using F23.StringSimilarity;
 using IniParser.Model;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.Common;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.Directives;

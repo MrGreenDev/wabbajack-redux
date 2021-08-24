@@ -2,8 +2,6 @@ using System;
 using System.Data.SQLite;
 using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.Compiler.PatchCache;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
