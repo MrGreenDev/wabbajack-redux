@@ -24,8 +24,15 @@ namespace Wabbajack.Services.OSIntegrated
             _dtos = dtos;
         }
 
-        private string? EnvValue => Environment.GetEnvironmentVariable(_key.ToUpperInvariant().Replace("-", "_"));
-        
+        private string? EnvValue
+        {
+            get
+            {
+                var data = Environment.GetEnvironmentVariable(_key.ToUpperInvariant().Replace("-", "_"));
+                return data == null ? data : Encoding.UTF8.GetString(Convert.FromBase64String(data));
+            }
+        }
+
         public bool HaveToken()
         {
             return KeyPath.FileExists() || EnvValue != null;
