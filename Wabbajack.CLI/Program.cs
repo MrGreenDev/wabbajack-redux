@@ -60,6 +60,7 @@ namespace Wabbajack.CLI
                     services.AddSingleton<IVerb, HashFile>();
                     services.AddSingleton<IVerb, VFSIndexFolder>();
                     services.AddSingleton<IVerb, Encrypt>();
+                    services.AddSingleton<IVerb, Decrypt>();
                     services.AddSingleton<IVerb, ValidateLists>();
                 }).Build();
 

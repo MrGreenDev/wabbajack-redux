@@ -74,5 +74,14 @@ namespace Wabbajack.Services.OSIntegrated
             return await JsonSerializer.DeserializeAsync<T>(enc);
         }
         
+        public static async Task<byte[]> FromEncryptedDataFile(this AbsolutePath destination)
+        {
+            if (!destination.FileExists()) return default;
+            
+            await using var fs = destination.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
+            await using var enc = await fs.UnProtect(destination.FileName.ToString());
+            return await enc.ReadAllAsync();
+        }
+        
     }
 }

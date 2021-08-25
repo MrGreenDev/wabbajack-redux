@@ -24,9 +24,11 @@ namespace Wabbajack.Services.OSIntegrated
             _dtos = dtos;
         }
 
+        private string? EnvValue => Environment.GetEnvironmentVariable(_key.ToUpperInvariant().Replace("-", "_"));
+        
         public bool HaveToken()
         {
-            return KeyPath.FileExists() || Environment.GetEnvironmentVariable(_key) != null;
+            return KeyPath.FileExists() || EnvValue != null;
         }
 
         public void DeleteToken()
@@ -51,7 +53,7 @@ namespace Wabbajack.Services.OSIntegrated
             }
             else
             {
-                return _dtos.Deserialize<T>(Environment.GetEnvironmentVariable(_key)!);
+                return _dtos.Deserialize<T>(EnvValue!);
             }
         }
 

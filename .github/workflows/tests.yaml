@@ -17,6 +17,7 @@ jobs:
 
     env:
       NEXUS_API_KEY: ${{ secrets.NEXUS_API_KEY }}
+      NEXUS_LOGIN: ${{ secrets.NEXUS_LOGIN }}
     
     strategy:
       matrix:
