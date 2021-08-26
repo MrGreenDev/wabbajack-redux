@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Threading;
 
 namespace Wabbajack.Paths.IO
 {
@@ -18,7 +20,20 @@ namespace Wabbajack.Paths.IO
 
         public void Dispose()
         {
-            _basePath.DeleteDirectory();
+            for (var retries = 0; retries < 10; retries++)
+            {
+                try
+                {
+                    if (!_basePath.DirectoryExists())
+                        return;
+                    _basePath.DeleteDirectory();
+                    return;
+                }
+                catch (IOException ex)
+                {
+                    Thread.Sleep(1000);
+                }
+            }
         }
 
         public TemporaryPath CreateFile(Extension? ext = default)
