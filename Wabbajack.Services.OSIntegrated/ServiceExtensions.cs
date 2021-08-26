@@ -52,7 +52,7 @@ namespace Wabbajack.Services.OSIntegrated
                 new BinaryPatchCache(s.GetService<TemporaryFileManager>()!.CreateFile().Path)
                 : new BinaryPatchCache(KnownFolders.EntryPoint.Combine("patchCache.sqlite")));
             
-            service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(2));
+            service.AddSingleton(new ParallelOptions {MaxDegreeOfParallelism = Environment.ProcessorCount});
 
             service.AddScoped<Context>();
             service.AddSingleton<FileExtractor.FileExtractor>();

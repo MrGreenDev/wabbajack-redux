@@ -2,40 +2,42 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Wabbajack.Common
 {
     public static class AsyncParallelExtensions
     {
-        public static async IAsyncEnumerable<TOut> PMap<TIn, TOut>(this IEnumerable<TIn> coll, IRateLimiter limiter,
+
+        public static ParallelOptions WithCancellationToken(this ParallelOptions options, CancellationToken token)
+        {
+            return new ParallelOptions
+            {
+                MaxDegreeOfParallelism = options.MaxDegreeOfParallelism,
+                TaskScheduler = options.TaskScheduler,
+                CancellationToken = token
+            };
+        }
+        public static IAsyncEnumerable<TOut> PMap<TIn, TOut>(this IEnumerable<TIn> coll, ParallelOptions options,
             Func<TIn, Task<TOut>> mapFn)
         {
-            var tasks = coll.Select(itm => limiter.Enqueue(() => mapFn(itm))).ToList();
 
-            CancellationTokenSource cts = new();
-            limiter.Assist(cts.Token);
+            var queue = Channel.CreateBounded<TOut>(options.MaxDegreeOfParallelism); 
+            Parallel.ForEachAsync(coll, options, async (x, token) =>
+            {
+                var result = await mapFn(x);
+                await queue.Writer.WriteAsync(result, token);
+            }).FireAndForget();
 
-
-            foreach (var result in tasks) yield return await result;
-            cts.Cancel();
+            return queue.Reader.ReadAllAsync();
         }
-
-        public static async Task PDo<TIn>(this IEnumerable<TIn> coll, IRateLimiter limiter, Func<TIn, Task> mapFn)
+        
+        public static async Task PDo<TIn>(this IEnumerable<TIn> coll, ParallelOptions options, Func<TIn, Task> mapFn)
         {
-            var tasks = coll.Select(itm => limiter.Enqueue(() => mapFn(itm)))
-                .ToArray();
-
-            CancellationTokenSource cts = new();
-            limiter.Assist(cts.Token);
-
-            await Task.WhenAll(tasks);
-
-            tasks.Where(t => t.IsFaulted).Do(f => throw f.Exception!);
-
-            cts.Cancel();
+            await Parallel.ForEachAsync(coll, options, async (x, token) => await mapFn(x));
         }
-
+        
         public static async Task<List<T>> ToList<T>(this IAsyncEnumerable<T> coll)
         {
             List<T> lst = new();

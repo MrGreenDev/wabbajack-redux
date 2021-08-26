@@ -1,5 +1,6 @@
 using System;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
@@ -14,7 +15,7 @@ namespace Wabbajack.FileExtractor.Test
         public void ConfigureServices(IServiceCollection service)
         {
             service.AddSingleton<TemporaryFileManager, TemporaryFileManager>();
-            service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(Environment.ProcessorCount));
+            service.AddSingleton(new ParallelOptions {MaxDegreeOfParallelism = Environment.ProcessorCount});
             service.AddSingleton<FileExtractor>();
             service.AddSingleton(new JsonSerializerOptions());
         }

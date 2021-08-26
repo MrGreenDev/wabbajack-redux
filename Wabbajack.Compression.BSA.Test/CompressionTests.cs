@@ -13,16 +13,16 @@ namespace Wabbajack.Compression.BSA.Test
 {
     public class CompressionTestss
     {
-        private readonly IRateLimiter _limiter;
+        private readonly ParallelOptions _parallelOptions;
         private readonly ILogger<CompressionTestss> _logger;
         private readonly TemporaryFileManager _tempManager;
 
         public CompressionTestss(ILogger<CompressionTestss> logger, TemporaryFileManager tempManager,
-            IRateLimiter limiter)
+            ParallelOptions parallelOptions)
         {
             _logger = logger;
             _tempManager = tempManager;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
         }
 
         public static IEnumerable<object[]> TestFiles
@@ -55,7 +55,7 @@ namespace Wabbajack.Compression.BSA.Test
             var reader = await BSADispatch.Open(path);
 
             var dataStates = await reader.Files
-                .PMap(_limiter,
+                .PMap(_parallelOptions,
                     async file =>
                     {
                         var ms = new MemoryStream();
@@ -69,7 +69,7 @@ namespace Wabbajack.Compression.BSA.Test
 
             var build = BSADispatch.CreateBuilder(oldState, _tempManager);
 
-            await dataStates.PDo(_limiter,
+            await dataStates.PDo(_parallelOptions,
                 async itm => { await build.AddFile(itm.State, itm.Stream, CancellationToken.None); });
 
 
@@ -79,7 +79,7 @@ namespace Wabbajack.Compression.BSA.Test
 
             var reader2 = await BSADispatch.Open(new MemoryStreamFactory(rebuiltStream, path, path.LastModifiedUtc()));
             await reader.Files.Zip(reader2.Files)
-                .PDo(_limiter, async pair =>
+                .PDo(_parallelOptions, async pair =>
                 {
                     var (oldFile, newFile) = pair;
                     _logger.LogInformation("Comparing {old} and {new}", oldFile.Path, newFile.Path);

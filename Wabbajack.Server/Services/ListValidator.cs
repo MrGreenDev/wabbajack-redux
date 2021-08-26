@@ -28,7 +28,7 @@ namespace Wabbajack.Server.Services
         private ArchiveMaintainer _archives;
         
         private AsyncLock _healLock = new();
-        private readonly IRateLimiter _limiter;
+        private readonly ParallelOptions _parallelOptions;
         private readonly DownloadDispatcher _dispatcher;
 
         public IEnumerable<(ModListSummary Summary, DetailedStatus Detailed)> Summaries => ValidationInfo.Values.Select(e => (e.Summary, e.Detailed));
@@ -38,14 +38,14 @@ namespace Wabbajack.Server.Services
 
 
         public ListValidator(ILogger<ListValidator> logger, AppSettings settings, SqlService sql, DiscordWebHook discord, 
-            ArchiveMaintainer archives, QuickSync quickSync, DownloadDispatcher dispatcher, IRateLimiter limiter, NexusApi nexusApi) 
+            ArchiveMaintainer archives, QuickSync quickSync, DownloadDispatcher dispatcher, ParallelOptions parallelOptions, NexusApi nexusApi) 
             : base(logger, settings, quickSync, TimeSpan.FromMinutes(5))
         {
             _sql = sql;
             _discord = discord;
             _archives = archives;
             _dispatcher = dispatcher;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
             _nexusApi = nexusApi;
         }
 
@@ -61,7 +61,7 @@ namespace Wabbajack.Server.Services
             stopwatch.Start();
 
             var results = await data.ModLists.Where(m => !m.ForceDown)
-                .PMap(_limiter, async metadata =>
+                .PMap(_parallelOptions, async metadata =>
             {
                 var timer = new Stopwatch();
                 timer.Start();
@@ -93,7 +93,7 @@ namespace Wabbajack.Server.Services
                 }
 
                 var listArchives = await _sql.ModListArchives(metadata.Links.MachineURL);
-                var archives = await listArchives.PMap(_limiter, async archive =>
+                var archives = await listArchives.PMap(_parallelOptions, async archive =>
                 {
                     if (mainFailed)
                         return (archive, ArchiveStatus.InValid);

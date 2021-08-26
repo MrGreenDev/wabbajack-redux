@@ -34,7 +34,7 @@ namespace Wabbajack.Installer
         private readonly FileHashCache _fileHashCache;
         protected readonly IGameLocator _gameLocator;
         private readonly DTOSerializer _jsonSerializer;
-        protected readonly IRateLimiter _limiter;
+        protected readonly ParallelOptions _parallelOptions;
         protected readonly ILogger<T> _logger;
         protected readonly TemporaryFileManager _manager;
         private readonly Context _vfs;
@@ -44,7 +44,7 @@ namespace Wabbajack.Installer
             FileExtractor.FileExtractor extractor,
             DTOSerializer jsonSerializer, Context vfs, FileHashCache fileHashCache,
             DownloadDispatcher downloadDispatcher,
-            IRateLimiter limiter, Client wjClient)
+            ParallelOptions parallelOptions, Client wjClient)
         {
             _manager = new TemporaryFileManager(config.Install.Combine("__temp__"));
             ExtractedModlistFolder = _manager.CreateFolder();
@@ -55,7 +55,7 @@ namespace Wabbajack.Installer
             _vfs = vfs;
             _fileHashCache = fileHashCache;
             _downloadDispatcher = downloadDispatcher;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
             _gameLocator = gameLocator;
             _wjClient = wjClient;
         }
@@ -231,7 +231,7 @@ namespace Wabbajack.Installer
             _logger.LogInformation("Downloading {count} archives", missing.Count);
 
             await missing.Where(a => a.State is not Manual)
-                .PDo(_limiter, async archive =>
+                .PDo(_parallelOptions, async archive =>
                 {
                     _logger.LogInformation("Downloading {archive}", archive.Name);
                     var outputPath = _configuration.Downloads.Combine(archive.Name);
@@ -302,7 +302,7 @@ namespace Wabbajack.Installer
 
             var hashResults = await
                 toHash
-                    .PMap(_limiter, async e => (await _fileHashCache.FileHashCachedAsync(e, token), e))
+                    .PMap(_parallelOptions, async e => (await _fileHashCache.FileHashCachedAsync(e, token), e))
                     .ToList();
 
             HashedArchives = hashResults
@@ -329,7 +329,7 @@ namespace Wabbajack.Installer
             var savePath = (RelativePath)"saves";
 
             await _configuration.Install.EnumerateFiles()
-                .PDo(_limiter, async f =>
+                .PDo(_parallelOptions, async f =>
                 {
                     var relativeTo = f.RelativeTo(_configuration.Install);
                     if (indexed.ContainsKey(relativeTo) || f.InFolder(_configuration.Downloads))
@@ -377,7 +377,7 @@ namespace Wabbajack.Installer
 
             var existingfiles = _configuration.Install.EnumerateFiles().ToHashSet();
 
-            await indexed.Values.PMap<Directive, Directive?>(_limiter, async d =>
+            await indexed.Values.PMap<Directive, Directive?>(_parallelOptions, async d =>
                 {
                     // Bit backwards, but we want to return null for 
                     // all files we *want* installed. We return the files

@@ -30,10 +30,10 @@ namespace Wabbajack.Compiler.Test
         private ModList? _modlist;
         private readonly FileExtractor.FileExtractor _fileExtractor;
         private readonly TemporaryFileManager _manager;
-        private readonly IRateLimiter _limiter;
+        private readonly ParallelOptions _parallelOptions;
 
         public CompilerSanityTests(ILogger<CompilerSanityTests> logger, IServiceProvider serviceProvider, FileExtractor.FileExtractor fileExtractor, 
-            TemporaryFileManager manager, IRateLimiter limiter)
+            TemporaryFileManager manager, ParallelOptions parallelOptions)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
@@ -41,7 +41,7 @@ namespace Wabbajack.Compiler.Test
             _harness = _scope.ServiceProvider.GetService<ModListHarness>()!;
             _fileExtractor = fileExtractor;
             _manager = manager;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
 
         }
         
@@ -125,7 +125,7 @@ namespace Wabbajack.Compiler.Test
             bsa.Delete();
 
             var creator = BSADispatch.CreateBuilder(bsaState, _manager);
-            await fileStates.Take(2).PDo(_limiter, async f => await creator.AddFile(f, f.Path.RelativeTo(_mod.FullPath).Open(FileMode.Open),CancellationToken.None));
+            await fileStates.Take(2).PDo(_parallelOptions, async f => await creator.AddFile(f, f.Path.RelativeTo(_mod.FullPath).Open(FileMode.Open),CancellationToken.None));
             {
                 await using var fs = bsa.Open(FileMode.Create, FileAccess.Write);
                 await creator.Build(fs, CancellationToken.None);
