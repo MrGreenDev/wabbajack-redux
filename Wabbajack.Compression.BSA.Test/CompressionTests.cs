@@ -11,13 +11,13 @@ using Xunit;
 
 namespace Wabbajack.Compression.BSA.Test
 {
-    public class CompressionTestss
+    public class CompressionTests
     {
         private readonly ParallelOptions _parallelOptions;
-        private readonly ILogger<CompressionTestss> _logger;
+        private readonly ILogger<CompressionTests> _logger;
         private readonly TemporaryFileManager _tempManager;
 
-        public CompressionTestss(ILogger<CompressionTestss> logger, TemporaryFileManager tempManager,
+        public CompressionTests(ILogger<CompressionTests> logger, TemporaryFileManager tempManager,
             ParallelOptions parallelOptions)
         {
             _logger = logger;
