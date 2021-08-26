@@ -19,15 +19,15 @@ namespace Wabbajack.DTOs.Test
         private readonly DTOSerializer _serializer;
         private readonly Client _wjClient;
         private readonly ILogger<ModListTests> _logger;
-        private readonly IRateLimiter _limiter;
+        private readonly ParallelOptions _parallelOptions;
 
-        public ModListTests(ILogger<ModListTests> logger, DTOSerializer serializer, HttpClient client, Client wjClient, IRateLimiter limiter)
+        public ModListTests(ILogger<ModListTests> logger, DTOSerializer serializer, HttpClient client, Client wjClient, ParallelOptions parallelOptions)
         {
             _serializer = serializer;
             _client = client;
             _wjClient = wjClient;
             _logger = logger;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
         }
 
         [Fact]
@@ -79,7 +79,7 @@ namespace Wabbajack.DTOs.Test
             var statuses = await _wjClient.GetListStatuses();
             Assert.True(statuses.Length > 10);
 
-            await statuses.PDo(_limiter, async status =>
+            await statuses.PDo(_parallelOptions, async status =>
             {
                 _logger.LogInformation("Loading {machineURL}", status.MachineURL);
                 var detailed = await _wjClient.GetDetailedStatus(status.MachineURL);

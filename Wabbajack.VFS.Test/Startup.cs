@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
@@ -13,8 +15,8 @@ namespace Wabbajack.VFS.Test
         {
             service.AddSingleton<TemporaryFileManager, TemporaryFileManager>();
 
-            // Keep this fixed at 2 so that we can detect deadlocks in the VFS limiter
-            service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(2));
+            // Keep this fixed at 2 so that we can detect deadlocks in the VFS parallelOptions
+            service.AddSingleton(new ParallelOptions {MaxDegreeOfParallelism = 2});
             service.AddSingleton(new FileHashCache(KnownFolders.EntryPoint.Combine("hashcache.sqlite")));
             service.AddSingleton(new VFSCache(KnownFolders.EntryPoint.Combine("vfscache.sqlite")));
             service.AddTransient<Context>();

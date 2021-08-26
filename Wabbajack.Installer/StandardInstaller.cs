@@ -33,9 +33,9 @@ namespace Wabbajack.Installer
             InstallerConfiguration config,
             IGameLocator gameLocator, FileExtractor.FileExtractor extractor,
             DTOSerializer jsonSerializer, Context vfs, FileHashCache fileHashCache,
-            DownloadDispatcher downloadDispatcher, IRateLimiter limiter, Client wjClient) :
+            DownloadDispatcher downloadDispatcher, ParallelOptions parallelOptions, Client wjClient) :
             base(logger, config, gameLocator, extractor, jsonSerializer, vfs, fileHashCache, downloadDispatcher,
-                limiter, wjClient)
+                parallelOptions, wjClient)
         {
          
         }
@@ -181,7 +181,7 @@ namespace Wabbajack.Installer
         private async Task InstallIncludedDownloadMetas(CancellationToken token)
         {
             await ModList.Archives
-                .PDo(_limiter, async archive =>
+                .PDo(_parallelOptions, async archive =>
                 {
                     if (HashedArchives.TryGetValue(archive.Hash, out var paths))
                     {
@@ -215,7 +215,7 @@ namespace Wabbajack.Installer
                 var sourceDir = _configuration.Install.Combine(BSACreationDir, bsa.TempID);
 
                 var a = BSADispatch.CreateBuilder(bsa.State, _manager);
-                var streams = await bsa.FileStates.PMap(_limiter, async state =>
+                var streams = await bsa.FileStates.PMap(_parallelOptions, async state =>
                 {
                     var fs = sourceDir.Combine(state.Path).Open(FileMode.Open, FileAccess.Read, FileShare.Read);
                     await a.AddFile(state, fs, token);
@@ -244,7 +244,7 @@ namespace Wabbajack.Installer
             _logger.LogInformation("Writing inline files");
             await ModList.Directives
                 .OfType<InlineFile>()
-                .PDo(_limiter, async directive =>
+                .PDo(_parallelOptions, async directive =>
                 {
                     var outPath = _configuration.Install.Combine(directive.To);
                     outPath.Delete();
@@ -355,7 +355,7 @@ namespace Wabbajack.Installer
             await _configuration.ModList
                 .Directives
                 .OfType<MergedPatch>()
-                .PDo(_limiter, async m =>
+                .PDo(_parallelOptions, async m =>
                 {
                     _logger.LogInformation("Generating zEdit merge: {to}", m.To);
 

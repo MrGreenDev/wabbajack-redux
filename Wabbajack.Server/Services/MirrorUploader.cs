@@ -28,14 +28,14 @@ namespace Wabbajack.Server.Services
         private DiscordWebHook _discord;
         private readonly IFtpSiteCredentials _credentials;
         private readonly Client _wjClient;
-        private readonly IRateLimiter _limiter;
+        private readonly ParallelOptions _parallelOptions;
         private readonly DTOSerializer _dtos;
         private readonly IFtpSiteCredentials _ftpCreds;
 
         public bool ActiveFileSyncEnabled { get; set; } = true;
 
         public MirrorUploader(ILogger<MirrorUploader> logger, AppSettings settings, SqlService sql, QuickSync quickSync, ArchiveMaintainer archives,
-            DiscordWebHook discord, IFtpSiteCredentials credentials, Client wjClient, IRateLimiter limiter, DTOSerializer dtos,
+            DiscordWebHook discord, IFtpSiteCredentials credentials, Client wjClient, ParallelOptions parallelOptions, DTOSerializer dtos,
             IFtpSiteCredentials ftpCreds)
             : base(logger, settings, quickSync, TimeSpan.FromHours(1))
         {
@@ -44,7 +44,7 @@ namespace Wabbajack.Server.Services
             _discord = discord;
             _credentials = credentials;
             _wjClient = wjClient;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
             _dtos = dtos;
             _ftpCreds = ftpCreds;
         }
@@ -105,7 +105,7 @@ namespace Wabbajack.Server.Services
                         return $"{definition.Hash.ToHex()}/parts/{idx}";
                     }
 
-                    await definition.Parts.PDo(_limiter, async part =>
+                    await definition.Parts.PDo(_parallelOptions, async part =>
                     {
                         _logger.LogInformation("Uploading mirror part ({index}/{length})", part.Index, definition.Parts.Length);
 

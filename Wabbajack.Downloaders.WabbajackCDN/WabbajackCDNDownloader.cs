@@ -22,8 +22,9 @@ namespace Wabbajack.Downloaders
     public class WabbajackCDNDownloader : ADownloader<WabbajackCDN>, IUrlDownloader
     {
         private readonly HttpClient _client;
-        private readonly IRateLimiter _limiter;
         private readonly ILogger<WabbajackCDNDownloader> _logger;
+        private readonly DTOSerializer _dtos;
+        private readonly ParallelOptions _parallelOptions;
         
         public static Dictionary<string, string> DomainRemaps = new()
         {
@@ -33,12 +34,12 @@ namespace Wabbajack.Downloaders
             {"wabbajacktest.b-cdn.net", "test-files.wabbajack.org"}
         };
 
-        private readonly DTOSerializer _dtos;
 
-        public WabbajackCDNDownloader(ILogger<WabbajackCDNDownloader> logger, IRateLimiter limiter, HttpClient client, DTOSerializer dtos)
+
+        public WabbajackCDNDownloader(ILogger<WabbajackCDNDownloader> logger, ParallelOptions parallelOptions, HttpClient client, DTOSerializer dtos)
         {
             _client = client;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
             _logger = logger;
             _dtos = dtos;
         }
@@ -48,7 +49,7 @@ namespace Wabbajack.Downloaders
             await using var fs = destination.Open(FileMode.Create, FileAccess.Write, FileShare.None);
             
             SemaphoreSlim slim = new(1, 1);
-            await definition.Parts.PDo(_limiter, async part =>
+            await definition.Parts.PDo(_parallelOptions.WithCancellationToken(token), async part =>
             {
                 var msg = MakeMessage(new Uri(state.Url + $"/parts/{part.Index}"));
                 using var response = await _client.SendAsync(msg, token);

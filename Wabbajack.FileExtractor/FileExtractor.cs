@@ -46,14 +46,14 @@ namespace Wabbajack.FileExtractor
             FOMODExtension
         };
 
-        private readonly IRateLimiter _limiter;
+        private readonly ParallelOptions _parallelOptions;
         private readonly ILogger<FileExtractor> _logger;
         private readonly TemporaryFileManager _manager;
 
-        public FileExtractor(ILogger<FileExtractor> logger, IRateLimiter limiter, TemporaryFileManager manager)
+        public FileExtractor(ILogger<FileExtractor> logger, ParallelOptions parallelOptions, TemporaryFileManager manager)
         {
             _logger = logger;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
             _manager = manager;
         }
 
@@ -266,7 +266,7 @@ namespace Wabbajack.FileExtractor
                 }*/
 
                 var results = await dest.Path.EnumerateFiles()
-                    .PMap(_limiter, async f =>
+                    .PMap(_parallelOptions, async f =>
                     {
                         var path = f.RelativeTo(dest.Path);
                         if (!shouldExtract(path)) return ((RelativePath, T))default;

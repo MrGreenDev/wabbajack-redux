@@ -18,16 +18,16 @@ namespace Wabbajack.Server.Services
         private AppSettings _settings;
         private GlobalInformation _globalInformation;
         private ILogger<NexusPoll> _logger;
-        private readonly IRateLimiter _limiter;
+        private readonly ParallelOptions _parallelOptions;
         private readonly NexusApi _api;
 
-        public NexusPoll(ILogger<NexusPoll> logger, AppSettings settings, SqlService service, GlobalInformation globalInformation, IRateLimiter limiter, NexusApi api)
+        public NexusPoll(ILogger<NexusPoll> logger, AppSettings settings, SqlService service, GlobalInformation globalInformation, ParallelOptions parallelOptions, NexusApi api)
         {
             _sql = service;
             _settings = settings;
             _globalInformation = globalInformation;
             _logger = logger;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
             _api = api;
         }
         public async Task UpdateNexusCacheAPI(CancellationToken token)

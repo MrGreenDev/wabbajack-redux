@@ -18,7 +18,7 @@ namespace Wabbajack.VFS
         public const ulong FileVersion = 0x03;
         public const string Magic = "WABBAJACK VFS FILE";
 
-        private readonly IRateLimiter _limiter;
+        private readonly ParallelOptions _parallelOptions;
         private readonly TemporaryFileManager _manager;
 
         public readonly FileExtractor.FileExtractor Extractor;
@@ -26,7 +26,7 @@ namespace Wabbajack.VFS
         public readonly ILogger<Context> Logger;
         public readonly VFSCache VfsCache;
 
-        public Context(ILogger<Context> logger, IRateLimiter limiter, TemporaryFileManager manager, VFSCache vfsCache,
+        public Context(ILogger<Context> logger, ParallelOptions parallelOptions, TemporaryFileManager manager, VFSCache vfsCache,
             FileHashCache hashCache, FileExtractor.FileExtractor extractor)
         {
             Logger = logger;
@@ -34,7 +34,7 @@ namespace Wabbajack.VFS
             Extractor = extractor;
             VfsCache = vfsCache;
             HashCache = hashCache;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
         }
 
         public IndexRoot Index { get; private set; } = IndexRoot.Empty;
@@ -49,7 +49,7 @@ namespace Wabbajack.VFS
             var filesToIndex = root.EnumerateFiles().Distinct().ToList();
 
             var allFiles = await filesToIndex
-                .PMap(_limiter, async f =>
+                .PMap(_parallelOptions, async f =>
                 {
                     if (byPath.TryGetValue(f, out var found))
                         if (found.LastModified == f.LastModifiedUtc().AsUnixTime() && found.Size == f.Size())
@@ -77,7 +77,7 @@ namespace Wabbajack.VFS
             var filesToIndex = roots.SelectMany(root => root.EnumerateFiles()).ToList();
 
             var allFiles = await filesToIndex
-                .PMap(_limiter, async f =>
+                .PMap(_parallelOptions, async f =>
                 {
                     if (native.TryGetValue(f, out var found))
                         if (found.LastModified == f.LastModifiedUtc().AsUnixTime() && found.Size == f.Size())
@@ -148,7 +148,7 @@ namespace Wabbajack.VFS
                 }
             }
 
-            await filesByParent[top].PDo(_limiter,
+            await filesByParent[top].PDo(_parallelOptions,
                 async file => await HandleFile(file, new ExtractedNativeFile(file.AbsoluteName) { CanMove = false }));
         }
 

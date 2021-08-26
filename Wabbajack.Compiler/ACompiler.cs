@@ -39,7 +39,7 @@ namespace Wabbajack.Compiler
         private readonly TemporaryFileManager _manager;
         public readonly CompilerSettings _settings;
         private readonly AbsolutePath _stagingFolder;
-        public readonly IRateLimiter _limiter;
+        public readonly ParallelOptions _parallelOptions;
 
         public ConcurrentDictionary<Directive, RawSourceFile> _sourceFileLinks;
         public ConcurrentDictionary<PatchedFromArchive, VirtualFile[]> _patchOptions;
@@ -50,7 +50,7 @@ namespace Wabbajack.Compiler
         public readonly IBinaryPatchCache _patchCache;
 
         public ACompiler(ILogger logger, FileExtractor.FileExtractor extractor, FileHashCache hashCache, Context vfs, TemporaryFileManager manager, CompilerSettings settings,
-            IRateLimiter limiter, DownloadDispatcher dispatcher, Client wjClient, IGameLocator locator, DTOSerializer dtos,
+            ParallelOptions parallelOptions, DownloadDispatcher dispatcher, Client wjClient, IGameLocator locator, DTOSerializer dtos,
             IBinaryPatchCache patchCache)
         {
             _logger = logger;
@@ -60,7 +60,7 @@ namespace Wabbajack.Compiler
             _manager = manager;
             _settings = settings;
             _stagingFolder = _manager.CreateFolder().Path;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
             _sourceFileLinks = new ConcurrentDictionary<Directive, RawSourceFile>();
             _dispatcher = dispatcher;
             _wjClient = wjClient;
@@ -144,7 +144,7 @@ namespace Wabbajack.Compiler
         public async Task<bool> GatherMetaData()
         {
             _logger.LogInformation("Getting meta data for {count} archives", SelectedArchives.Count);
-            await SelectedArchives.PDo(_limiter, async a =>
+            await SelectedArchives.PDo(_parallelOptions, async a =>
             {
                 await _dispatcher.FillInMetadata(a);
             });
@@ -207,7 +207,7 @@ namespace Wabbajack.Compiler
 
         protected async Task CleanInvalidArchivesAndFillState()
         {
-            var remove = await IndexedArchives.PMap(_limiter, async a =>
+            var remove = await IndexedArchives.PMap(_parallelOptions, async a =>
             {
                 try
                 {
@@ -262,7 +262,7 @@ namespace Wabbajack.Compiler
 
             var toFind = await _settings.Downloads.EnumerateFiles()
                 .Where(f => f.Extension != Ext.Meta)
-                .PMap(_limiter, async f => await HasInvalidMeta(f) ? f : default)
+                .PMap(_parallelOptions, async f => await HasInvalidMeta(f) ? f : default)
                 .Where(f => f != default)
                 .Where(f => f.FileExists())
                 .ToList();
@@ -274,7 +274,7 @@ namespace Wabbajack.Compiler
 
             _logger.LogInformation("Attempting to infer {count} metas from the server.", toFind.Count);
 
-            await toFind.PDo(_limiter, async f =>
+            await toFind.PDo(_parallelOptions, async f =>
             {
                 var vf = _vfs.Index.ByRootPath[f];
 
@@ -420,7 +420,7 @@ namespace Wabbajack.Compiler
             // Load in the patches
             await InstallDirectives.OfType<PatchedFromArchive>()
                 .Where(p => p.PatchID == default)
-                .PDo(_limiter, async pfa =>
+                .PDo(_parallelOptions, async pfa =>
                 {
                     
                     var patches = await _patchOptions[pfa]
@@ -494,7 +494,7 @@ namespace Wabbajack.Compiler
                 .ToDictionary(f => f.Key, f => f.First());
 
             SelectedArchives.Clear();
-            SelectedArchives.AddRange(await hashes.PMap(_limiter, hash => ResolveArchive(hash, archives)).ToList());
+            SelectedArchives.AddRange(await hashes.PMap(_parallelOptions, hash => ResolveArchive(hash, archives)).ToList());
         }
 
         public async Task<Archive> ResolveArchive(Hash hash, IDictionary<Hash, IndexedArchive> archives)

@@ -30,17 +30,17 @@ namespace Wabbajack.Networking.WabbajackClientApi
         private readonly Configuration _configuration;
         private readonly ILogger<Client> _logger;
         private readonly DTOSerializer _dtos;
+        private readonly ParallelOptions _parallelOptions;
 
-        private readonly IRateLimiter _limiter;
 
-        public Client(ILogger<Client> logger, HttpClient client, Configuration configuration, DTOSerializer dtos, IRateLimiter limiter)
+        public Client(ILogger<Client> logger, HttpClient client, Configuration configuration, DTOSerializer dtos, ParallelOptions parallelOptions)
         {
             _configuration = configuration;
             _client = client;
             _logger = logger;
             _logger.LogInformation("File hash check (-42) {key}", _configuration.MetricsKey);
             _dtos = dtos;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
         }
 
         public async Task SendMetric(string action, string subject)
@@ -136,7 +136,7 @@ namespace Wabbajack.Networking.WabbajackClientApi
                 OriginalFileName = path.FileName, 
                 Size = path.Size(), 
                 Hash = await path.Hash(),
-                Parts = await parts.PMap(_limiter, async part =>
+                Parts = await parts.PMap(_parallelOptions, async part =>
                 {
                     var buffer = new byte[part.Size];
                     await using (var fs = path.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -160,7 +160,7 @@ namespace Wabbajack.Networking.WabbajackClientApi
                 "https://raw.githubusercontent.com/wabbajack-tools/mod-lists/master/unlisted_modlists.json"})
                 .Take(includeUnlisted ? 3 : 2);
 
-            return await lists.PMap(_limiter, async url => await _client.GetFromJsonAsync<ModlistMetadata[]>(url)!)
+            return await lists.PMap(_parallelOptions, async url => await _client.GetFromJsonAsync<ModlistMetadata[]>(url)!)
                 .SelectMany(x => x)
                 .ToArray();
 

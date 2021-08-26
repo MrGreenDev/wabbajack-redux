@@ -16,15 +16,15 @@ namespace Wabbajack.Server.Services
     {
         private SqlService _sql;
         private readonly DownloadDispatcher _dispatcher;
-        private readonly IRateLimiter _limiter;
+        private readonly ParallelOptions _parallelOptions;
 
         public NonNexusDownloadValidator(ILogger<NonNexusDownloadValidator> logger, AppSettings settings, SqlService sql, 
-            QuickSync quickSync, DownloadDispatcher dispatcher, IRateLimiter limiter)
+            QuickSync quickSync, DownloadDispatcher dispatcher, ParallelOptions parallelOptions)
             : base(logger, settings, quickSync, TimeSpan.FromHours(2))
         {
             _sql = sql;
             _dispatcher = dispatcher;
-            _limiter = limiter;
+            _parallelOptions = parallelOptions;
         }
 
         public override async Task<int> Execute()
@@ -34,7 +34,7 @@ namespace Wabbajack.Server.Services
             await _dispatcher.PrepareAll(archives.Select(a => a.State));
             var random = new Random();
 
-            var results = await archives.PMap(_limiter, async archive =>
+            var results = await archives.PMap(_parallelOptions, async archive =>
             {
                 try
                 {

@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Wabbajack.Common;
 using Wabbajack.DTOs.JsonConverters;
@@ -13,7 +14,7 @@ namespace Wabbajack.DTOs.Test
             services.AddDTOConverters();
             services.AddDTOSerializer();
             services.AddWabbajackClient();
-            services.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(4));
+            services.AddSingleton(new ParallelOptions {MaxDegreeOfParallelism = 2});
             services.AddSingleton<HttpClient>();
         }
     }
