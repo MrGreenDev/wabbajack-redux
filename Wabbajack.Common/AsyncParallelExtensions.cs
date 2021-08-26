@@ -23,7 +23,7 @@ namespace Wabbajack.Common
             Func<TIn, Task<TOut>> mapFn)
         {
 
-            var queue = Channel.CreateUnbounded<TOut>(); 
+            var queue = Channel.CreateBounded<TOut>(options.MaxDegreeOfParallelism); 
             Parallel.ForEachAsync(coll, options, async (x, token) =>
             {
                 var result = await mapFn(x);
