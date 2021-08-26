@@ -51,6 +51,11 @@ namespace Wabbajack.CLI.Verbs
             var version = Version.Parse(FileVersionInfo.GetVersionInfo(cefNet.ToString()).FileVersion!);
             var downloadVersion = $"{version.Major}.{version.Minor}";
             var runtime = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
+            if (folder.Combine("libcef.dll").FileExists())
+            {
+                _logger.LogInformation("Not downloading, cef already exists");
+                return 0;
+            }
             
             _logger.LogInformation("Downloading Cef version {version} for {runtime}", downloadVersion, runtime);
 

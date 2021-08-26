@@ -30,4 +30,9 @@
     <ProjectReference Include="..\Wabbajack.Paths\Wabbajack.Paths.csproj" />
     <ProjectReference Include="..\Wabbajack.Services.OSIntegrated\Wabbajack.Services.OSIntegrated.csproj" />
   </ItemGroup>
+
+  <Target Name="AferBuild" AfterTargets="Build">
+    <Message Text="Downloading Cef"/>
+    <Exec Command="$(OutDir)wabbajack-cli.exe download-cef"/>
+  </Target>
 </Project>
