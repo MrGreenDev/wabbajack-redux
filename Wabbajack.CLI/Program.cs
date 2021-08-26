@@ -7,16 +7,20 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Octokit;
 using Wabbajack.CLI.TypeConverters;
 using Wabbajack.CLI.Verbs;
 using Wabbajack.Common;
-using Wabbajack.Downloaders;
+using Wabbajack.DTOs.GitHub;
 using Wabbajack.Networking.Http;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi;
+using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using Wabbajack.Services.OSIntegrated;
 using Wabbajack.VFS;
+using Client = Wabbajack.Networking.GitHub.Client;
 
 namespace Wabbajack.CLI
 {
@@ -26,23 +30,16 @@ namespace Wabbajack.CLI
         {
             TypeDescriptor.AddAttributes(typeof(AbsolutePath),
                 new TypeConverterAttribute(typeof(AbsolutePathTypeConverter)));
+            TypeDescriptor.AddAttributes(typeof(List),
+                new TypeConverterAttribute(typeof(ModListCategoryConverter)));
 
             var host = Host.CreateDefaultBuilder(Array.Empty<string>())
                 .ConfigureServices((host, services) =>
                 {
-                    services.AddSingleton(new ApplicationInfo
-                    {
-                        AppName = "Wabbajack.Networking.NexusApi.Test",
-                        AppVersion = new Version(1, 0)
-                    });
 
                     services.AddSingleton(new JsonSerializerOptions());
-                    services.AddSingleton<ApiKey, StaticApiKey>(p =>
-                        new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
-                    services.AddNexusApi();
                     services.AddSingleton<HttpClient, HttpClient>();
                     services.AddSingleton<IHttpDownloader, SingleThreadedDownloader>();
-                    services.AddDownloadDispatcher();
                     services.AddSingleton<IConsole, SystemConsole>();
                     services.AddSingleton<CommandLineBuilder, CommandLineBuilder>();
                     services.AddSingleton<TemporaryFileManager>();
@@ -50,11 +47,21 @@ namespace Wabbajack.CLI
                     services.AddSingleton(new VFSCache(KnownFolders.EntryPoint.Combine("vfscache.sqlite")));
                     services.AddSingleton(new FileHashCache(KnownFolders.EntryPoint.Combine("filehashpath.sqlite")));
                     services.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(Environment.ProcessorCount));
+                    services.AddSingleton<Client>();
+                    services.AddSingleton<Networking.WabbajackClientApi.Client>();
+                    services.AddSingleton<Configuration>();
+                    services.AddSingleton<GitHubClient>(s => new GitHubClient(new ProductHeaderValue("wabbajack")));
 
+                    services.AddOSIntegrated();
+
+                    
+                    
                     services.AddTransient<Context>();
                     services.AddSingleton<IVerb, HashFile>();
                     services.AddSingleton<IVerb, VFSIndexFolder>();
                     services.AddSingleton<IVerb, Encrypt>();
+                    services.AddSingleton<IVerb, Decrypt>();
+                    services.AddSingleton<IVerb, ValidateLists>();
                 }).Build();
 
             var service = host.Services.GetService<CommandLineBuilder>();

@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.BuildServer;
 using Wabbajack.DTOs;
 using Wabbajack.Server.DataLayer;

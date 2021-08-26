@@ -16,6 +16,7 @@ using Wabbajack.Networking.NexusApi.Test.Helpers;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using Wabbajack.Services.OSIntegrated;
 using Wabbajack.VFS;
 using Xunit.DependencyInjection;
 using Xunit.DependencyInjection.Logging;
@@ -26,33 +27,13 @@ namespace Wabbajack.Compiler.Test
     {
         public void ConfigureServices(IServiceCollection service)
         {
-            service.AddSingleton<TemporaryFileManager, TemporaryFileManager>();
-            service.AddSingleton(new FileHashCache(KnownFolders.EntryPoint.Combine("hashcache.sqlite")));
-            service.AddSingleton(new VFSCache(KnownFolders.EntryPoint.Combine("vfscache.sqlite")));
-            service.AddSingleton<Context>();
-            service.AddSingleton<HttpClient>();
-            service.AddHttpDownloader();
-            service.AddNexusApi();
-            service.AddSingleton<ITokenProvider<string>, StaticApiKey>(p =>
-                new StaticApiKey(Environment.GetEnvironmentVariable("NEXUS_API_KEY")!));
-            service.AddSingleton<IRateLimiter>(new FixedSizeRateLimiter(2));
-            service.AddSingleton<FileExtractor.FileExtractor>();
-            service.AddSingleton(new JsonSerializerOptions());
-            service.AddDTOSerializer();
-            service.AddDTOConverters();
-            service.AddDownloadDispatcher();
-            service.AddStandardInstaller();
-            service.AddSingleton<Client>();
-            service.AddScoped<ModListHarness>();
-            service.AddScoped<MO2CompilerSettings>();
-            service.AddScoped<MO2Compiler>();
-            service.AddSingleton<IGameLocator, StubbedGameLocator>();
-            service.AddSingleton<IBinaryPatchCache>(new BinaryPatchCache(KnownFolders.EntryPoint.Combine("patchCache.sqlite")));
-            service.AddSingleton(new ApplicationInfo
+            service.AddOSIntegrated(o =>
             {
-                AppName = "Wabbajack.Networking.NexusApi.Test",
-                AppVersion = new Version(1, 0)
+                o.UseLocalCache = true;
+                o.UseStubbedGameFolders = true;
             });
+            
+            service.AddScoped<ModListHarness>();
             service.AddSingleton<Configuration>();
         }
 

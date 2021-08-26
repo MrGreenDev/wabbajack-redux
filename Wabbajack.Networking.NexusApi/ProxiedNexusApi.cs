@@ -4,7 +4,11 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Wabbajack.DTOs;
+using Wabbajack.DTOs.Logins;
+using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi.DTOs;
+using Wabbajack.Networking.WabbajackClientApi;
 
 namespace Wabbajack.Networking.NexusApi
 {
@@ -12,13 +16,20 @@ namespace Wabbajack.Networking.NexusApi
     {
         public HashSet<string> ProxiedEndpoints = new()
         {
-            Endpoints.ModInfo
+            Endpoints.ModInfo,
+            Endpoints.ModFiles,
+            Endpoints.ModFile
         };
 
-        public ProxiedNexusApi(ApiKey apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo,
-            JsonSerializerOptions jsonOptions)
+        private readonly ITokenProvider<WabbajackApiState> _apiState;
+        private readonly Configuration _wabbajackClientConfiguration;
+
+        public ProxiedNexusApi(ITokenProvider<NexusApiState> apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo,
+            JsonSerializerOptions jsonOptions, ITokenProvider<WabbajackApiState> apiState, Configuration wabbajackClientConfiguration)
             : base(apiKey, logger, client, appInfo, jsonOptions)
         {
+            _apiState = apiState;
+            _wabbajackClientConfiguration = wabbajackClientConfiguration;
         }
 
         protected override async ValueTask<HttpRequestMessage> GenerateMessage(HttpMethod method, string uri,
@@ -27,6 +38,7 @@ namespace Wabbajack.Networking.NexusApi
             var msg = await base.GenerateMessage(method, uri, parameters);
             if (ProxiedEndpoints.Contains(uri))
                 msg.RequestUri = new Uri($"https://build.wabbajack.org/{string.Format(uri, parameters)}");
+            msg.Headers.Add(_wabbajackClientConfiguration.MetricsKeyHeader, (await _apiState.Get())!.MetricsKey);
             return msg;
         }
 

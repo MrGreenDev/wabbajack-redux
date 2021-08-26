@@ -1,8 +1,9 @@
 using Wabbajack.DTOs;
+using Wabbajack.Installer;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
 
-namespace Wabbajack.Installer
+namespace Wabbajack.Services.OSIntegrated
 {
     public class StubbedGameLocator : IGameLocator
     {

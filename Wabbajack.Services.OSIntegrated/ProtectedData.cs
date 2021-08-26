@@ -44,7 +44,7 @@ namespace Wabbajack.Services.OSIntegrated
         
         public static async ValueTask<Stream> UnProtect(this Stream inStream, string key)
         {
-            var encryptor = TripleDES.Create().CreateEncryptor(await _deviceKey, (await Encoding.UTF8.GetBytes(key).Hash()).ToArray());
+            var encryptor = TripleDES.Create().CreateDecryptor(await _deviceKey, (await Encoding.UTF8.GetBytes(key).Hash()).ToArray());
             return new CryptoStream(inStream, encryptor, CryptoStreamMode.Read);
         }
 
@@ -54,6 +54,7 @@ namespace Wabbajack.Services.OSIntegrated
             await using var fs = destination.Open(FileMode.Create, FileAccess.Write, FileShare.None);
             await using var enc = await fs.Protect(destination.FileName.ToString());
             await JsonSerializer.SerializeAsync(enc, obj);
+            await enc.FlushAsync();
         }
         
         public static async Task AsEncryptedDataFile(this byte[] obj, AbsolutePath destination)
@@ -71,6 +72,15 @@ namespace Wabbajack.Services.OSIntegrated
             await using var fs = destination.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
             await using var enc = await fs.UnProtect(destination.FileName.ToString());
             return await JsonSerializer.DeserializeAsync<T>(enc);
+        }
+        
+        public static async Task<byte[]> FromEncryptedDataFile(this AbsolutePath destination)
+        {
+            if (!destination.FileExists()) return default;
+            
+            await using var fs = destination.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
+            await using var enc = await fs.UnProtect(destination.FileName.ToString());
+            return await enc.ReadAllAsync();
         }
         
     }

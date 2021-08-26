@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.DTOs;
+using Wabbajack.DTOs.Logins;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi.DTOs;
 using Wabbajack.Server.DTOs;
@@ -17,13 +18,13 @@ namespace Wabbajack.Networking.NexusApi
 {
     public class NexusApi
     {
-        protected readonly ITokenProvider<string> ApiKey;
+        protected readonly ITokenProvider<NexusApiState> ApiKey;
         private readonly ApplicationInfo _appInfo;
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly ILogger<NexusApi> _logger;
 
-        public NexusApi(ITokenProvider<string> apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo,
+        public NexusApi(ITokenProvider<NexusApiState> apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo,
             JsonSerializerOptions jsonOptions)
         {
             ApiKey = apiKey;
@@ -138,10 +139,17 @@ namespace Wabbajack.Networking.NexusApi
         {
             var msg = new HttpRequestMessage();
             msg.Method = method;
+            
+            var userAgent =
+                $"{_appInfo.ApplicationSlug}/{_appInfo.Version} ({_appInfo.OSVersion}; {_appInfo.Platform})";
+            // Debugg on linux
+            _logger.LogWarning("USER AGENT ISSUE - {issue}", userAgent);
+
             msg.RequestUri = new Uri($"https://api.nexusmods.com/{string.Format(uri, parameters)}");
-            msg.Headers.Add("Application-Name", _appInfo.AppName);
-            msg.Headers.Add("Application-Version", _appInfo.AppVersion.ToString());
-            msg.Headers.Add("apikey", await ApiKey.Get());
+            msg.Headers.Add("User-Agent", userAgent);
+            msg.Headers.Add("Application-Name", _appInfo.ApplicationSlug);
+            msg.Headers.Add("Application-Version", _appInfo.Version);
+            msg.Headers.Add("apikey", (await ApiKey.Get())!.ApiKey);
             msg.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             return msg;
         }

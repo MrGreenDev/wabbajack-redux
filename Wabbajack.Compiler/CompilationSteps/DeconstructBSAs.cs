@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.VisualBasic.CompilerServices;
 using Wabbajack.Common;
 using Wabbajack.Compression.BSA;
 using Wabbajack.DTOs;

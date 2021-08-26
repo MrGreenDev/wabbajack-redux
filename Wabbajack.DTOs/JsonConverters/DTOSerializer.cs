@@ -14,6 +14,7 @@ namespace Wabbajack.DTOs.JsonConverters
         public DTOSerializer(IEnumerable<JsonConverter> converters)
         {
             Options = new JsonSerializerOptions();
+            Options.NumberHandling = JsonNumberHandling.AllowReadingFromString;
             foreach (var c in converters) Options.Converters.Add(c);
         }
 
