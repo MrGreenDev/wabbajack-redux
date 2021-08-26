@@ -24,6 +24,7 @@
     <PackageReference Include="XamlNameReferenceGenerator" Version="1.3.4" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Wabbajack.CLI\Wabbajack.CLI.csproj" />
     <ProjectReference Include="..\Wabbajack.DTOs\Wabbajack.DTOs.csproj" />
     <ProjectReference Include="..\Wabbajack.Installer\Wabbajack.Installer.csproj" />
     <ProjectReference Include="..\Wabbajack.Paths\Wabbajack.Paths.csproj" />

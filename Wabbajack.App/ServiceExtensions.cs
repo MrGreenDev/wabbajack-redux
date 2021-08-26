@@ -46,7 +46,7 @@ namespace Wabbajack.App
             services.AddAllSingleton<IReceiverMarker, NexusLoginViewModel>();
             services.AddAllSingleton<IReceiverMarker, LoversLabOAuthLoginViewModel>();
 
-            var resources = KnownFolders.EntryPoint.Combine("Library/libcef/windows-x64");
+            var resources = KnownFolders.EntryPoint;
             services.AddSingleton(s => new CefSettings()
             {
                 NoSandbox = true,
