@@ -141,7 +141,7 @@ namespace Wabbajack.Networking.NexusApi
             msg.Method = method;
             
             var userAgent =
-                $"{_appInfo.ApplicationSlug}/{_appInfo.Version} ({_appInfo.OSVersion}; {_appInfo.Platform}) {_appInfo.OperatingSystemDescription}";
+                $"{_appInfo.ApplicationSlug}/{_appInfo.Version} ({_appInfo.OSVersion}; {_appInfo.Platform})";
             // Debugg on linux
             _logger.LogWarning("USER AGENT ISSUE - {issue}", userAgent);
 
