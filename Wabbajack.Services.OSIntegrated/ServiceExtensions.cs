@@ -38,7 +38,7 @@ namespace Wabbajack.Services.OSIntegrated
             var options = new OSIntegratedOptions();
             cfn?.Invoke(options);
 
-            service.AddTransient(s => new TemporaryFileManager(KnownFolders.EntryPoint.Combine("temp")));
+            service.AddTransient(s => new TemporaryFileManager(KnownFolders.EntryPoint.Combine("temp", Guid.NewGuid().ToString())));
             
             service.AddSingleton(s => options.UseLocalCache ? 
                 new FileHashCache(s.GetService<TemporaryFileManager>()!.CreateFile().Path) 
