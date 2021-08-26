@@ -4,6 +4,8 @@
     <TargetFramework Condition=" '$(OS)' == 'Windows_NT'">net6.0-windows</TargetFramework>
     <TargetFramework Condition=" '$(OS)' != 'Windows_NT'">net6.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TimeMode>linked</TimeMode>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Models\" />
