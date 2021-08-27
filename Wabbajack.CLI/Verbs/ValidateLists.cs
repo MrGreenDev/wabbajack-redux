@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -13,6 +15,7 @@ using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.GitHub;
 using Wabbajack.DTOs.JsonConverters;
+using Wabbajack.DTOs.ModListValidation;
 using Wabbajack.DTOs.ServerResponses;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Installer;
@@ -30,10 +33,11 @@ namespace Wabbajack.CLI.Verbs
         private readonly TemporaryFileManager _temporaryFileManager;
         private readonly DownloadDispatcher _dispatcher;
         private readonly DTOSerializer _dtos;
+        private readonly ParallelOptions _parallelOptions;
 
         public ValidateLists(ILogger<ValidateLists> logger, Client wjClient, 
             Wabbajack.Networking.GitHub.Client gitHubClient, TemporaryFileManager temporaryFileManager,
-            DownloadDispatcher dispatcher, DTOSerializer dtos)
+            DownloadDispatcher dispatcher, DTOSerializer dtos, ParallelOptions parallelOptions)
         {
             _logger = logger;
             _wjClient = wjClient;
@@ -41,6 +45,7 @@ namespace Wabbajack.CLI.Verbs
             _temporaryFileManager = temporaryFileManager;
             _dispatcher = dispatcher;
             _dtos = dtos;
+            _parallelOptions = parallelOptions;
         }
         
         public Command MakeCommand()
@@ -63,27 +68,56 @@ namespace Wabbajack.CLI.Verbs
             {
                 _logger.LogInformation("Loading list of lists: {list}", list);
                 var listData = await _gitHubClient.GetData(list);
-                foreach (var modList in listData.Lists)
+                var stopWatch = Stopwatch.StartNew();
+                var validatedLists = await listData.Lists.PMap(_parallelOptions, async modList =>
                 {
                     if (modList.ForceDown)
                     {
                         _logger.LogWarning("List is ForceDown, skipping");
-                        continue;
+                        return new ValidatedModList { Status = ListStatus.ForcedDown };
                     }
+
                     using var scope = _logger.BeginScope("MachineURL: {machineURL}", modList.Links.MachineURL);
-                    _logger.LogInformation("Verifying {machineURL} - {title}", modList.Links.MachineURL,  modList.Title);
+                    _logger.LogInformation("Verifying {machineURL} - {title}", modList.Links.MachineURL, modList.Title);
                     await ValidateList(modList, archiveManager, CancellationToken.None);
 
                     _logger.LogInformation("Loading Modlist");
                     var modListData =
-                        await StandardInstaller.LoadFromFile(_dtos, archiveManager.GetPath(modList.DownloadMetadata!.Hash));
-                    
+                        await StandardInstaller.LoadFromFile(_dtos,
+                            archiveManager.GetPath(modList.DownloadMetadata!.Hash));
+
                     _logger.LogInformation("Verifying {count} archives", modListData.Archives.Length);
 
-                    foreach (var archive in modListData.Archives)
+                    var archives = await modListData.Archives.PMap(_parallelOptions, async archive =>
                     {
-                        (ArchiveStatus status, Archive newArchive) = await DownloadAndValidate(archive, archiveManager, token);
-                    }
+                        var result = await DownloadAndValidate(archive, archiveManager, token);
+                        return new ValidatedArchive
+                        {
+                            Original = archive,
+                            Status = result.Item1,
+                            PatchedFrom = result.Item1 is ArchiveStatus.Mirrored or ArchiveStatus.Updated
+                                ? result.Item2
+                                : null
+                        };
+                    }).ToArray();
+                    return new ValidatedModList
+                    {
+                        ModListHash = modList.DownloadMetadata.Hash,
+                        MachineURL = modList.Links.MachineURL,
+                        Archives = archives
+                    };
+                }).ToArray();
+
+                var allArchives = validatedLists.SelectMany(l => l.Archives).ToList();
+                _logger.LogInformation("Validated {count} lists in {elapsed}", validatedLists, stopWatch.Elapsed);
+                _logger.LogInformation(" - {count} Valid", allArchives.Count(a => a.Status is ArchiveStatus.Valid));
+                _logger.LogInformation(" - {count} Invalid", allArchives.Count(a => a.Status is ArchiveStatus.InValid));
+                _logger.LogInformation(" - {count} Mirrored", allArchives.Count(a => a.Status is ArchiveStatus.Mirrored));
+                _logger.LogInformation(" - {count} Updated", allArchives.Count(a => a.Status is ArchiveStatus.Updated));
+
+                foreach (var invalid in allArchives.Where(a => a.Status is ArchiveStatus.InValid))
+                {
+                    _logger.LogInformation("-- Invalid : {primaryKeyString}", invalid.Original.State.PrimaryKeyString);
                 }
 
             }
