@@ -76,6 +76,32 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
                     {
                         State = new WabbajackCDN { Url = new Uri("https://authored-files.wabbajack.org/Tonal%20Architect_WJ_TEST_FILES.zip_9cb97a01-3354-4077-9e4a-7e808d47794fFFOOO") }
                     }
+                },
+                // ModDB Data
+                new object[]
+                {
+                    new Archive
+                    {
+                        Hash = Hash.FromBase64("V3ejL5oUeQI="),
+                        State = new DTOs.DownloadStates.ModDB { Url = new Uri("https://www.moddb.com/downloads/start/199178") }
+                    },
+                    new Archive
+                    {
+                        State = new DTOs.DownloadStates.ModDB { Url = new Uri("https://www.moddb.com/downloads/start/199178000000") }
+                    }
+                },
+                // Wabbajack CDN Data
+                new object[]
+                {
+                    new Archive
+                    {
+                        Hash = Hash.FromBase64("u7aZhqgDA6Y="),
+                        State = new WabbajackCDN { Url = new Uri("https://authored-files.wabbajack.org/Tonal%20Architect_WJ_TEST_FILES.zip_9cb97a01-3354-4077-9e4a-7e808d47794f") }
+                    },
+                    new Archive
+                    {
+                        State = new WabbajackCDN { Url = new Uri("https://authored-files.wabbajack.org/Tonal%20Architect_WJ_TEST_FILES.zip_9cb97a01-3354-4077-9e4a-7e808d47794fFFOOO") }
+                    }
                 }
             };
 

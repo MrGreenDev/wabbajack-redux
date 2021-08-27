@@ -11,6 +11,7 @@
         <ProjectReference Include="..\Wabbajack.Downloaders.GoogleDrive\Wabbajack.Downloaders.GoogleDrive.csproj" />
         <ProjectReference Include="..\Wabbajack.Downloaders.Http\Wabbajack.Downloaders.Http.csproj" />
         <ProjectReference Include="..\Wabbajack.Downloaders.Interfaces\Wabbajack.Downloaders.Interfaces.csproj" />
+        <ProjectReference Include="..\Wabbajack.Downloaders.ModDB\Wabbajack.Downloaders.ModDB.csproj" />
         <ProjectReference Include="..\Wabbajack.Downloaders.Nexus\Wabbajack.Downloaders.Nexus.csproj" />
         <ProjectReference Include="..\Wabbajack.Downloaders.WabbajackCDN\Wabbajack.Downloaders.WabbajackCDN.csproj" />
         <ProjectReference Include="..\Wabbajack.Networking.WabbajackClientApi\Wabbajack.Networking.WabbajackClientApi.csproj" />
