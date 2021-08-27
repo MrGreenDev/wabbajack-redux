@@ -88,7 +88,7 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
                     new Archive
                     {
                         State = new Mega { Url = new Uri("https://mega.nz/file/zz42FaaJ#-uziC4mbJPRy2e4pPk8Gjb3oDT_38Be9fzZ6L42NL-k") }
-                    }`
+                    }
                 },
                 // ModDB Data
                 new object[]
