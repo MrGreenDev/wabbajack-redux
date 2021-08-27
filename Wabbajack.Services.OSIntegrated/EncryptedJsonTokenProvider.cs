@@ -60,6 +60,7 @@ namespace Wabbajack.Services.OSIntegrated
             }
             else
             {
+                var value = EnvValue!;
                 return _dtos.Deserialize<T>(EnvValue!);
             }
         }

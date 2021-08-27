@@ -4,9 +4,11 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentFTP;
 using Microsoft.Extensions.Logging;
 using Wabbajack.CLI.Services;
 using Wabbajack.Common;
@@ -23,11 +25,15 @@ using Wabbajack.Installer;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using Wabbajack.Server.Lib.DTOs;
+using Wabbajack.Server.Lib.TokenProviders;
 
 namespace Wabbajack.CLI.Verbs
 {
     public class ValidateLists : IVerb
     {
+        private static Uri MirrorPrefix = new Uri("https://mirror.wabbajack.org");
+        
         private readonly ILogger<ValidateLists> _logger;
         private readonly Client _wjClient;
         private readonly Networking.GitHub.Client _gitHubClient;
@@ -35,10 +41,12 @@ namespace Wabbajack.CLI.Verbs
         private readonly DownloadDispatcher _dispatcher;
         private readonly DTOSerializer _dtos;
         private readonly ParallelOptions _parallelOptions;
+        private readonly IFtpSiteCredentials _ftpSiteCredentials;
 
         public ValidateLists(ILogger<ValidateLists> logger, Client wjClient, 
             Wabbajack.Networking.GitHub.Client gitHubClient, TemporaryFileManager temporaryFileManager,
-            DownloadDispatcher dispatcher, DTOSerializer dtos, ParallelOptions parallelOptions)
+            DownloadDispatcher dispatcher, DTOSerializer dtos, ParallelOptions parallelOptions,
+            IFtpSiteCredentials ftpSiteCredentials)
         {
             _logger = logger;
             _wjClient = wjClient;
@@ -47,6 +55,7 @@ namespace Wabbajack.CLI.Verbs
             _dispatcher = dispatcher;
             _dtos = dtos;
             _parallelOptions = parallelOptions;
+            _ftpSiteCredentials = ftpSiteCredentials;
         }
         
         public Command MakeCommand()
@@ -65,6 +74,8 @@ namespace Wabbajack.CLI.Verbs
             var archiveManager = new ArchiveManager(_logger, archives);
             var token = CancellationToken.None;
 
+            var mirroredFiles = await AllMirroredFiles(token);
+
             _logger.LogInformation("Loading Mirror Allow List");
             var mirrorAllowList = await _wjClient.LoadMirrorAllowList();
 
@@ -72,7 +83,7 @@ namespace Wabbajack.CLI.Verbs
                 (x => x.State.PrimaryKeyString, archive => DownloadAndValidate(archive, archiveManager, token));
 
             var mirrorCache = new LazyCache<string, Archive, (ArchiveStatus Status, Archive archive)>
-                (x => x.State.PrimaryKeyString, archive => AttemptToMirrorArchive(archive, archiveManager, mirrorAllowList,  token));
+                (x => x.State.PrimaryKeyString, archive => AttemptToMirrorArchive(archive, archiveManager, mirrorAllowList, mirroredFiles, token));
             
             foreach (var list in lists)
             {
@@ -143,10 +154,81 @@ namespace Wabbajack.CLI.Verbs
         }
 
         private async Task<(ArchiveStatus Status, Archive archive)> AttemptToMirrorArchive(Archive archive,
-            ArchiveManager archiveManager, ServerAllowList mirrorAllowList, CancellationToken token)
+            ArchiveManager archiveManager, ServerAllowList mirrorAllowList, HashSet<Hash> previouslyMirrored, 
+            CancellationToken token)
         {
+            // Are we allowed to mirror the file?
             if (!_dispatcher.Matches(archive, mirrorAllowList)) return (ArchiveStatus.InValid, archive);
-            return (ArchiveStatus.Mirrored, archive);
+
+            var mirroredArchive = new Archive
+            {
+                Name = archive.Name,
+                Size = archive.Size,
+                Hash = archive.Hash,
+                State = new WabbajackCDN
+                {
+                    Url = new Uri($"{MirrorPrefix}{archive.Hash}")
+                }
+            };
+
+            // If it's already mirrored, we can exit
+            if (previouslyMirrored.Contains(archive.Hash)) return (ArchiveStatus.Mirrored, mirroredArchive);
+            
+            // We need to mirror the file, but do we have a copy to mirror?
+            if (!archiveManager.HaveArchive(archive.Hash)) return (ArchiveStatus.InValid, mirroredArchive);
+
+            var srcPath = archiveManager.GetPath(archive.Hash);
+            var definition = await _wjClient.GenerateFileDefinition(srcPath);
+
+            using (var client = await GetMirrorFtpClient(token))
+            {
+                await client.CreateDirectoryAsync($"{definition.Hash.ToHex()}", token);
+                await client.CreateDirectoryAsync($"{definition.Hash.ToHex()}/parts", token);
+            }
+
+            string MakePath(long idx)
+            {
+                return $"{definition!.Hash.ToHex()}/parts/{idx}";
+            }
+
+            await definition.Parts.PDo(_parallelOptions, async part =>
+            {
+                _logger.LogInformation("Uploading mirror part of {name} {hash} ({index}/{length})", archive.Name, archive.Hash, part.Index, definition.Parts.Length);
+
+                var buffer = new byte[part.Size];
+                await using (var fs = srcPath.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    fs.Position = part.Offset;
+                    await fs.ReadAsync(buffer, token);
+                }
+                
+                await CircuitBreaker.WithAutoRetryAllAsync(_logger, async () =>{
+                    using var client = await GetMirrorFtpClient(token);
+                    var name = MakePath(part.Index);
+                    await client.UploadAsync(new MemoryStream(buffer), name, token: token);
+                });
+
+            });
+
+            await CircuitBreaker.WithAutoRetryAllAsync(_logger, async () =>
+            {
+                using var client = await GetMirrorFtpClient(token);
+                _logger.LogInformation($"Finishing mirror upload");
+
+
+                await using var ms = new MemoryStream();
+                await using (var gz = new GZipStream(ms, CompressionLevel.Optimal, true))
+                {
+                    await _dtos.Serialize(definition, gz);
+                }
+
+                ms.Position = 0;
+                var remoteName = $"{definition.Hash.ToHex()}/definition.json.gz";
+                await client.UploadAsync(ms, remoteName, token: token);
+            });
+
+            
+            return (ArchiveStatus.Mirrored, mirroredArchive);
         }
 
         private async Task<(ArchiveStatus, Archive)> DownloadAndValidate(Archive archive, ArchiveManager archiveManager, CancellationToken token)
@@ -167,7 +249,9 @@ namespace Wabbajack.CLI.Verbs
                 try
                 {
                     await using var tempFile = _temporaryFileManager.CreateFile();
-                    await _dispatcher.Download(archive, tempFile.Path, token);
+                    var hash = await _dispatcher.Download(archive, tempFile.Path, token);
+                    if (hash != archive.Hash)
+                        return (ArchiveStatus.InValid, archive);
                     await archiveManager.Ingest(tempFile.Path, token);
                 }
                 catch (Exception ex)
@@ -233,6 +317,24 @@ namespace Wabbajack.CLI.Verbs
             _logger.LogInformation("Archiving {hash}", hash);
             await archiveManager.Ingest(tempFile.Path, token);
 
+        }
+
+        public async ValueTask<HashSet<Hash>> AllMirroredFiles(CancellationToken token)
+        {
+            using var client = await GetMirrorFtpClient(token);
+            
+            var files = await client.GetListingAsync(token);
+
+            var parsed = files.TryKeep(f => (Hash.TryGetFromHex(f.Name, out var hash), hash)).ToHashSet();
+
+            return parsed;
+        }
+
+        private async Task<FtpClient> GetMirrorFtpClient(CancellationToken token)
+        {
+            var client = await (await _ftpSiteCredentials.Get())![StorageSpace.Mirrors].GetClient(_logger);
+            await client.ConnectAsync(token);
+            return client;
         }
     }
 }

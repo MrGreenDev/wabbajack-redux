@@ -124,5 +124,20 @@ namespace Wabbajack.Hashing.xxHash64
                 _ => FromLong(long.Parse(input))
             };
         }
+
+        public static bool TryGetFromHex(string hex, out Hash hash)
+        {
+            hash = default;
+            if (hex.Length != 16) return false;
+            try
+            {
+                hash = FromHex(hex);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
 }

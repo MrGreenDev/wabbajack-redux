@@ -9,5 +9,11 @@ namespace Wabbajack.Common
         {
             foreach (var i in coll) f(i);
         }
+
+
+        public static IEnumerable<TOut> TryKeep<TIn, TOut>(this IEnumerable<TIn> coll, Func<TIn, (bool, TOut)> fn)
+        {
+            return coll.Select(fn).Where(p => p.Item1).Select(p => p.Item2);
+        }
     }
 }
