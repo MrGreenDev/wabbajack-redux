@@ -84,6 +84,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Services.OSIntegr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Downloaders.ModDB", "Wabbajack.Downloaders.ModDB\Wabbajack.Downloaders.ModDB.csproj", "{176E8CCF-3591-4DC2-A22B-0FAB14E2A0C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Downloaders.Mega", "Wabbajack.Downloaders.Mega\Wabbajack.Downloaders.Mega.csproj", "{1DD25EF5-DC69-4287-B3C5-B2CE101257A2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -258,5 +260,9 @@ Global
 		{176E8CCF-3591-4DC2-A22B-0FAB14E2A0C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{176E8CCF-3591-4DC2-A22B-0FAB14E2A0C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{176E8CCF-3591-4DC2-A22B-0FAB14E2A0C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DD25EF5-DC69-4287-B3C5-B2CE101257A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DD25EF5-DC69-4287-B3C5-B2CE101257A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DD25EF5-DC69-4287-B3C5-B2CE101257A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DD25EF5-DC69-4287-B3C5-B2CE101257A2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

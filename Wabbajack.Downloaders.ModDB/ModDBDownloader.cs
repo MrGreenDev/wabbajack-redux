@@ -42,7 +42,7 @@ namespace Wabbajack.Downloaders.ModDB
                         Method = HttpMethod.Get,
                         RequestUri = new Uri(url)
                     };
-                    var result = await _httpClient.SendAsync(msg, token);
+                    var result = await _httpClient.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
                     return await _downloader.Download(result, destination, token);
                 }
                 catch (Exception)
