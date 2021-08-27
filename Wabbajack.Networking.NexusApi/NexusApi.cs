@@ -142,8 +142,6 @@ namespace Wabbajack.Networking.NexusApi
             
             var userAgent =
                 $"{_appInfo.ApplicationSlug}/{_appInfo.Version} ({_appInfo.OSVersion}; {_appInfo.Platform})";
-            // Debugg on linux
-            _logger.LogWarning("USER AGENT ISSUE - {issue}", userAgent);
 
             msg.RequestUri = new Uri($"https://api.nexusmods.com/{string.Format(uri, parameters)}");
             msg.Headers.Add("User-Agent", userAgent);

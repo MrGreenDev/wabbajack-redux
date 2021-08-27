@@ -4,6 +4,8 @@
     <TargetFramework Condition=" '$(OS)' == 'Windows_NT'">net6.0-windows</TargetFramework>
     <TargetFramework Condition=" '$(OS)' != 'Windows_NT'">net6.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TimeMode>linked</TimeMode>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Models\" />
@@ -24,9 +26,15 @@
     <PackageReference Include="XamlNameReferenceGenerator" Version="1.3.4" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Wabbajack.CLI\Wabbajack.CLI.csproj" />
     <ProjectReference Include="..\Wabbajack.DTOs\Wabbajack.DTOs.csproj" />
     <ProjectReference Include="..\Wabbajack.Installer\Wabbajack.Installer.csproj" />
     <ProjectReference Include="..\Wabbajack.Paths\Wabbajack.Paths.csproj" />
     <ProjectReference Include="..\Wabbajack.Services.OSIntegrated\Wabbajack.Services.OSIntegrated.csproj" />
   </ItemGroup>
+
+  <Target Name="AferBuild" AfterTargets="Build">
+    <Message Text="Downloading Cef"/>
+    <Exec Command="$(OutDir)wabbajack-cli.exe download-cef"/>
+  </Target>
 </Project>
