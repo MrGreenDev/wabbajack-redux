@@ -14,6 +14,7 @@ using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using YamlDotNet.Core;
 
 namespace Wabbajack.Downloaders
 {
@@ -201,6 +202,19 @@ namespace Wabbajack.Downloaders
         {
             foreach (var d in downloadStates.Select(d => Downloader(new Archive { State = d })).Distinct())
                 await d.Prepare();
+        }
+
+        public bool Matches(Archive archive, ServerAllowList mirrorAllowList)
+        {
+            if (archive.State is DTOs.DownloadStates.GoogleDrive gdrive)
+            {
+                return mirrorAllowList.GoogleIDs.Contains(gdrive.Id);
+            }
+            else
+            {
+                var url = ((IUrlDownloader)Downloader(archive)).UnParse(archive.State).ToString();
+                return mirrorAllowList.AllowedPrefixes.Any(p => url.StartsWith(p));
+            }
         }
     }
 }

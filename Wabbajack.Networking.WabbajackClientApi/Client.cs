@@ -51,9 +51,18 @@ namespace Wabbajack.Networking.WabbajackClientApi
             await _client.SendAsync(msg);
         }
 
-        public async Task<ServerAllowList> LoadAllowList()
+        public async Task<ServerAllowList> LoadDownloadAllowList()
         {
             var str = await _client.GetStringAsync(_configuration.ServerAllowList);
+            var d = new DeserializerBuilder()
+                .WithNamingConvention(PascalCaseNamingConvention.Instance)
+                .Build();
+            return d.Deserialize<ServerAllowList>(str);
+        }
+        
+        public async Task<ServerAllowList> LoadMirrorAllowList()
+        {
+            var str = await _client.GetStringAsync(_configuration.MirrorAllowList);
             var d = new DeserializerBuilder()
                 .WithNamingConvention(PascalCaseNamingConvention.Instance)
                 .Build();

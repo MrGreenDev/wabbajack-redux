@@ -17,6 +17,7 @@ using Wabbajack.DTOs.GitHub;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.DTOs.ModListValidation;
 using Wabbajack.DTOs.ServerResponses;
+using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Installer;
 using Wabbajack.Networking.WabbajackClientApi;
@@ -63,6 +64,15 @@ namespace Wabbajack.CLI.Verbs
         {
             var archiveManager = new ArchiveManager(_logger, archives);
             var token = CancellationToken.None;
+
+            _logger.LogInformation("Loading Mirror Allow List");
+            var mirrorAllowList = await _wjClient.LoadMirrorAllowList();
+
+            var validationCache = new LazyCache<string, Archive, (ArchiveStatus Status, Archive archive)>
+                (x => x.State.PrimaryKeyString, archive => DownloadAndValidate(archive, archiveManager, token));
+
+            var mirrorCache = new LazyCache<string, Archive, (ArchiveStatus Status, Archive archive)>
+                (x => x.State.PrimaryKeyString, archive => AttemptToMirrorArchive(archive, archiveManager, mirrorAllowList,  token));
             
             foreach (var list in lists)
             {
@@ -90,13 +100,20 @@ namespace Wabbajack.CLI.Verbs
 
                     var archives = await modListData.Archives.PMap(_parallelOptions, async archive =>
                     {
-                        var result = await DownloadAndValidate(archive, archiveManager, token);
+                        //var result = await DownloadAndValidate(archive, archiveManager, token);
+                        var result = await validationCache.Get(archive);
+
+                        if (result.Status == ArchiveStatus.InValid)
+                        {
+                            result = await  mirrorCache.Get(archive);
+                        }
+
                         return new ValidatedArchive
                         {
                             Original = archive,
-                            Status = result.Item1,
-                            PatchedFrom = result.Item1 is ArchiveStatus.Mirrored or ArchiveStatus.Updated
-                                ? result.Item2
+                            Status = result.Status,
+                            PatchedFrom = result.Status is ArchiveStatus.Mirrored or ArchiveStatus.Updated
+                                ? result.archive
                                 : null
                         };
                     }).ToArray();
@@ -109,7 +126,7 @@ namespace Wabbajack.CLI.Verbs
                 }).ToArray();
 
                 var allArchives = validatedLists.SelectMany(l => l.Archives).ToList();
-                _logger.LogInformation("Validated {count} lists in {elapsed}", validatedLists, stopWatch.Elapsed);
+                _logger.LogInformation("Validated {count} lists in {elapsed}", validatedLists.Length, stopWatch.Elapsed);
                 _logger.LogInformation(" - {count} Valid", allArchives.Count(a => a.Status is ArchiveStatus.Valid));
                 _logger.LogInformation(" - {count} Invalid", allArchives.Count(a => a.Status is ArchiveStatus.InValid));
                 _logger.LogInformation(" - {count} Mirrored", allArchives.Count(a => a.Status is ArchiveStatus.Mirrored));
@@ -123,6 +140,13 @@ namespace Wabbajack.CLI.Verbs
             }
             
             return 0;
+        }
+
+        private async Task<(ArchiveStatus Status, Archive archive)> AttemptToMirrorArchive(Archive archive,
+            ArchiveManager archiveManager, ServerAllowList mirrorAllowList, CancellationToken token)
+        {
+            if (!_dispatcher.Matches(archive, mirrorAllowList)) return (ArchiveStatus.InValid, archive);
+            return (ArchiveStatus.Mirrored, archive);
         }
 
         private async Task<(ArchiveStatus, Archive)> DownloadAndValidate(Archive archive, ArchiveManager archiveManager, CancellationToken token)

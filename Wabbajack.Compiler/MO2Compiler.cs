@@ -176,7 +176,7 @@ namespace Wabbajack.Compiler
 
         private async Task RunValidation(ModList modList)
         {
-            var allowList = await _wjClient.LoadAllowList();
+            var allowList = await _wjClient.LoadDownloadAllowList();
             foreach (var archive in modList.Archives)
             {
                 if (!_dispatcher.IsAllowed(archive, allowList))
