@@ -14,6 +14,7 @@ namespace Wabbajack.Downloaders
                 .AddDTOSerializer()
                 .AddGoogleDriveDownloader()
                 .AddHttpDownloader()
+                .AddMegaDownloader()
                 .AddModDBDownloader()
                 .AddNexusDownloader()
                 .AddWabbajackCDNDownloader()

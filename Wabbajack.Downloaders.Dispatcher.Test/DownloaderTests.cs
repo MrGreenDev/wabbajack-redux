@@ -77,6 +77,19 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
                         State = new WabbajackCDN { Url = new Uri("https://authored-files.wabbajack.org/Tonal%20Architect_WJ_TEST_FILES.zip_9cb97a01-3354-4077-9e4a-7e808d47794fFFOOO") }
                     }
                 },
+                // Mega Data
+                new object[]
+                {
+                    new Archive
+                    {
+                        Hash = Hash.FromBase64("eSIyd+KOG3s="),
+                        State = new Mega { Url = new Uri("https://mega.nz/file/CsMSFaaJ#-uziC4mbJPRy2e4pPk8Gjb3oDT_38Be9fzZ6Ld4NL-k") }
+                    },
+                    new Archive
+                    {
+                        State = new Mega { Url = new Uri("https://mega.nz/file/zz42FaaJ#-uziC4mbJPRy2e4pPk8Gjb3oDT_38Be9fzZ6L42NL-k") }
+                    }
+                },
                 // ModDB Data
                 new object[]
                 {
