@@ -18,6 +18,7 @@ using Wabbajack.Networking.NexusApi;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using Wabbajack.Server.Lib;
 using Wabbajack.Services.OSIntegrated;
 using Wabbajack.VFS;
 using Client = Wabbajack.Networking.GitHub.Client;
@@ -53,6 +54,7 @@ namespace Wabbajack.CLI
                     services.AddSingleton<GitHubClient>(s => new GitHubClient(new ProductHeaderValue("wabbajack")));
 
                     services.AddOSIntegrated();
+                    services.AddServerLib();
 
                     
                     

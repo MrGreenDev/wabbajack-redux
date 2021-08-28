@@ -10,6 +10,9 @@ namespace Wabbajack.Networking.WabbajackClientApi
 
         public Uri ServerAllowList { get; set; } =
             new("https://raw.githubusercontent.com/wabbajack-tools/opt-out-lists/master/ServerWhitelist.yml");
+        
+        public Uri MirrorAllowList { get; set; } =
+            new("https://raw.githubusercontent.com/wabbajack-tools/allow-lists/main/allowed-mirrors.yaml");
 
         public Uri BuildServerUrl { get; set; } = new("https://build.wabbajack.org/");
     }

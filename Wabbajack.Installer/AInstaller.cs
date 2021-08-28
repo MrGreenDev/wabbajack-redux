@@ -204,7 +204,7 @@ namespace Wabbajack.Installer
 
             await Task.WhenAll(dispatchers.Select(d => d.Prepare()));
 
-            var validationData = await _wjClient.LoadAllowList();
+            var validationData = await _wjClient.LoadDownloadAllowList();
 
             foreach (var archive in missing.Where(archive =>
                 !_downloadDispatcher.Downloader(archive).IsAllowed(validationData, archive.State)))
