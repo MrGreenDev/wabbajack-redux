@@ -13,6 +13,7 @@
 
     <ItemGroup>
       <PackageReference Include="FluentFTP" Version="34.0.2" />
+      <PackageReference Include="Nettle" Version="1.3.0" />
     </ItemGroup>
 
 </Project>

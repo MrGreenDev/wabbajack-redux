@@ -17,5 +17,6 @@ namespace Wabbajack.Common
         public static Extension Zip = new(".zip");
         public static Extension Wabbajack = new(".wabbajack");
         public static Extension Dds = new(".dds");
+        public static Extension Json = new(".json");
     }
 }

@@ -62,6 +62,7 @@ namespace Wabbajack.CLI.Verbs
         {
             var command = new Command("validate-lists");
             command.Add(new Option<List[]>(new[] { "-l", "-lists" }, "Lists of lists to validate") {IsRequired = true});
+            command.Add(new Option<AbsolutePath>(new [] {"-r", "--reports"}, "Location to store validation report outputs"));
             command.Add(new Option<AbsolutePath>(new[] { "-a", "-archives" }, "Location to store archives (files are named as the hex version of their hashes)")
                 {IsRequired = true});
             command.Description = "Gets a list of modlists, validates them and exports a result list";
@@ -69,8 +70,9 @@ namespace Wabbajack.CLI.Verbs
             return command;
         }
         
-        public async Task<int> Run(List[] lists, AbsolutePath archives)
+        public async Task<int> Run(List[] lists, AbsolutePath archives, AbsolutePath reports)
         {
+            reports.CreateDirectory();
             var archiveManager = new ArchiveManager(_logger, archives);
             var token = CancellationToken.None;
 
@@ -100,7 +102,7 @@ namespace Wabbajack.CLI.Verbs
 
                     using var scope = _logger.BeginScope("MachineURL: {machineURL}", modList.Links.MachineURL);
                     _logger.LogInformation("Verifying {machineURL} - {title}", modList.Links.MachineURL, modList.Title);
-                    await ValidateList(modList, archiveManager, CancellationToken.None);
+                    await DownloadModList(modList, archiveManager, CancellationToken.None);
 
                     _logger.LogInformation("Loading Modlist");
                     var modListData =
@@ -148,9 +150,37 @@ namespace Wabbajack.CLI.Verbs
                     _logger.LogInformation("-- Invalid : {primaryKeyString}", invalid.Original.State.PrimaryKeyString);
                 }
 
+                await ExportReports(reports, validatedLists);
+
             }
             
             return 0;
+        }
+
+        private async Task ExportReports(AbsolutePath reports, ValidatedModList[] validatedLists)
+        {
+            foreach (var validatedList in validatedLists)
+            {
+                var baseFile = reports.Combine(validatedList.MachineURL);
+                await using var jsonFile = baseFile.WithExtension(Ext.Json)
+                    .Open(FileMode.Create, FileAccess.Write, FileShare.None);
+                await _dtos.Serialize(validatedList, jsonFile, true);
+            }
+
+
+            var summaries = validatedLists.Select(l => new ModListSummary
+            {
+                Failed = l.Archives.Count(f => f.Status == ArchiveStatus.InValid),
+                Mirrored = l.Archives.Count(f => f.Status == ArchiveStatus.Mirrored),
+                Passed = l.Archives.Count(f => f.Status == ArchiveStatus.Valid),
+                MachineURL = l.MachineURL,
+                Name = l.Name,
+                Updating = 0
+            }).ToArray();
+            
+            await using var summaryFile = reports.Combine("modListSummary.json")
+                .Open(FileMode.Create, FileAccess.Write, FileShare.None);
+            await _dtos.Serialize(summaries, summaryFile, true);
         }
 
         private async Task<(ArchiveStatus Status, Archive archive)> AttemptToMirrorArchive(Archive archive,
@@ -277,21 +307,23 @@ namespace Wabbajack.CLI.Verbs
             }
         }
 
-        private async Task ValidateList(ModlistMetadata modList, ArchiveManager archiveManager, CancellationToken token)
+        private async Task<Hash> DownloadModList(ModlistMetadata modList, ArchiveManager archiveManager, CancellationToken token)
         {
             if (archiveManager.HaveArchive(modList.DownloadMetadata!.Hash))
             {
                 _logger.LogInformation("Previously downloaded {hash} not re-downloading", modList.Links.MachineURL);
+                return modList.DownloadMetadata!.Hash;
             }
             else
             {
                 _logger.LogInformation("Downloading {hash}", modList.Links.MachineURL);
-                await DownloadWabbajackFile(modList, archiveManager, token);
+                return await DownloadWabbajackFile(modList, archiveManager, token);
             }
+            
             
         }
 
-        private async Task DownloadWabbajackFile(ModlistMetadata modList, ArchiveManager archiveManager,
+        private async Task<Hash> DownloadWabbajackFile(ModlistMetadata modList, ArchiveManager archiveManager,
             CancellationToken token)
         {
             var state = _dispatcher.Parse(new Uri(modList.Links.Download));
@@ -316,7 +348,7 @@ namespace Wabbajack.CLI.Verbs
 
             _logger.LogInformation("Archiving {hash}", hash);
             await archiveManager.Ingest(tempFile.Path, token);
-
+            return hash;
         }
 
         public async ValueTask<HashSet<Hash>> AllMirroredFiles(CancellationToken token)

@@ -142,7 +142,6 @@ namespace Wabbajack.Server.Services
 
                 var summary =  new ModListSummary
                 {
-                    Checked = DateTime.UtcNow,
                     Failed = failedCount,
                     Passed = passCount,
                     Updating = updatingCount,
