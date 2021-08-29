@@ -88,6 +88,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Downloaders.Mega"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Server.Lib", "Wabbajack.Server.Lib\Wabbajack.Server.Lib.csproj", "{4CC1B70B-186E-4440-B723-E7A6819E27DD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.Downloaders.IPS4OAuth2Downloader", "Wabbajack.Downloaders.IPS4OAuth2Downloader\Wabbajack.Downloaders.IPS4OAuth2Downloader.csproj", "{70180D74-7902-45D4-9A50-C02EAE0B5CF9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -270,5 +272,9 @@ Global
 		{4CC1B70B-186E-4440-B723-E7A6819E27DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4CC1B70B-186E-4440-B723-E7A6819E27DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4CC1B70B-186E-4440-B723-E7A6819E27DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70180D74-7902-45D4-9A50-C02EAE0B5CF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70180D74-7902-45D4-9A50-C02EAE0B5CF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70180D74-7902-45D4-9A50-C02EAE0B5CF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70180D74-7902-45D4-9A50-C02EAE0B5CF9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

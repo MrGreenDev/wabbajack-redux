@@ -14,12 +14,13 @@ using Wabbajack.Services.OSIntegrated;
 
 namespace Wabbajack.App.ViewModels
 {
-    public abstract class OAuthLoginViewModel : GuidedWebViewModel
+    public abstract class OAuthLoginViewModel<TLoginType> : GuidedWebViewModel
+    where TLoginType : OAuth2LoginState, new()
     {
         private readonly HttpClient _httpClient;
-        private readonly EncryptedJsonTokenProvider<OAuth2LoginState> _tokenProvider;
+        private readonly EncryptedJsonTokenProvider<TLoginType> _tokenProvider;
 
-        public OAuthLoginViewModel(ILogger<OAuthLoginViewModel> logger, HttpClient httpClient, EncryptedJsonTokenProvider<OAuth2LoginState> tokenProvider) : base(logger)
+        public OAuthLoginViewModel(ILogger logger, HttpClient httpClient, EncryptedJsonTokenProvider<TLoginType> tokenProvider) : base(logger)
         {
             _logger = logger;
             _httpClient = httpClient;
@@ -122,7 +123,7 @@ namespace Wabbajack.App.ViewModels
             using var response = await _httpClient.SendAsync(msg, token);
             var data = await response.Content.ReadFromJsonAsync<OAuthResultState>(cancellationToken: token);
 
-            await _tokenProvider.SetToken(new OAuth2LoginState
+            await _tokenProvider.SetToken(new TLoginType
             {
                 Cookies = cookies,
                 ResultState = data!

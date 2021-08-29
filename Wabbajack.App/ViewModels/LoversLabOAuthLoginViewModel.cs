@@ -9,7 +9,7 @@ using Wabbajack.Services.OSIntegrated.TokenProviders;
 
 namespace Wabbajack.App.ViewModels
 {
-    public class LoversLabOAuthLoginViewModel : OAuthLoginViewModel
+    public class LoversLabOAuthLoginViewModel : OAuthLoginViewModel<LoversLabLoginState>
     {
         public LoversLabOAuthLoginViewModel(ILogger<LoversLabOAuthLoginViewModel> logger, HttpClient client, 
             LoversLabTokenProvider tokenProvider)

@@ -48,11 +48,8 @@ namespace Wabbajack.Downloaders
 
         public async Task<bool> Verify(Archive a, CancellationToken token)
         {
-            foreach (var downloader in _downloaders)
-                if (downloader.CanDownload(a))
-                    return await downloader.Verify(a, token);
-
-            throw new NotImplementedException();
+            var downloader = Downloader(a);
+            return await downloader.Verify(a, token);
         }
 
         public async Task<(DownloadResult, Hash)> DownloadWithPossibleUpgrade(Archive archive, AbsolutePath destination,
