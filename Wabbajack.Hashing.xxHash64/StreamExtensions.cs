@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,8 @@ namespace Wabbajack.Hashing.xxHash64
         public static async Task<Hash> HashingCopy(this Stream inputStream, Stream outputStream,
             CancellationToken token)
         {
-            var buffer = new byte[1024 * 1024];
+            using var rented = MemoryPool<byte>.Shared.Rent(1024 * 1024);
+            var buffer = rented.Memory;
 
             var hasher = new xxHashAlgorithm(0);
 
@@ -26,7 +28,7 @@ namespace Wabbajack.Hashing.xxHash64
 
                 while (totalRead != buffer.Length)
                 {
-                    var read = await inputStream.ReadAsync(buffer.AsMemory(totalRead, buffer.Length - totalRead),
+                    var read = await inputStream.ReadAsync(buffer.Slice(totalRead, buffer.Length - totalRead),
                         token);
                     if (read == 0)
                     {
@@ -37,10 +39,10 @@ namespace Wabbajack.Hashing.xxHash64
                     totalRead += read;
                 }
 
-                var pendingWrite = outputStream.WriteAsync(buffer, 0, totalRead, token);
+                var pendingWrite = outputStream.WriteAsync(buffer[..totalRead], token);
                 if (running)
                 {
-                    hasher.TransformByteGroupsInternal(buffer);
+                    hasher.TransformByteGroupsInternal(buffer.Span);
                     await pendingWrite;
                 }
                 else
@@ -48,13 +50,13 @@ namespace Wabbajack.Hashing.xxHash64
                     var preSize = (totalRead >> 5) << 5;
                     if (preSize > 0)
                     {
-                        hasher.TransformByteGroupsInternal(buffer.AsSpan()[..preSize]);
-                        finalHash = hasher.FinalizeHashValueInternal(buffer.AsSpan()[preSize..totalRead]);
+                        hasher.TransformByteGroupsInternal(buffer[..preSize].Span);
+                        finalHash = hasher.FinalizeHashValueInternal(buffer[preSize..totalRead].Span);
                         await pendingWrite;
                         break;
                     }
 
-                    finalHash = hasher.FinalizeHashValueInternal(buffer.AsSpan()[..totalRead]);
+                    finalHash = hasher.FinalizeHashValueInternal(buffer[..totalRead].Span);
                     await pendingWrite;
                     break;
                 }

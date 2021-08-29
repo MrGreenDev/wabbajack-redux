@@ -424,7 +424,7 @@ namespace Wabbajack.Compiler
                 {
                     
                     var patches = await _patchOptions[pfa]
-                        .Select(async c => (await _patchCache.GetPatch(c.Hash, pfa.Hash), c))
+                        .SelectAsync(async c => (await _patchCache.GetPatch(c.Hash, pfa.Hash), c))
                         .ToList();
 
                     // Pick the best patch

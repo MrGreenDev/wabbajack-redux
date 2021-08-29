@@ -359,7 +359,7 @@ namespace Wabbajack.Installer
                 {
                     _logger.LogInformation("Generating zEdit merge: {to}", m.To);
 
-                    var srcData = (await m.Sources.Select(async s =>
+                    var srcData = (await m.Sources.SelectAsync(async s =>
                             await _configuration.Install.Combine(s.RelativePath).ReadAllBytesAsync(token))
                         .ToReadOnlyCollection())
                         .ConcatArrays();

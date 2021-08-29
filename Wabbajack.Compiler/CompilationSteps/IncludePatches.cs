@@ -103,7 +103,7 @@ namespace Wabbajack.Compiler.CompilationSteps
             
             var e = source.EvolveTo<PatchedFromArchive>();
 
-            var patches = await found.Select(async c => (await _compiler._patchCache.GetPatch(c.Hash, source.File.Hash), c))
+            var patches = await found.SelectAsync(async c => (await _compiler._patchCache.GetPatch(c.Hash, source.File.Hash), c))
                 .ToList();
 
             if (patches.All(p => p.Item1 != null))

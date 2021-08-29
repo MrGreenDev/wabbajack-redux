@@ -49,10 +49,10 @@ namespace Wabbajack.Downloaders
             await using var fs = destination.Open(FileMode.Create, FileAccess.Write, FileShare.None);
             
             SemaphoreSlim slim = new(1, 1);
-            await definition.Parts.PDo(_parallelOptions.WithCancellationToken(token), async part =>
+            await definition.Parts.PDo(_parallelOptions, async part =>
             {
                 var msg = MakeMessage(new Uri(state.Url + $"/parts/{part.Index}"));
-                using var response = await _client.SendAsync(msg, token);
+                using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
                 if (!response.IsSuccessStatusCode)
                     throw new InvalidDataException($"Bad response for part request for part {part.Index}");
                 

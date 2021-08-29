@@ -9,16 +9,6 @@ namespace Wabbajack.Common
 {
     public static class AsyncParallelExtensions
     {
-
-        public static ParallelOptions WithCancellationToken(this ParallelOptions options, CancellationToken token)
-        {
-            return new ParallelOptions
-            {
-                MaxDegreeOfParallelism = options.MaxDegreeOfParallelism,
-                TaskScheduler = options.TaskScheduler,
-                CancellationToken = token
-            };
-        }
         public static IAsyncEnumerable<TOut> PMap<TIn, TOut>(this IEnumerable<TIn> coll, ParallelOptions options,
             Func<TIn, Task<TOut>> mapFn)
         {
@@ -112,7 +102,7 @@ namespace Wabbajack.Common
                     yield return itm;
         }
         
-        public static async IAsyncEnumerable<TOut> Select<TIn, TOut>(this IEnumerable<TIn> coll, Func<TIn, ValueTask<TOut>> fn)
+        public static async IAsyncEnumerable<TOut> SelectAsync<TIn, TOut>(this IEnumerable<TIn> coll, Func<TIn, ValueTask<TOut>> fn)
         {
             foreach (var itm in coll)
                 yield return await fn(itm);

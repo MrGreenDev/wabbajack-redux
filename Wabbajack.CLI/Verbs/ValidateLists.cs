@@ -76,7 +76,9 @@ namespace Wabbajack.CLI.Verbs
             var archiveManager = new ArchiveManager(_logger, archives);
             var token = CancellationToken.None;
 
+            _logger.LogInformation("Scanning for existing patches/mirrors");
             var mirroredFiles = await AllMirroredFiles(token);
+            var patchFiles = await AllPatchFiles(token);
 
             _logger.LogInformation("Loading Mirror Allow List");
             var mirrorAllowList = await _wjClient.LoadMirrorAllowList();
@@ -354,17 +356,37 @@ namespace Wabbajack.CLI.Verbs
         public async ValueTask<HashSet<Hash>> AllMirroredFiles(CancellationToken token)
         {
             using var client = await GetMirrorFtpClient(token);
-            
             var files = await client.GetListingAsync(token);
-
             var parsed = files.TryKeep(f => (Hash.TryGetFromHex(f.Name, out var hash), hash)).ToHashSet();
-
+            return parsed;
+        }
+        
+        public async ValueTask<HashSet<(Hash, Hash)>> AllPatchFiles(CancellationToken token)
+        {
+            using var client = await GetPatchesFtpClient(token);
+            var files = await client.GetListingAsync(token);
+            var parsed = files.TryKeep(f =>
+            {
+                var parts = f.Name.Split("_");
+                return (parts.Length == 2, parts);
+            })
+                .TryKeep(p => (Hash.TryGetFromHex(p[0], out var fromHash) & 
+                                     Hash.TryGetFromHex(p[1], out var toHash), 
+                    (fromHash, toHash)))
+                .ToHashSet();
             return parsed;
         }
 
         private async Task<FtpClient> GetMirrorFtpClient(CancellationToken token)
         {
             var client = await (await _ftpSiteCredentials.Get())![StorageSpace.Mirrors].GetClient(_logger);
+            await client.ConnectAsync(token);
+            return client;
+        }
+        
+        private async Task<FtpClient> GetPatchesFtpClient(CancellationToken token)
+        {
+            var client = await (await _ftpSiteCredentials.Get())![StorageSpace.Patches].GetClient(_logger);
             await client.ConnectAsync(token);
             return client;
         }
