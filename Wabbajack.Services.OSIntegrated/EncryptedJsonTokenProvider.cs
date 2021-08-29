@@ -60,7 +60,12 @@ namespace Wabbajack.Services.OSIntegrated
             }
             else
             {
-                var value = EnvValue!;
+                var value = EnvValue;
+                if (value == default)
+                {
+                    _logger.LogCritical("No login data for {key}", _key);
+                    throw new Exception("No login data for {_key}");
+                }
                 return _dtos.Deserialize<T>(EnvValue!);
             }
         }
