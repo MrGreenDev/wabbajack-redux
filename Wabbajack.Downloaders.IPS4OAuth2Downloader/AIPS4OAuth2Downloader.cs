@@ -134,7 +134,10 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
             using var authResponse = await _client.SendAsync(authMessage, HttpCompletionOption.ResponseHeadersRead, token);
 
             if (authResponse.StatusCode != HttpStatusCode.Redirect)
+            {
+                _logger.LogCritical("Quick renew auth returned {code} - {message} - {body}", authResponse.StatusCode, authResponse.ReasonPhrase, await authResponse.Content.ReadAsStringAsync());
                 return false;
+            }
 
             var redirect = authResponse.Headers.GetValues("Location").FirstOrDefault();
             if (redirect == default) return false;
