@@ -3,12 +3,21 @@ using System.Text.Json.Serialization;
 
 namespace Wabbajack.DTOs.Logins
 {
-    public class OAuth2LoginState
+    public abstract class OAuth2LoginState
     {
         [JsonPropertyName("result_state")]
         public OAuthResultState ResultState { get; set; } = new();
         [JsonPropertyName("cookies")]
         public Cookie[] Cookies { get; set; } = Array.Empty<Cookie>();
+        
+        [JsonIgnore] public abstract string SiteName { get; }
+        [JsonIgnore] public abstract string[] Scopes { get; }
+
+        [JsonIgnore] public abstract string ClientID { get; }
+
+        [JsonIgnore] public abstract Uri AuthorizationEndpoint { get; }
+        
+        [JsonIgnore] public abstract Uri TokenEndpoint { get; }
     }
         
     public class OAuthResultState

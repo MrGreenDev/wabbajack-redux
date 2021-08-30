@@ -10,7 +10,7 @@ namespace Wabbajack.DTOs.DownloadStates
         public string IPS4File { get; set; } = "";
         public string IPS4Url { get; set; } = "";
 
-        public override object[] PrimaryKey { get; }
+        public override object[] PrimaryKey => new object[] {IPS4Mod, IPS4File ?? "", IsAttachment};
         public Uri URL { get; }
         public string? Name { get; set; }
         public string? Author { get; set; }

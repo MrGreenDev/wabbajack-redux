@@ -12,5 +12,6 @@ namespace Wabbajack.DTOs
         public string ApplicationSha { get; set; }
         public string RuntimeIdentifier { get; set; }
         public string OSVersion { get; set; }
+        public string UserAgent => $"{ApplicationSlug}/{Version} ({OSVersion}; {Platform})";
     }
 }

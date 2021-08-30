@@ -1,6 +1,5 @@
 using System;
 using System.Net.Http;
-using CefNet;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Wabbajack.DTOs.Logins;
@@ -9,10 +8,10 @@ using Wabbajack.Services.OSIntegrated.TokenProviders;
 
 namespace Wabbajack.App.ViewModels
 {
-    public class LoversLabOAuthLoginViewModel : OAuthLoginViewModel<LoversLabLoginState>
+    public class VectorPlexusOAuthLoginViewModel : OAuthLoginViewModel<VectorPlexusLoginState>
     {
-        public LoversLabOAuthLoginViewModel(ILogger<LoversLabOAuthLoginViewModel> logger, HttpClient client, 
-            LoversLabTokenProvider tokenProvider)
+        public VectorPlexusOAuthLoginViewModel(ILogger<LoversLabOAuthLoginViewModel> logger, HttpClient client, 
+            VectorPlexusTokenProvider tokenProvider)
             : base(logger, client, tokenProvider)
         {
         }

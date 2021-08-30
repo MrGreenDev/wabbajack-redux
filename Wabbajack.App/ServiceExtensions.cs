@@ -45,6 +45,7 @@ namespace Wabbajack.App
             services.AddAllSingleton<IReceiverMarker, SettingsViewModel>();
             services.AddAllSingleton<IReceiverMarker, NexusLoginViewModel>();
             services.AddAllSingleton<IReceiverMarker, LoversLabOAuthLoginViewModel>();
+            services.AddAllSingleton<IReceiverMarker, VectorPlexusOAuthLoginViewModel>();
 
             var resources = KnownFolders.EntryPoint;
             services.AddSingleton(s => new CefSettings()

@@ -66,7 +66,8 @@ namespace Wabbajack.Services.OSIntegrated
             
             // Token Providers
             service.AddAllSingleton<ITokenProvider<NexusApiState>, NexusApiTokenProvider>();
-            service.AddSingleton<LoversLabTokenProvider>();
+            service.AddAllSingleton<ITokenProvider<LoversLabLoginState>, EncryptedJsonTokenProvider<LoversLabLoginState>, LoversLabTokenProvider>();
+            service.AddAllSingleton<ITokenProvider<VectorPlexusLoginState>, EncryptedJsonTokenProvider<VectorPlexusLoginState>, VectorPlexusTokenProvider>();
 
             service.AddAllSingleton<ITokenProvider<WabbajackApiState>, WabbajackApiTokenProvider>();
 

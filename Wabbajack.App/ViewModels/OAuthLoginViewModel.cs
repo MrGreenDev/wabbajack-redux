@@ -14,29 +14,19 @@ using Wabbajack.Services.OSIntegrated;
 
 namespace Wabbajack.App.ViewModels
 {
-    public abstract class OAuthLoginViewModel : GuidedWebViewModel
+    public abstract class OAuthLoginViewModel<TLoginType> : GuidedWebViewModel
+    where TLoginType : OAuth2LoginState, new()
     {
         private readonly HttpClient _httpClient;
-        private readonly EncryptedJsonTokenProvider<OAuth2LoginState> _tokenProvider;
+        private readonly EncryptedJsonTokenProvider<TLoginType> _tokenProvider;
 
-        public OAuthLoginViewModel(ILogger<OAuthLoginViewModel> logger, HttpClient httpClient, EncryptedJsonTokenProvider<OAuth2LoginState> tokenProvider) : base(logger)
+        public OAuthLoginViewModel(ILogger logger, HttpClient httpClient, EncryptedJsonTokenProvider<TLoginType> tokenProvider) : base(logger)
         {
             _logger = logger;
             _httpClient = httpClient;
             _tokenProvider = tokenProvider;
 
         }
-
-        protected abstract string SiteName { get; }
-        protected abstract string[] Scopes { get; }
-
-        protected abstract string ClientID { get; }
-
-        protected abstract Uri AuthorizationEndpoint { get; }
-        protected abstract Uri TokenEndpoint { get; }
-        
-        protected abstract string StorageKey { get; }
-
 
         private class AsyncSchemeHandler : CefSchemeHandlerFactory
         {
@@ -73,22 +63,24 @@ namespace Wabbajack.App.ViewModels
 
         public override async Task Run(CancellationToken token)
         {
+            var tlogin = new TLoginType();
+            
             await Browser.WaitForReady();
 
             var handler = new AsyncSchemeHandler();
             Browser.RequestContext.RegisterSchemeHandlerFactory("wabbajack", "", handler);
 
-            Instructions = $"Please log in and allow Wabbajack to access your {SiteName} account";
+            Instructions = $"Please log in and allow Wabbajack to access your {tlogin.SiteName} account";
 
-            var scopes = string.Join(" ", Scopes);
+            var scopes = string.Join(" ", tlogin.Scopes);
             var state = Guid.NewGuid().ToString();
 
-            await Browser.NavigateTo(new Uri(AuthorizationEndpoint +
-                                             $"?response_type=code&client_id={ClientID}&state={state}&scope={scopes}"));
+            await Browser.NavigateTo(new Uri(tlogin.AuthorizationEndpoint +
+                                             $"?response_type=code&client_id={tlogin.ClientID}&state={state}&scope={scopes}"));
 
             var uri = await handler.Task.WaitAsync(token);
 
-            var cookies = await Browser.Cookies("loverslab.com", token);
+            var cookies = await Browser.Cookies(tlogin.AuthorizationEndpoint.Host, token);
 
             var parsed = HttpUtility.ParseQueryString(uri.Query);
             if (parsed.Get("state") != state)
@@ -109,12 +101,12 @@ namespace Wabbajack.App.ViewModels
             {
                 new("grant_type", "authorization_code"),
                 new("code", authCode),
-                new("client_id", ClientID)
+                new("client_id", tlogin.ClientID)
             };
 
             var msg = new HttpRequestMessage();
             msg.Method = HttpMethod.Post;
-            msg.RequestUri = TokenEndpoint;
+            msg.RequestUri = tlogin.TokenEndpoint;
             msg.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
             msg.Headers.Add("Cookie", string.Join(";", cookies.Select(c => $"{c.Name}={c.Value}")));
             msg.Content = new FormUrlEncodedContent(formData.ToList());
@@ -122,7 +114,7 @@ namespace Wabbajack.App.ViewModels
             using var response = await _httpClient.SendAsync(msg, token);
             var data = await response.Content.ReadFromJsonAsync<OAuthResultState>(cancellationToken: token);
 
-            await _tokenProvider.SetToken(new OAuth2LoginState
+            await _tokenProvider.SetToken(new TLoginType
             {
                 Cookies = cookies,
                 ResultState = data!

@@ -4,8 +4,6 @@
     <TargetFramework Condition=" '$(OS)' == 'Windows_NT'">net6.0-windows</TargetFramework>
     <TargetFramework Condition=" '$(OS)' != 'Windows_NT'">net6.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <PublishTrimmed>true</PublishTrimmed>
-    <TimeMode>linked</TimeMode>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Models\" />
@@ -34,7 +32,7 @@
   </ItemGroup>
 
   <Target Name="AferBuild" AfterTargets="Build">
-    <Message Text="Downloading Cef"/>
-    <Exec Command="$(OutDir)wabbajack-cli.exe download-cef"/>
+    <Message Text="Downloading Cef" />
+    <Exec Command="$(OutDir)wabbajack-cli.exe download-cef" />
   </Target>
 </Project>

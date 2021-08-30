@@ -24,14 +24,7 @@ namespace Wabbajack.Services.OSIntegrated
             _dtos = dtos;
         }
 
-        private string? EnvValue
-        {
-            get
-            {
-                var data = Environment.GetEnvironmentVariable(_key.ToUpperInvariant().Replace("-", "_"));
-                return data == null ? data : Encoding.UTF8.GetString(Convert.FromBase64String(data));
-            }
-        }
+        private string? EnvValue => Environment.GetEnvironmentVariable(_key.ToUpperInvariant().Replace("-", "_"));
 
         public bool HaveToken()
         {
@@ -51,6 +44,14 @@ namespace Wabbajack.Services.OSIntegrated
             await token.AsEncryptedJsonFile(KeyPath);
         }
 
+        public async ValueTask<bool> TryDelete(T val)
+        {
+            if (!KeyPath.FileExists()) return false;
+            KeyPath.Delete();
+            return true;
+
+        }
+
         public async ValueTask<T?> Get()
         {
             var path = KeyPath;
@@ -60,7 +61,12 @@ namespace Wabbajack.Services.OSIntegrated
             }
             else
             {
-                var value = EnvValue!;
+                var value = EnvValue;
+                if (value == default)
+                {
+                    _logger.LogCritical("No login data for {key}", _key);
+                    throw new Exception("No login data for {_key}");
+                }
                 return _dtos.Deserialize<T>(EnvValue!);
             }
         }

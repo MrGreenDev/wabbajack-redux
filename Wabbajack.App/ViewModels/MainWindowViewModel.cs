@@ -35,7 +35,7 @@ namespace Wabbajack.App.ViewModels
                 BackButton = ReactiveCommand.Create(() => {}).DisposeWith(disposables);
             });
             
-            Receive(new NavigateTo(typeof(LoversLabOAuthLoginViewModel)));
+            Receive(new NavigateTo(typeof(VectorPlexusOAuthLoginViewModel)));
 
         }
         public ViewModelActivator Activator { get; }
