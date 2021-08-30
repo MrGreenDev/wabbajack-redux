@@ -9,5 +9,8 @@ namespace Wabbajack.Networking.Http.Interfaces
     public interface ITokenProvider<T>
     {
         public ValueTask<T?> Get();
+
+        public ValueTask SetToken(T val);
+        public ValueTask<bool> TryDelete(T val);
     }
 }

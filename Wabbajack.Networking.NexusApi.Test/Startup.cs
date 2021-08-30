@@ -1,10 +1,5 @@
-using System;
-using System.Net.Http;
-using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Wabbajack.Networking.Http.Interfaces;
-using Wabbajack.Networking.NexusApi.Test.Helpers;
 using Wabbajack.Services.OSIntegrated;
 using Xunit.DependencyInjection;
 using Xunit.DependencyInjection.Logging;

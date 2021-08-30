@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
 using Wabbajack.Downloaders.Interfaces;
@@ -20,7 +22,7 @@ using Wabbajack.Paths;
 namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
 {
     public class AIPS4OAuth2Downloader<TDownloader, TLogin, TState> : ADownloader<TState>
-        where TLogin : OAuth2LoginState
+        where TLogin : OAuth2LoginState, new()
     where TState : IPS4OAuth2, new()
     {
         private readonly ILogger _logger;
@@ -64,15 +66,29 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
 
         public async Task<IPS4OAuthFilesResponse.Root> GetDownloads(long modID, CancellationToken token)
         {
-            var url = new Uri(_siteURL + $"api/downloads/files/{modID}");
-            var msg = await MakeMessage(HttpMethod.Get, url);
-            using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
+            var retried = false;
+            while (true)
+            {
+                var url = new Uri(_siteURL + $"api/downloads/files/{modID}");
+                var msg = await MakeMessage(HttpMethod.Get, url);
+                using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
 
-            if (response.IsSuccessStatusCode)
-                return (await response.Content.ReadFromJsonAsync<IPS4OAuthFilesResponse.Root>(cancellationToken: token))!;
+                if (response.IsSuccessStatusCode)
+                    return (await response.Content.ReadFromJsonAsync<IPS4OAuthFilesResponse.Root>(cancellationToken: token))!;
 
-            _logger.LogCritical("IPS4 Request Error {response} {reason} - \n {url}", response.StatusCode, response.ReasonPhrase, url);
-            throw new HttpException(response);
+                if (retried)
+                {
+                    _logger.LogCritical("IPS4 Request Error {response} {reason} - \n {url}", response.StatusCode, response.ReasonPhrase, url);
+                    throw new HttpException(response);
+                }
+                
+                if (!await SimpleTokenRenew(token))
+                {
+                    _logger.LogCritical("IPS4 Request Error and couldn't renew {response} {reason} - \n {url}", response.StatusCode, response.ReasonPhrase, url);
+                    throw new HttpException(response);
+                }    
+                retried = true;
+            }
         }
         
         public override async Task<Hash> Download(Archive archive, TState state, AbsolutePath destination, CancellationToken token)
@@ -103,6 +119,54 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
 
         public override bool IsAllowed(ServerAllowList allowList, IDownloadState state)
         {
+            return true;
+        }
+
+        private async Task<bool> SimpleTokenRenew(CancellationToken token)
+        {
+            var tLogin = new TLogin();
+            
+            var scopes = string.Join(" ", tLogin.Scopes);
+            var state = Guid.NewGuid().ToString();
+
+            var authMessage = await MakeMessage(HttpMethod.Get, new Uri(tLogin.AuthorizationEndpoint +
+                                                              $"?response_type=code&client_id={tLogin.ClientID}&state={state}&scope={scopes}"), false);
+            using var authResponse = await _client.SendAsync(authMessage, HttpCompletionOption.ResponseHeadersRead, token);
+
+            if (authResponse.StatusCode != HttpStatusCode.Redirect)
+                return false;
+
+            var redirect = authResponse.Headers.GetValues("Location").FirstOrDefault();
+            if (redirect == default) return false;
+
+            var parsed = HttpUtility.ParseQueryString(new Uri(redirect!).Query);
+            if (parsed.Get("state") != state)
+            {
+                _logger.LogCritical("Bad OAuth state, this shouldn't happen");
+                throw new Exception("Bad OAuth State");
+            }
+
+            if (parsed.Get("code") == null)
+            {
+                _logger.LogCritical("Bad code result from OAuth");
+                throw new Exception("Bad code result from OAuth");
+            }
+
+            var authCode = parsed.Get("code");
+
+            var formData = new KeyValuePair<string?, string?>[]
+            {
+                new("grant_type", "authorization_code"),
+                new("code", authCode),
+                new("client_id", tLogin.ClientID)
+            };
+            var msg = await MakeMessage(HttpMethod.Post, tLogin.TokenEndpoint, false);
+            
+            msg.Content = new FormUrlEncodedContent(formData.ToList());
+                
+            using var response = await _client.SendAsync(msg, token);
+            var data = await response.Content.ReadFromJsonAsync<OAuthResultState>(cancellationToken: token);
+
             return true;
         }
 

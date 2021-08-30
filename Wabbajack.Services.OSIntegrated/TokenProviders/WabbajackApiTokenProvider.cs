@@ -23,6 +23,16 @@ namespace Wabbajack.Services.OSIntegrated.TokenProviders
             };
         }
 
+        public ValueTask SetToken(WabbajackApiState val)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ValueTask<bool> TryDelete(WabbajackApiState val)
+        {
+            throw new NotImplementedException();
+        }
+
         private async Task CreateMetricsKey()
         {
             var key = MakeRandomKey();

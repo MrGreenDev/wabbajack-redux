@@ -44,6 +44,14 @@ namespace Wabbajack.Services.OSIntegrated
             await token.AsEncryptedJsonFile(KeyPath);
         }
 
+        public async ValueTask<bool> TryDelete(T val)
+        {
+            if (!KeyPath.FileExists()) return false;
+            KeyPath.Delete();
+            return true;
+
+        }
+
         public async ValueTask<T?> Get()
         {
             var path = KeyPath;

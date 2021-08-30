@@ -1,23 +1,7 @@
-using System;
-using System.Net.Http;
-using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Wabbajack.Common;
-using Wabbajack.Downloaders;
-using Wabbajack.DTOs;
-using Wabbajack.DTOs.JsonConverters;
-using Wabbajack.Installer;
-using Wabbajack.Networking.Http;
-using Wabbajack.Networking.Http.Interfaces;
-using Wabbajack.Networking.NexusApi;
-using Wabbajack.Networking.NexusApi.Test.Helpers;
 using Wabbajack.Networking.WabbajackClientApi;
-using Wabbajack.Paths;
-using Wabbajack.Paths.IO;
 using Wabbajack.Services.OSIntegrated;
-using Wabbajack.VFS;
 using Xunit.DependencyInjection;
 using Xunit.DependencyInjection.Logging;
 

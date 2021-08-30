@@ -28,17 +28,6 @@ namespace Wabbajack.App.ViewModels
 
         }
 
-        protected abstract string SiteName { get; }
-        protected abstract string[] Scopes { get; }
-
-        protected abstract string ClientID { get; }
-
-        protected abstract Uri AuthorizationEndpoint { get; }
-        protected abstract Uri TokenEndpoint { get; }
-        
-        protected abstract string StorageKey { get; }
-
-
         private class AsyncSchemeHandler : CefSchemeHandlerFactory
         {
             private TaskCompletionSource<Uri> _tcs = new();
@@ -74,22 +63,24 @@ namespace Wabbajack.App.ViewModels
 
         public override async Task Run(CancellationToken token)
         {
+            var tlogin = new TLoginType();
+            
             await Browser.WaitForReady();
 
             var handler = new AsyncSchemeHandler();
             Browser.RequestContext.RegisterSchemeHandlerFactory("wabbajack", "", handler);
 
-            Instructions = $"Please log in and allow Wabbajack to access your {SiteName} account";
+            Instructions = $"Please log in and allow Wabbajack to access your {tlogin.SiteName} account";
 
-            var scopes = string.Join(" ", Scopes);
+            var scopes = string.Join(" ", tlogin.Scopes);
             var state = Guid.NewGuid().ToString();
 
-            await Browser.NavigateTo(new Uri(AuthorizationEndpoint +
-                                             $"?response_type=code&client_id={ClientID}&state={state}&scope={scopes}"));
+            await Browser.NavigateTo(new Uri(tlogin.AuthorizationEndpoint +
+                                             $"?response_type=code&client_id={tlogin.ClientID}&state={state}&scope={scopes}"));
 
             var uri = await handler.Task.WaitAsync(token);
 
-            var cookies = await Browser.Cookies("loverslab.com", token);
+            var cookies = await Browser.Cookies(tlogin.AuthorizationEndpoint.Host, token);
 
             var parsed = HttpUtility.ParseQueryString(uri.Query);
             if (parsed.Get("state") != state)
@@ -110,12 +101,12 @@ namespace Wabbajack.App.ViewModels
             {
                 new("grant_type", "authorization_code"),
                 new("code", authCode),
-                new("client_id", ClientID)
+                new("client_id", tlogin.ClientID)
             };
 
             var msg = new HttpRequestMessage();
             msg.Method = HttpMethod.Post;
-            msg.RequestUri = TokenEndpoint;
+            msg.RequestUri = tlogin.TokenEndpoint;
             msg.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
             msg.Headers.Add("Cookie", string.Join(";", cookies.Select(c => $"{c.Name}={c.Value}")));
             msg.Content = new FormUrlEncodedContent(formData.ToList());
