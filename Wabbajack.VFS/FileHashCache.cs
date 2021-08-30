@@ -17,11 +17,18 @@ namespace Wabbajack.VFS
         public FileHashCache(AbsolutePath location)
         {
             _location = location;
+            
+            if (!_location.Parent.DirectoryExists())
+                _location.Parent.CreateDirectory();
+            
             _connectionString =
                 string.Intern($"URI=file:{_location};Pooling=True;Max Pool Size=100; Journal Mode=Memory;");
             _conn = new SQLiteConnection(_connectionString);
             _conn.Open();
 
+
+
+            
             using var cmd = new SQLiteCommand(_conn);
             cmd.CommandText = @"CREATE TABLE IF NOT EXISTS HashCache (
             Path TEXT PRIMARY KEY,

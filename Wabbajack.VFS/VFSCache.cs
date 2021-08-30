@@ -9,6 +9,7 @@ using Wabbajack.Common;
 using Wabbajack.DTOs.Streams;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
+using Wabbajack.Paths.IO;
 
 namespace Wabbajack.VFS
 {
@@ -21,6 +22,10 @@ namespace Wabbajack.VFS
         public VFSCache(AbsolutePath path)
         {
             _path = path;
+            
+            if (!_path.Parent.DirectoryExists())
+                _path.Parent.CreateDirectory();
+            
             _connectionString = string.Intern($"URI=file:{path};Pooling=True;Max Pool Size=100; Journal Mode=Memory;");
             _conn = new SQLiteConnection(_connectionString);
             _conn.Open();

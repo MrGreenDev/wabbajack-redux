@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Wabbajack.Compiler.PatchCache;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
+using Wabbajack.Paths.IO;
 
 namespace Wabbajack.Compiler
 {
@@ -12,9 +13,14 @@ namespace Wabbajack.Compiler
     {
         private readonly string _connectionString;
         private readonly SQLiteConnection _conn;
+        private readonly AbsolutePath _location;
 
         public BinaryPatchCache(AbsolutePath location)
         {
+            _location = location;
+            if (!_location.Parent.DirectoryExists())
+                _location.Parent.CreateDirectory();
+            
             _connectionString = string.Intern($"URI=file:{location.ToString()};Pooling=True;Max Pool Size=100; Journal Mode=Memory;");
             _conn = new SQLiteConnection(_connectionString);
             _conn.Open();
