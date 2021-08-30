@@ -44,13 +44,21 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
             _siteName = siteName;
         }
 
-        public async ValueTask<HttpRequestMessage> MakeMessage(HttpMethod method, Uri url)
+        public async ValueTask<HttpRequestMessage> MakeMessage(HttpMethod method, Uri url, bool useOAuth2 = true)
         {
             var msg = new HttpRequestMessage(method, url);
             var loginData = await _loginInfo.Get();
             _logger.LogInformation("BLEH {tok}", loginData.ResultState.AccessToken);
-            msg.AddCookiesAndAgent(loginData.Cookies);
-            msg.Headers.Add("Authorization", $"Bearer {loginData.ResultState.AccessToken}");
+            if (useOAuth2)
+            {
+                msg.Headers.Add("User-Agent", _appInfo.UserAgent);
+                msg.Headers.Add("Authorization", $"Bearer {loginData.ResultState.AccessToken}");
+            }
+            else
+            {
+                msg.AddCookiesAndAgent(loginData.Cookies);
+            }
+
             return msg;
         }
 
@@ -72,7 +80,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
             if (state.IsAttachment)
             {
                 var msg = await MakeMessage(HttpMethod.Get,
-                    new Uri($"{_siteURL}/applications/core/interface/file/attachment.php?id={state.IPS4Mod}"));
+                    new Uri($"{_siteURL}/applications/core/interface/file/attachment.php?id={state.IPS4Mod}"), false);
                 using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
                 return await _downloader.Download(response, destination, token);
             }
@@ -133,7 +141,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
             if (state.IsAttachment)
             {
                 var msg = await MakeMessage(HttpMethod.Get,
-                    new Uri($"{_siteURL}/applications/core/interface/file/attachment.php?id={state.IPS4Mod}"));
+                    new Uri($"{_siteURL}/applications/core/interface/file/attachment.php?id={state.IPS4Mod}"), false);
                 using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
                 return response.IsSuccessStatusCode;
 
