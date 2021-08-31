@@ -49,6 +49,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
         public async ValueTask<HttpRequestMessage> MakeMessage(HttpMethod method, Uri url, bool useOAuth2 = true)
         {
             var msg = new HttpRequestMessage(method, url);
+            msg.Version = new Version(2, 0);
             var loginData = await _loginInfo.Get();
             _logger.LogInformation("BLEH {tok}", loginData.ResultState.AccessToken);
             if (useOAuth2)
@@ -105,6 +106,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
                 var downloads = await GetDownloads(state.IPS4Mod, token);
                 var fileEntry = downloads.Files.FirstOrDefault(f => f.Name == state.IPS4File);
                 var msg = new HttpRequestMessage(HttpMethod.Get, fileEntry.Url);
+                msg.Version = new Version(2, 0);
                 msg.Headers.Add("User-Agent", _appInfo.UserAgent);
                 using var response =
                     await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
@@ -169,6 +171,10 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
                 
             using var response = await _client.SendAsync(msg, token);
             var data = await response.Content.ReadFromJsonAsync<OAuthResultState>(cancellationToken: token);
+
+            var prevData = await _loginInfo.Get() ?? new TLogin();
+            prevData.ResultState = data!;
+            await _loginInfo.SetToken(prevData);
 
             return true;
         }

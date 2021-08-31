@@ -26,6 +26,7 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
 
         private bool AutoPassTest(Archive archive)
         {
+            return false;
             return Environment.GetEnvironmentVariable("CI") != default && archive.State is IPS4OAuth2;
         }
 
