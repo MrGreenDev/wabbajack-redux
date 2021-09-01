@@ -6,7 +6,7 @@ namespace Wabbajack.RateLimiter
 {
     public interface IJob : IDisposable
     {
-        public ValueTask<IMemoryOwner<byte>> Process(Percent progress, int size);
-        public ValueTask Report(Percent progress, int processedSize);
+        public ValueTask<IMemoryOwner<byte>> Process(int size);
+        public ValueTask Report(int processedSize);
     }
 }

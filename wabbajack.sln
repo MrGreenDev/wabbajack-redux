@@ -102,6 +102,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ArchiveManagement", "Archiv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.RateLimiter", "Wabbajack.RateLimiter\Wabbajack.RateLimiter.csproj", "{69223B89-EFC8-4EBA-BA78-23B2207AC0A4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wabbajack.RateLimiter.Test", "Wabbajack.RateLimiter.Test\Wabbajack.RateLimiter.Test.csproj", "{C9767945-6B5B-48F3-BBCD-62D8E7294B1A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -292,6 +294,10 @@ Global
 		{69223B89-EFC8-4EBA-BA78-23B2207AC0A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{69223B89-EFC8-4EBA-BA78-23B2207AC0A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{69223B89-EFC8-4EBA-BA78-23B2207AC0A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9767945-6B5B-48F3-BBCD-62D8E7294B1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9767945-6B5B-48F3-BBCD-62D8E7294B1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9767945-6B5B-48F3-BBCD-62D8E7294B1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9767945-6B5B-48F3-BBCD-62D8E7294B1A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4057B668-8595-44FE-9805-007B284A838F} = {98B731EE-4FC0-4482-A069-BCBA25497871}
