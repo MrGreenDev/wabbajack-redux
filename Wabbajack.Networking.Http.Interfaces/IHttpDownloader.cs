@@ -9,5 +9,6 @@ namespace Wabbajack.Networking.Http.Interfaces
     public interface IHttpDownloader
     {
         public Task<Hash> Download(HttpResponseMessage message, AbsolutePath dest, CancellationToken token);
+        public Task<Hash> Download(HttpRequestMessage message, AbsolutePath dest, CancellationToken token);
     }
 }

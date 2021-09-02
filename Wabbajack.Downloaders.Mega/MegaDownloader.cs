@@ -13,6 +13,7 @@ using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Downloaders.ModDB
 {
@@ -20,22 +21,27 @@ namespace Wabbajack.Downloaders.ModDB
     {
         private readonly ILogger<MegaDownloader> _logger;
         private readonly MegaApiClient _apiClient;
+        private readonly IRateLimiter _limiter;
         private const string MegaPrefix = "https://mega.nz/#!";
         private const string MegaFilePrefix = "https://mega.nz/file/";
 
-        public MegaDownloader(ILogger<MegaDownloader> logger, MegaApiClient apiClient)
+        public MegaDownloader(ILogger<MegaDownloader> logger, MegaApiClient apiClient, IRateLimiter limiter)
         {
             _logger = logger;
             _apiClient = apiClient;
+            _limiter = limiter;
         }
         public override async Task<Hash> Download(Archive archive, Mega state, AbsolutePath destination, CancellationToken token)
         {
+            using var job = await _limiter.Begin($"Downloading {destination.FileName}", archive.Size, token,
+                Resource.Disk, Resource.Network, Resource.CPU);
+            
             if (!_apiClient.IsLoggedIn)
                 await _apiClient.LoginAsync();
 
             await using var ous = destination.Open(FileMode.Create, FileAccess.Write, FileShare.None);
             await using var ins = await _apiClient.DownloadAsync(state.Url, cancellationToken:token);
-            return await ins.HashingCopy(ous, token);
+            return await ins.HashingCopy(ous, token, job);
         }
 
         private Mega? GetDownloaderState(string? url)
