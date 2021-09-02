@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Toolkit.HighPerformance;
 using Wabbajack.Common;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
@@ -62,7 +63,7 @@ namespace Wabbajack.Downloaders
                     throw new InvalidDataException($"Bad response for part request for part {part.Index}");
                 
                 using var data = await response.Content.ReadAsByteArrayAsync(token, networkJob);
-                if (data.Memory.Length != part.Size)
+                if (data.Memory.Length < part.Size)
                     throw new InvalidDataException(
                         $"Bad part size, expected {part.Size} got {data.Memory.Length} for part {part.Index}");
 
@@ -73,8 +74,8 @@ namespace Wabbajack.Downloaders
                         $"Hashing and saving {definition.OriginalFileName} ({part.Index}/{definition.Parts.Length})", part.Size,
                         token, Resource.Disk, Resource.CPU);
                     fs.Position = part.Offset;
-                        
-                    var hash = await new MemoryStream(data.Memory.Length).HashingCopy(fs, token);
+
+                    var hash = await data.Memory[..(int)part.Size].AsStream().HashingCopy(fs, token);
                     if (hash != part.Hash)
                         throw new InvalidDataException($"Bad part hash, got {hash} expected {part.Hash} for part {part.Index}");
                     await fs.FlushAsync(token);
