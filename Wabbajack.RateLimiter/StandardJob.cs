@@ -7,33 +7,39 @@ namespace Wabbajack.RateLimiter
     public class StandardJob : IJob
     {
         private readonly StandardRateLimitedResource _resource;
-        private readonly string _title;
-        private readonly long _size;
-        private long _processed;
+        public string Description { get; }
+        public long Size { get; }
+        
+        private long _current;
+        public long Current => _current;
+        public ulong ID { get; }
 
-        public StandardJob(StandardRateLimitedResource resource, string jobTitle, long size)
+
+        public StandardJob(StandardRateLimitedResource resource, string jobTitle, long size, ulong id)
         {
             _resource = resource;
-            _title = jobTitle;
-            _size = size;
-            _processed = 0;
+            Description = jobTitle;
+            Size = size;
+            _current = 0;
+            ID = id;
         }
 
         public void Dispose()
         {
-            _resource.Release();
+            _resource.Release(this);
         }
 
-        public ValueTask<IMemoryOwner<byte>> Process(int requestedSize)
+
+        public ValueTask<IMemoryOwner<byte>> Process(int requestedSize, CancellationToken token)
         {
-            Interlocked.Add(ref _processed, requestedSize);
-            return _resource.Process(this, requestedSize);
+            Interlocked.Add(ref _current, requestedSize);
+            return _resource.Process(this, requestedSize, token);
         }
 
-        public async ValueTask Report(int processedSize)
+        public async ValueTask Report(int processedSize, CancellationToken token)
         {
-            Interlocked.Add(ref _processed, processedSize);
-            await _resource.Process(this, processedSize);
+            Interlocked.Add(ref _current, processedSize);
+            await _resource.Process(this, processedSize, token);
         }
 
     }
