@@ -11,6 +11,7 @@ using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
+using Wabbajack.Networking.Http;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi;
 using Wabbajack.Paths;
@@ -117,8 +118,15 @@ namespace Wabbajack.Downloaders
 
         public override async Task<bool> Verify(Archive archive, Nexus state, CancellationToken token)
         {
-            var fileInfo = await _api.FileInfo(state.Game.MetaData().NexusName!, state.ModID, state.FileID, token);
-            return fileInfo.info.FileId == state.FileID;
+            try
+            {
+                var fileInfo = await _api.FileInfo(state.Game.MetaData().NexusName!, state.ModID, state.FileID, token);
+                return fileInfo.info.FileId == state.FileID;
+            }
+            catch (HttpException)
+            {
+                return false;
+            }
         }
 
         public override IEnumerable<string> MetaIni(Archive a, Nexus state)

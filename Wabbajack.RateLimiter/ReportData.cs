@@ -22,6 +22,8 @@ namespace Wabbajack.RateLimiter
         {
             var totalTransfer = JobReports.Values.Select(v => v.Size).Sum();
             var currentTransfer = JobReports.Values.Select(v => v.Current).Sum();
+            var totalJobsCount = JobReports.Values.Select(v => v.Size).Count();
+            var activeJobsCount = JobReports.Values.Select(v => v.Current < v.Size && v.Size != 0).Count();
             Percent percent;
             if (totalTransfer == 0)
                 percent = Percent.Zero;
@@ -29,7 +31,7 @@ namespace Wabbajack.RateLimiter
             {
                 percent = Percent.FactoryPutInRange(currentTransfer, totalTransfer);
             }
-            return $"{percent} ({currentTransfer.ToFileSizeString()}/{totalTransfer.ToFileSizeString()})";
+            return $"{percent} {activeJobsCount} of {totalJobsCount} ({currentTransfer.ToFileSizeString()}/{totalTransfer.ToFileSizeString()})";
         }
     }
 

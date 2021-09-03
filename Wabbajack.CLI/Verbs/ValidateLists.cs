@@ -94,7 +94,7 @@ namespace Wabbajack.CLI.Verbs
                 _logger.LogInformation("Loading list of lists: {list}", list);
                 var listData = await _gitHubClient.GetData(list);
                 var stopWatch = Stopwatch.StartNew();
-                var validatedLists = await listData.Lists.PMap(_parallelOptions, async modList =>
+                var validatedLists = await listData.Lists.PMapAll(async modList =>
                 {
                     if (modList.ForceDown)
                     {
@@ -113,7 +113,7 @@ namespace Wabbajack.CLI.Verbs
 
                     _logger.LogInformation("Verifying {count} archives", modListData.Archives.Length);
 
-                    var archives = await modListData.Archives.PMap(_parallelOptions, async archive =>
+                    var archives = await modListData.Archives.PMapAll(async archive =>
                     {
                         //var result = await DownloadAndValidate(archive, archiveManager, token);
                         var result = await validationCache.Get(archive);

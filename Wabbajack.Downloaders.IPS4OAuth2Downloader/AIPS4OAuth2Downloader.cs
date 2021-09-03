@@ -4,6 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -64,6 +66,11 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
 
             return msg;
         }
+        
+        private static readonly JsonSerializerOptions SerializerOptions = new()
+        {
+            NumberHandling = JsonNumberHandling.AllowReadingFromString
+        };
 
         public async Task<IPS4OAuthFilesResponse.Root> GetDownloads(long modID, CancellationToken token)
         {
@@ -75,7 +82,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
                 using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
 
                 if (response.IsSuccessStatusCode)
-                    return (await response.Content.ReadFromJsonAsync<IPS4OAuthFilesResponse.Root>(cancellationToken: token))!;
+                    return (await response.Content.ReadFromJsonAsync<IPS4OAuthFilesResponse.Root>(SerializerOptions, token))!;
 
                 if (retried)
                 {

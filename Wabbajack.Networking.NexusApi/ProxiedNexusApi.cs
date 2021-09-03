@@ -9,6 +9,7 @@ using Wabbajack.DTOs.Logins;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi.DTOs;
 using Wabbajack.Networking.WabbajackClientApi;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Networking.NexusApi
 {
@@ -24,9 +25,9 @@ namespace Wabbajack.Networking.NexusApi
         private readonly ITokenProvider<WabbajackApiState> _apiState;
         private readonly Configuration _wabbajackClientConfiguration;
 
-        public ProxiedNexusApi(ITokenProvider<NexusApiState> apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo,
-            JsonSerializerOptions jsonOptions, ITokenProvider<WabbajackApiState> apiState, Configuration wabbajackClientConfiguration)
-            : base(apiKey, logger, client, appInfo, jsonOptions)
+        public ProxiedNexusApi(ITokenProvider<NexusApiState> apiKey, ILogger<ProxiedNexusApi> logger, HttpClient client, IRateLimiter limiter, 
+            ApplicationInfo appInfo, JsonSerializerOptions jsonOptions, ITokenProvider<WabbajackApiState> apiState, Configuration wabbajackClientConfiguration)
+            : base(apiKey, logger, client, limiter, appInfo, jsonOptions)
         {
             _apiState = apiState;
             _wabbajackClientConfiguration = wabbajackClientConfiguration;

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.Threading.Tasks;
 using Wabbajack.CLI.Verbs;
+using Wabbajack.Services.OSIntegrated;
 
 namespace Wabbajack.CLI
 {
@@ -10,7 +11,7 @@ namespace Wabbajack.CLI
         private readonly IConsole _console;
         private readonly IEnumerable<IVerb> _verbs;
 
-        public CommandLineBuilder(IEnumerable<IVerb> verbs, IConsole console)
+        public CommandLineBuilder(IEnumerable<IVerb> verbs, IConsole console, LoggingRateLimiterReporter _)
         {
             _console = console;
             _verbs = verbs;

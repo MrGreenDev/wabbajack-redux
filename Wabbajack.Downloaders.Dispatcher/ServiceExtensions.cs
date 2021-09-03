@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wabbajack.Downloaders.Http;
 using Wabbajack.Downloaders.IPS4OAuth2Downloader;
+using Wabbajack.Downloaders.MediaFire;
 using Wabbajack.Downloaders.ModDB;
 using Wabbajack.DTOs.JsonConverters;
 
@@ -16,6 +17,7 @@ namespace Wabbajack.Downloaders
                 .AddGoogleDriveDownloader()
                 .AddHttpDownloader()
                 .AddMegaDownloader()
+                .AddMediaFireDownloader()
                 .AddModDBDownloader()
                 .AddNexusDownloader()
                 .AddIPS4OAuth2Downloaders()
