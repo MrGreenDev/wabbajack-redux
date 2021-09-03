@@ -33,7 +33,6 @@ jobs:
           - Wabbajack.Hashing.PHash.Test
           - Wabbajack.Hashing.xxHash64.Test
           - Wabbajack.Installer.Test
-          - Wabbajack.Networking.Http.Test
           - Wabbajack.Networking.NexusApi.Test
           - Wabbajack.Paths.Test
           - Wabbajack.Paths.IO.Test

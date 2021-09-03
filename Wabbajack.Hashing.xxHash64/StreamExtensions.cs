@@ -3,6 +3,7 @@ using System.Buffers;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Hashing.xxHash64
 {
@@ -13,7 +14,7 @@ namespace Wabbajack.Hashing.xxHash64
             return await stream.HashingCopy(Stream.Null, token);
         }
         public static async Task<Hash> HashingCopy(this Stream inputStream, Stream outputStream,
-            CancellationToken token)
+            CancellationToken token, IJob? job = null)
         {
             using var rented = MemoryPool<byte>.Shared.Rent(1024 * 1024);
             var buffer = rented.Memory;
@@ -30,11 +31,16 @@ namespace Wabbajack.Hashing.xxHash64
                 {
                     var read = await inputStream.ReadAsync(buffer.Slice(totalRead, buffer.Length - totalRead),
                         token);
+
+                    
                     if (read == 0)
                     {
                         running = false;
                         break;
                     }
+                    
+                    if (job != null) 
+                        await job.Report(read, token);
 
                     totalRead += read;
                 }

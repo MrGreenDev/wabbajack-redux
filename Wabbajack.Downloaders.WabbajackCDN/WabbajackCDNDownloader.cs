@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Toolkit.HighPerformance;
 using Wabbajack.Common;
 using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
@@ -14,8 +15,10 @@ using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.JsonConverters;
 using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
+using Wabbajack.Networking.Http;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Downloaders
 {
@@ -25,6 +28,7 @@ namespace Wabbajack.Downloaders
         private readonly ILogger<WabbajackCDNDownloader> _logger;
         private readonly DTOSerializer _dtos;
         private readonly ParallelOptions _parallelOptions;
+        private readonly IRateLimiter _limiter;
         
         public static Dictionary<string, string> DomainRemaps = new()
         {
@@ -33,13 +37,11 @@ namespace Wabbajack.Downloaders
             {"wabbajack-patches.b-cdn.net", "patches.wabbajack.org"},
             {"wabbajacktest.b-cdn.net", "test-files.wabbajack.org"}
         };
-
-
-
-        public WabbajackCDNDownloader(ILogger<WabbajackCDNDownloader> logger, ParallelOptions parallelOptions, HttpClient client, DTOSerializer dtos)
+        
+        public WabbajackCDNDownloader(ILogger<WabbajackCDNDownloader> logger, IRateLimiter limiter, HttpClient client, DTOSerializer dtos)
         {
             _client = client;
-            _parallelOptions = parallelOptions;
+            _limiter = limiter;
             _logger = logger;
             _dtos = dtos;
         }
@@ -49,24 +51,31 @@ namespace Wabbajack.Downloaders
             await using var fs = destination.Open(FileMode.Create, FileAccess.Write, FileShare.None);
             
             SemaphoreSlim slim = new(1, 1);
-            await definition.Parts.PDo(_parallelOptions, async part =>
+            await definition.Parts.PDoAll(
+            async part =>
             {
+                using var networkJob = await _limiter.Begin(
+                    $"Downloading {definition.OriginalFileName} ({part.Index}/{definition.Parts.Length}", part.Size, token, Resource.Network);
+                
                 var msg = MakeMessage(new Uri(state.Url + $"/parts/{part.Index}"));
                 using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
                 if (!response.IsSuccessStatusCode)
                     throw new InvalidDataException($"Bad response for part request for part {part.Index}");
                 
-                var data = await response.Content.ReadAsByteArrayAsync(token);
-                if (data.Length != part.Size)
+                using var data = await response.Content.ReadAsByteArrayAsync(token, networkJob);
+                if (data.Memory.Length < part.Size)
                     throw new InvalidDataException(
-                        $"Bad part size, expected {part.Size} got {data.Length} for part {part.Index}");
+                        $"Bad part size, expected {part.Size} got {data.Memory.Length} for part {part.Index}");
 
                 await slim.WaitAsync(token);
                 try
                 {
+                    using var diskCpuJob = await _limiter.Begin(
+                        $"Hashing and saving {definition.OriginalFileName} ({part.Index}/{definition.Parts.Length})", part.Size,
+                        token, Resource.Disk, Resource.CPU);
                     fs.Position = part.Offset;
-                        
-                    var hash = await new MemoryStream(data).HashingCopy(fs, token);
+
+                    var hash = await data.Memory[..(int)part.Size].AsStream().HashingCopy(fs, token);
                     if (hash != part.Hash)
                         throw new InvalidDataException($"Bad part hash, got {hash} expected {part.Hash} for part {part.Index}");
                     await fs.FlushAsync(token);
@@ -79,9 +88,9 @@ namespace Wabbajack.Downloaders
             return definition.Hash;
         }
 
-        public override async Task<bool> Prepare()
+        public override Task<bool> Prepare()
         {
-            return true;
+            return Task.FromResult(true);
         }
 
         public override bool IsAllowed(ServerAllowList allowList, IDownloadState state)

@@ -14,6 +14,7 @@ using Wabbajack.Networking.NexusApi;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using Wabbajack.RateLimiter;
 using Wabbajack.Services.OSIntegrated.TokenProviders;
 using Wabbajack.VFS;
 using ApplicationInfo = Wabbajack.DTOs.ApplicationInfo;
@@ -53,6 +54,14 @@ namespace Wabbajack.Services.OSIntegrated
                 : new BinaryPatchCache(KnownFolders.EntryPoint.Combine("patchCache.sqlite")));
             
             service.AddSingleton(new ParallelOptions {MaxDegreeOfParallelism = Environment.ProcessorCount});
+            service.AddSingleton<IRateLimiter, StandardRateLimiter>(s => new StandardRateLimiter(
+                new ResourceLimitConfiguration
+                {
+                    CPU = new ResourceLimit { MaxConcurrentTasks = Environment.ProcessorCount, MaxThroughput = -1 },
+                    Disk = new ResourceLimit { MaxConcurrentTasks = 4, MaxThroughput = -1 },
+                    Network = new ResourceLimit { MaxConcurrentTasks = 4, MaxThroughput = -1 }
+                }));
+            service.AddSingleton<LoggingRateLimiterReporter>();
 
             service.AddScoped<Context>();
             service.AddSingleton<FileExtractor.FileExtractor>();

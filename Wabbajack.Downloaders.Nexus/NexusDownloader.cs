@@ -14,6 +14,7 @@ using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi;
 using Wabbajack.Paths;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Downloaders
 {
@@ -23,14 +24,16 @@ namespace Wabbajack.Downloaders
         private readonly HttpClient _client;
         private readonly IHttpDownloader _downloader;
         private readonly ILogger<NexusDownloader> _logger;
+        private readonly IRateLimiter _limiter;
 
         public NexusDownloader(ILogger<NexusDownloader> logger, HttpClient client, IHttpDownloader downloader,
-            NexusApi api)
+            NexusApi api, IRateLimiter limiter)
         {
             _logger = logger;
             _client = client;
             _downloader = downloader;
             _api = api;
+            _limiter = limiter;
         }
 
         public override async Task<bool> Prepare()
@@ -85,11 +88,12 @@ namespace Wabbajack.Downloaders
         public override async Task<Hash> Download(Archive archive, Nexus state, AbsolutePath destination,
             CancellationToken token)
         {
+
             var urls = await _api.DownloadLink(state.Game.MetaData().NexusName!, state.ModID, state.FileID, token);
             _logger.LogInformation("Downloading Nexus File: {game}|{modid}|{fileid}", state.Game, state.ModID,
                 state.FileID);
-            var response = await _client.GetAsync(urls.info.First().URI, token);
-            return await _downloader.Download(response, destination, token);
+            var message = new HttpRequestMessage(HttpMethod.Get, urls.info.First().URI);
+            return await _downloader.Download(message, destination, token);
         }
 
         public override IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData)

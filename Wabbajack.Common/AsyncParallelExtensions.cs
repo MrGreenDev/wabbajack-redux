@@ -31,6 +31,12 @@ namespace Wabbajack.Common
             await Parallel.ForEachAsync(coll, options, async (x, token) => await mapFn(x));
         }
         
+        public static async Task PDoAll<TIn>(this IEnumerable<TIn> coll, Func<TIn, Task> mapFn)
+        {
+            var tasks = coll.Select(mapFn).ToList();
+            await Task.WhenAll(tasks);
+        }
+        
         public static async Task<List<T>> ToList<T>(this IAsyncEnumerable<T> coll)
         {
             List<T> lst = new();

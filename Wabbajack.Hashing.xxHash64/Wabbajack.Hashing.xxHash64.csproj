@@ -10,5 +10,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Wabbajack.Paths\Wabbajack.Paths.csproj" />
+        <ProjectReference Include="..\Wabbajack.RateLimiter\Wabbajack.RateLimiter.csproj" />
     </ItemGroup>
 </Project>
