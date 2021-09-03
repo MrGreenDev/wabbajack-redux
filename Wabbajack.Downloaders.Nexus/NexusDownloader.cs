@@ -92,8 +92,8 @@ namespace Wabbajack.Downloaders
             var urls = await _api.DownloadLink(state.Game.MetaData().NexusName!, state.ModID, state.FileID, token);
             _logger.LogInformation("Downloading Nexus File: {game}|{modid}|{fileid}", state.Game, state.ModID,
                 state.FileID);
-            var response = await _client.GetAsync(urls.info.First().URI, token);
-            return await _downloader.Download(response, destination, token);
+            var message = new HttpRequestMessage(HttpMethod.Get, urls.info.First().URI);
+            return await _downloader.Download(message, destination, token);
         }
 
         public override IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData)

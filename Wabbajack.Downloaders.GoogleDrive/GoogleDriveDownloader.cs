@@ -64,8 +64,7 @@ namespace Wabbajack.Downloaders.GoogleDrive
             AbsolutePath destination, CancellationToken token)
         {
             var msg = await ToMessage(state, true, token);
-            using var response = await _client.SendAsync(msg!, token);
-            return await _downloader.Download(response!, destination, token);
+            return await _downloader.Download(msg!, destination, token);
         }
 
         public override IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData)

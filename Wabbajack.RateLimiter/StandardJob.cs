@@ -8,7 +8,7 @@ namespace Wabbajack.RateLimiter
     {
         private readonly StandardRateLimitedResource _resource;
         public string Description { get; }
-        public long Size { get; }
+        public long Size { get; set; }
         
         private long _current;
         public long Current => _current;

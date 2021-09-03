@@ -24,7 +24,7 @@ namespace Wabbajack.Services.OSIntegrated
             var report = _limiter.GetJobReports();
             foreach (var (resource, resourceReport) in report.Reports.Where(line => line.Value.JobReports.Count > 0))
             {
-                _logger.LogInformation("{Resource}: {Task}/{Max}", resource, resourceReport.JobReports.Count(r => r.Value.Current > 0), report.Reports.Count);
+                _logger.LogInformation("{Resource}: {Report}", resource, resourceReport.ToString());
             }
         }
 

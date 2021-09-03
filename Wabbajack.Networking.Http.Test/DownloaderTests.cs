@@ -25,15 +25,10 @@ namespace Wabbajack.Networking.Http.Test
         [Fact]
         public async Task Test1()
         {
-            using var response =
-                await _client.Send(new HttpRequestMessage(HttpMethod.Get, "http://localhost/largeFile.bin"));
-
-            Assert.True(response.IsSuccessStatusCode, response.ReasonPhrase);
-            Assert.Equal(1024 * 1024 * 1024, response.Content.Headers.ContentLength);
-
+            var msg = new HttpRequestMessage(HttpMethod.Get, "http://localhost/largeFile.bin");
             var tempFile = KnownFolders.EntryPoint.Combine("tempLargeFile");
-            var hash = await _downloader.Download(response, tempFile, CancellationToken.None);
-            Assert.Equal(response.Content.Headers.ContentLength, tempFile.Size());
+            var hash = await _downloader.Download(msg, tempFile, CancellationToken.None);
+            Assert.Equal(1024 * 1024 * 1024, tempFile.Size());
             Assert.Equal(Hash.FromBase64("KcPNNlWJ+7Y="), hash);
 
             tempFile.Delete();

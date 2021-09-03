@@ -31,10 +31,17 @@ namespace Wabbajack.Downloaders.Http
         public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.Http state,
             AbsolutePath destination, CancellationToken token)
         {
-            return await _downloader.Download(await GetResponse(state, token), destination, token);
+            return await _downloader.Download(MakeMessage(state), destination, token);
         }
 
         private async Task<HttpResponseMessage> GetResponse(DTOs.DownloadStates.Http state, CancellationToken token)
+        {
+            var msg = MakeMessage(state);
+
+            return await _client.SendAsync(msg, token);
+        }
+
+        private static HttpRequestMessage MakeMessage(DTOs.DownloadStates.Http state)
         {
             var msg = new HttpRequestMessage(HttpMethod.Get, state.Url);
             foreach (var header in state.Headers)
@@ -45,7 +52,7 @@ namespace Wabbajack.Downloaders.Http
                 msg.Headers.Add(k, v);
             }
 
-            return await _client.SendAsync(msg, token);
+            return msg;
         }
 
         public override IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData)

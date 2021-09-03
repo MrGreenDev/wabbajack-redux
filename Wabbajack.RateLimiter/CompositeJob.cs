@@ -24,7 +24,16 @@ namespace Wabbajack.RateLimiter
         public ulong ID => throw new NotImplementedException();
         public string Description => _jobs[0].Description;
         public long Current => _jobs[0].Current;
-        public long Size => _jobs[0].Size;
+
+        public long Size
+        {
+            get => _jobs[0].Size;
+            set
+            {
+                foreach (var job in _jobs) 
+                    job.Size = value;
+            }
+        }
         
         public async ValueTask<IMemoryOwner<byte>> Process(int size, CancellationToken token)
         {

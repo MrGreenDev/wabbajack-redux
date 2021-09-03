@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Wabbajack.Common;
 
 namespace Wabbajack.RateLimiter
 {
@@ -21,7 +22,14 @@ namespace Wabbajack.RateLimiter
         {
             var totalTransfer = JobReports.Values.Select(v => v.Size).Sum();
             var currentTransfer = JobReports.Values.Select(v => v.Current).Sum();
-            return $"{Percent.FactoryPutInRange(currentTransfer, totalTransfer)} ({currentTransfer}/{totalTransfer})";
+            Percent percent;
+            if (totalTransfer == 0)
+                percent = Percent.Zero;
+            else
+            {
+                percent = Percent.FactoryPutInRange(currentTransfer, totalTransfer);
+            }
+            return $"{percent} ({currentTransfer.ToFileSizeString()}/{totalTransfer.ToFileSizeString()})";
         }
     }
 

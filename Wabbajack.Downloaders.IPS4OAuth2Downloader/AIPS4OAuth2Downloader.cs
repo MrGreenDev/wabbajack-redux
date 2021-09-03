@@ -97,8 +97,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
             {
                 var msg = await MakeMessage(HttpMethod.Get,
                     new Uri($"{_siteURL}/applications/core/interface/file/attachment.php?id={state.IPS4Mod}"), false);
-                using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
-                return await _downloader.Download(response, destination, token);
+                return await _downloader.Download(msg, destination, token);
             }
             else
             {
@@ -106,9 +105,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
                 var fileEntry = downloads.Files.FirstOrDefault(f => f.Name == state.IPS4File);
                 var msg = new HttpRequestMessage(HttpMethod.Get, fileEntry.Url);
                 msg.Headers.Add("User-Agent", _appInfo.UserAgent);
-                using var response =
-                    await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
-                return await _downloader.Download(response, destination, token);
+                return await _downloader.Download(msg, destination, token);
             }
         }
 
