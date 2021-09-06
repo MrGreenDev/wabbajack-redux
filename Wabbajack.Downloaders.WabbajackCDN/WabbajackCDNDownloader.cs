@@ -55,7 +55,7 @@ namespace Wabbajack.Downloaders
             async part =>
             {
                 using var networkJob = await _limiter.Begin(
-                    $"Downloading {definition.OriginalFileName} ({part.Index}/{definition.Parts.Length}", part.Size, token, Resource.Network);
+                    $"Downloading {definition.OriginalFileName} ({part.Index}/{definition.Parts.Length})", part.Size, token, Resource.Network);
                 
                 var msg = MakeMessage(new Uri(state.Url + $"/parts/{part.Index}"));
                 using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
@@ -66,16 +66,18 @@ namespace Wabbajack.Downloaders
                 if (data.Memory.Length < part.Size)
                     throw new InvalidDataException(
                         $"Bad part size, expected {part.Size} got {data.Memory.Length} for part {part.Index}");
+                
+                using var diskCpuJob = await _limiter.Begin(
+                    $"Hashing and saving {definition.OriginalFileName} ({part.Index}/{definition.Parts.Length})", part.Size,
+                    token, Resource.Disk, Resource.CPU);
 
                 await slim.WaitAsync(token);
                 try
                 {
-                    using var diskCpuJob = await _limiter.Begin(
-                        $"Hashing and saving {definition.OriginalFileName} ({part.Index}/{definition.Parts.Length})", part.Size,
-                        token, Resource.Disk, Resource.CPU);
+
                     fs.Position = part.Offset;
 
-                    var hash = await data.Memory[..(int)part.Size].AsStream().HashingCopy(fs, token);
+                    var hash = await data.Memory[..(int)part.Size].AsStream().HashingCopy(fs, token, diskCpuJob);
                     if (hash != part.Hash)
                         throw new InvalidDataException($"Bad part hash, got {hash} expected {part.Hash} for part {part.Index}");
                     await fs.FlushAsync(token);

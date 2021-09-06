@@ -12,18 +12,19 @@ namespace Wabbajack.RateLimiter
     public class StandardRateLimitedResource
     {
         private readonly ResourceLimit _limit;
-        private readonly SemaphoreSlim _semephore;
+        private readonly SemaphoreSlim _semaphore;
         private readonly Channel<PendingReport> _channel;
         private readonly ConcurrentDictionary<ulong, IJob> _tasks;
         private ulong _nextId = 0;
         private readonly Resource _resource;
+        private long _totalUsed = 0;
 
         public StandardRateLimitedResource(ResourceLimit limit, Resource resource)
         {
             _resource = resource;
             _limit = limit;
             var calcLimit = _limit.MaxConcurrentTasks == -1 ? int.MaxValue : _limit.MaxConcurrentTasks;
-            _semephore = new SemaphoreSlim(calcLimit, calcLimit);
+            _semaphore = new SemaphoreSlim(calcLimit, calcLimit);
             _channel = Channel.CreateBounded<PendingReport>(10);
             _tasks = new ConcurrentDictionary<ulong, IJob>();
             var tsk = StartTask(CancellationToken.None);
@@ -36,18 +37,22 @@ namespace Wabbajack.RateLimiter
 
             await foreach (var item in _channel.Reader.ReadAllAsync(token))
             {
+                Interlocked.Add(ref _totalUsed, item.Size);
                 if (_limit.MaxThroughput == -1)
                 {
-                    item.Result.TrySetResult(item.Size == -1 ? null : MemoryPool<byte>.Shared.Rent(item.Size));
+                    item.Result.TrySetResult(item.AllocSize == -1 ? null : MemoryPool<byte>.Shared.Rent(item.AllocSize));
                     sw.Restart();
                     continue;
                 }
                 
                 var span = TimeSpan.FromSeconds((double)item.Size / _limit.MaxThroughput);
+                
+
                 await Task.Delay(span, token);
+                
                 sw.Restart();
                 
-                item.Result.TrySetResult(item.Size == -1 ? null : MemoryPool<byte>.Shared.Rent(item.Size));
+                item.Result.TrySetResult(item.AllocSize == -1 ? null : MemoryPool<byte>.Shared.Rent(item.AllocSize));
             }
         }
 
@@ -56,23 +61,24 @@ namespace Wabbajack.RateLimiter
             var id = Interlocked.Increment(ref _nextId);
             var job = new StandardJob(this, jobTitle, size, id);
             _tasks.TryAdd(id, job);
-            await _semephore.WaitAsync(token);
+            await _semaphore.WaitAsync(token);
             return job;
         }
 
         public void Release(IJob job)
         {
-            _semephore.Release();
+            _semaphore.Release();
             _tasks.TryRemove(job.ID, out _);
         }
 
-        public async ValueTask<IMemoryOwner<byte>> Process(StandardJob standardJob, int size, CancellationToken token)
+        public async ValueTask<IMemoryOwner<byte>> Process(StandardJob standardJob, int size, int allocSize, CancellationToken token)
         {
             var tcs = new TaskCompletionSource<IMemoryOwner<byte>?>();
             await _channel.Writer.WriteAsync(new PendingReport
             {
                 Job = standardJob,
                 Size = size,
+                AllocSize = allocSize,
                 Result = tcs
             }, token);
             return (await tcs.Task)!;
@@ -82,6 +88,8 @@ namespace Wabbajack.RateLimiter
         {
             public IJob Job { get; set; }
             public int Size { get; set; }
+            
+            public int AllocSize { get; set; }
             public TaskCompletionSource<IMemoryOwner<byte>?> Result { get; set; }
         }
 
@@ -89,6 +97,7 @@ namespace Wabbajack.RateLimiter
         {
             return new ResourceReport
             {
+                TotalUsed = _totalUsed,
                 Resource = _resource,
                 JobReports = _tasks.Select(j => new JobReport
                 {

@@ -23,7 +23,15 @@ namespace Wabbajack.RateLimiter
 
         public ulong ID => throw new NotImplementedException();
         public string Description => _jobs[0].Description;
-        public long Current => _jobs[0].Current;
+        public long Current
+        {
+            get => _jobs[0].Current;
+            set
+            {
+                foreach (var job in _jobs) 
+                    job.Current = value;
+            }
+        }
 
         public long Size
         {

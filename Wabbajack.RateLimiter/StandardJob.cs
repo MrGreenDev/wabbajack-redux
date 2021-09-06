@@ -11,7 +11,11 @@ namespace Wabbajack.RateLimiter
         public long Size { get; set; }
         
         private long _current;
-        public long Current => _current;
+        public long Current
+        {
+            get => _current;
+            set => _current = value;
+        }
         public ulong ID { get; }
 
 
@@ -33,13 +37,13 @@ namespace Wabbajack.RateLimiter
         public ValueTask<IMemoryOwner<byte>> Process(int requestedSize, CancellationToken token)
         {
             Interlocked.Add(ref _current, requestedSize);
-            return _resource.Process(this, requestedSize, token);
+            return _resource.Process(this, requestedSize, requestedSize, token);
         }
 
         public async ValueTask Report(int processedSize, CancellationToken token)
         {
             Interlocked.Add(ref _current, processedSize);
-            await _resource.Process(this, processedSize, token);
+            await _resource.Process(this, processedSize, -1, token);
         }
 
     }

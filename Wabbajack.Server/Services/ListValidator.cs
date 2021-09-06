@@ -60,7 +60,8 @@ namespace Wabbajack.Server.Services
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            var results = await data.ModLists.Where(m => !m.ForceDown)
+            var results = await data.ModLists
+                .Where(m => !m.ForceDown)
                 .PMap(_parallelOptions, async metadata =>
             {
                 var timer = new Stopwatch();

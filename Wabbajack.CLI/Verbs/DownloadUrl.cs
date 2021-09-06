@@ -1,4 +1,6 @@
 using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,36 +14,40 @@ using Wabbajack.Paths.IO;
 namespace Wabbajack.CLI.Verbs
 {
     
-    [Verb("download-url", HelpText = "Downloads a file from a Url and saves it to a file")]
-    public class DownloadUrl : AVerb<DownloadUrl>
+    public class DownloadUrl : IVerb
     {
         private readonly ILogger<DownloadUrl> _logger;
         private readonly DownloadDispatcher _dispatcher;
 
-        public DownloadUrl(ILogger<DownloadUrl> logger, DownloadDispatcher dispatcher) : base(logger)
+        public DownloadUrl(ILogger<DownloadUrl> logger, DownloadDispatcher dispatcher)
         {
             _logger = logger;
             _dispatcher = dispatcher;
         }
-        
-        public async Task<int> Run(
-            [Option('u', Required = true, HelpText = "Url to download")]
-            Uri url,
-            [Option('o', Required = true, HelpText = "Output path")]
-            AbsolutePath output)
+
+        public Command MakeCommand()
+        {
+            var command = new Command("download-url");
+            command.Add(new Option<Uri>(new[] { "-u", "-url" }, "Url to parse"));
+            command.Add(new Option<AbsolutePath>(new[] { "-o", "-output" }, "Output file"));
+            command.Description = "Downloads a file to a given output";
+            command.Handler = CommandHandler.Create(Run);
+            return command;
+        }
+
+        private async Task<int> Run(Uri url, AbsolutePath output)
         {
             var parsed = _dispatcher.Parse(url);
             if (parsed == null)
             {
-                _logger.LogCritical("No parser found for {url}", url);
+                _logger.LogCritical("No downloader found for {Url}", url);
+
                 return 1;
             }
 
-            var hash = await _dispatcher.Download(new Archive { State = parsed! }, output, CancellationToken.None);
-            _logger.LogInformation("Downloaded {url}, Size: {size}, Hash: {hash}", url, output.Size(), hash);
+            var archive = new Archive() { State = parsed, Name = output.FileName.ToString() };
+            await _dispatcher.Download(archive, output, CancellationToken.None);
             return 0;
         }
-        
-        
     }
 }

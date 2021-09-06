@@ -18,6 +18,8 @@ namespace Wabbajack.RateLimiter
     {
         public Resource Resource { get; set; }
         public Dictionary<ulong, JobReport> JobReports { get; set; } = new();
+        public long TotalUsed { get; set; }
+
         public override string ToString()
         {
             var totalTransfer = JobReports.Values.Select(v => v.Size).Sum();

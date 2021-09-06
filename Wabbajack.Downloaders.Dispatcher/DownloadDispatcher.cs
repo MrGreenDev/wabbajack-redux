@@ -11,6 +11,7 @@ using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.ServerResponses;
 using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
+using Wabbajack.Networking.Http;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
@@ -48,8 +49,15 @@ namespace Wabbajack.Downloaders
 
         public async Task<bool> Verify(Archive a, CancellationToken token)
         {
-            var downloader = Downloader(a);
-            return await downloader.Verify(a, token);
+            try
+            {
+                var downloader = Downloader(a);
+                return await downloader.Verify(a, token);
+            }
+            catch (HttpException)
+            {
+                return false;
+            }
         }
 
         public async Task<(DownloadResult, Hash)> DownloadWithPossibleUpgrade(Archive archive, AbsolutePath destination,

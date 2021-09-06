@@ -43,6 +43,7 @@ namespace Wabbajack.RateLimiter.Test
                 });
 
             Assert.Equal(2, max);
+
         }
 
         [Fact]
@@ -54,7 +55,10 @@ namespace Wabbajack.RateLimiter.Test
             using var job = await rateLimiter.Begin( "Transferring", 1024 * 1024 * 5 / 2, CancellationToken.None, Resource.CPU);
 
             var sw = Stopwatch.StartNew();
-            foreach (var x in Enumerable.Range(0, 4))
+            
+            var report = rateLimiter.GetJobReports();
+            Assert.Equal(0, report.Reports[Resource.CPU].TotalUsed);
+            foreach (var x in Enumerable.Range(0, 5))
             {
                 using var block = await job.Process(1024 * 1024 / 2, CancellationToken.None);
             }
@@ -62,6 +66,9 @@ namespace Wabbajack.RateLimiter.Test
             var elapsed = sw.Elapsed;
             Assert.True(elapsed > TimeSpan.FromSeconds(2));
             Assert.True(elapsed < TimeSpan.FromSeconds(3));
+
+            report = rateLimiter.GetJobReports();
+            Assert.Equal(1024 * 1024 * 5 / 2, report.Reports[Resource.CPU].TotalUsed);
         }
 
         [Fact]

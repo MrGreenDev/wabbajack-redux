@@ -65,6 +65,7 @@ namespace Wabbajack.CLI
                     services.AddSingleton<IVerb, Decrypt>();
                     services.AddSingleton<IVerb, ValidateLists>();
                     services.AddSingleton<IVerb, DownloadCef>();
+                    services.AddSingleton<IVerb, DownloadUrl>();
                 }).Build();
 
             var service = host.Services.GetService<CommandLineBuilder>();

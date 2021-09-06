@@ -89,12 +89,12 @@ namespace Wabbajack.CLI.Verbs
             var mirrorCache = new LazyCache<string, Archive, (ArchiveStatus Status, Archive archive)>
                 (x => x.State.PrimaryKeyString, archive => AttemptToMirrorArchive(archive, archiveManager, mirrorAllowList, mirroredFiles, token));
             
-            foreach (var list in lists)
+            foreach (var list in lists.Take(1))
             {
                 _logger.LogInformation("Loading list of lists: {list}", list);
                 var listData = await _gitHubClient.GetData(list);
                 var stopWatch = Stopwatch.StartNew();
-                var validatedLists = await listData.Lists.PMapAll(async modList =>
+                var validatedLists = await listData.Lists.Take(1).PMapAll(async modList =>
                 {
                     if (modList.ForceDown)
                     {
