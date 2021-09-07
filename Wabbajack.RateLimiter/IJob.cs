@@ -11,6 +11,7 @@ namespace Wabbajack.RateLimiter
         public string Description { get; }
         public long Current { get; set; }
         public long Size { get; set; }
+        bool Started { get; set; }
         public ValueTask<IMemoryOwner<byte>> Process(int size, CancellationToken token);
         public ValueTask Report(int processedSize, CancellationToken token);
     }

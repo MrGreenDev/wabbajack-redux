@@ -43,6 +43,8 @@ namespace Wabbajack.RateLimiter
         public string Description { get; set; } = "";
         public long Current { get; set; }
         public long Size { get; set; }
+
+        public bool Started { get; set; } = false;
         public Percent Percent => Percent.FactoryPutInRange(Current, Size);
     }
 }

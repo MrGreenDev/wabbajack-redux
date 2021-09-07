@@ -17,6 +17,8 @@ namespace Wabbajack.RateLimiter
             set => _current = value;
         }
         public ulong ID { get; }
+        
+        public bool Started { get; set; }
 
 
         public StandardJob(StandardRateLimitedResource resource, string jobTitle, long size, ulong id)

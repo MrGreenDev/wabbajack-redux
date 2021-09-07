@@ -43,6 +43,16 @@ namespace Wabbajack.RateLimiter
             }
         }
         
+        public bool Started
+        {
+            get => _jobs[0].Started;
+            set
+            {
+                foreach (var job in _jobs) 
+                    job.Started = true;
+            }
+        }
+        
         public async ValueTask<IMemoryOwner<byte>> Process(int size, CancellationToken token)
         {
             var array = await _jobs[0].Process(size, token);

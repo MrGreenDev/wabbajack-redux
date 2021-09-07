@@ -62,6 +62,7 @@ namespace Wabbajack.RateLimiter
             var job = new StandardJob(this, jobTitle, size, id);
             _tasks.TryAdd(id, job);
             await _semaphore.WaitAsync(token);
+            job.Started = true;
             return job;
         }
 

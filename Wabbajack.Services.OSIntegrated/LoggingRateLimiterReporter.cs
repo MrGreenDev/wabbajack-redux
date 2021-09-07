@@ -15,16 +15,19 @@ namespace Wabbajack.Services.OSIntegrated
         private readonly ILogger<IRateLimiter> _logger;
         private readonly IRateLimiter _limiter;
         private Report _prevReport = new();
+        private long _reportNumber = 0;
 
         public LoggingRateLimiterReporter(ILogger<IRateLimiter> logger, IRateLimiter limiter)
         {
             _logger = logger;
             _limiter = limiter;
-            _timer = new Timer(StartLoop, null, TimeSpan.FromSeconds(0.25), TimeSpan.FromSeconds(0.5));
+            _timer = new Timer(StartLoop, null, TimeSpan.FromSeconds(0.25), TimeSpan.FromSeconds(1));
         }
 
         private void StartLoop(object? state)
         {
+            _reportNumber += 1;
+            
             var report = _limiter.GetJobReports();
 
             var itms = new Dictionary<Resource, long>();
@@ -32,6 +35,7 @@ namespace Wabbajack.Services.OSIntegrated
             var some = true;
             foreach (var (resource, resourceReport) in report.Reports)
             {
+
                 long used = 0;
                 if (_prevReport.Reports.TryGetValue(resource, out var prevResource))
                 {
@@ -44,9 +48,27 @@ namespace Wabbajack.Services.OSIntegrated
                     some = true;
                 }
             }
-            _logger.LogInformation("Network: {Network}/sec, CPU: {Cpu}/sec, Disk: {Disk}/sec",
+
+            var started = report.Reports.SelectMany(r => r.Value.JobReports.Values)
+                .Count(r => r.Started);
+            
+            var pending = report.Reports.SelectMany(r => r.Value.JobReports.Values)
+                .Count(r => !r.Started);
+
+            
+            var bleh = report.Reports.SelectMany(r => r.Value.JobReports.Values)
+                .Where(r => r.Started)
+                .Select(r => r.Description)
+                .Distinct();
+            foreach (var bl in bleh)
+            {
+                _logger.LogCritical(bl);
+            }
+            _logger.LogInformation("#{ReportNumber} [{Started}/{Pending}] Network: {Network}/sec, CPU: {Cpu}/sec, Disk: {Disk}/sec",
+                _reportNumber, started, pending,
                 itms[Resource.Network].ToFileSizeString(), itms[Resource.CPU].ToFileSizeString(),
                 itms[Resource.Disk].ToFileSizeString());
+
             if (some)
             {
 
