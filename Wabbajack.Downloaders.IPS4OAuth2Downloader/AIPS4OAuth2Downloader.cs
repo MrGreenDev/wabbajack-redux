@@ -54,7 +54,6 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
             var msg = new HttpRequestMessage(method, url);
             msg.Version = new Version(2, 0);
             var loginData = await _loginInfo.Get();
-            _logger.LogInformation("BLEH {tok}", loginData.ResultState.AccessToken);
             if (useOAuth2)
             {
                 msg.Headers.Add("User-Agent", _appInfo.UserAgent);

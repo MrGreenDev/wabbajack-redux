@@ -220,11 +220,13 @@ namespace Wabbajack.Downloaders
             {
                 return mirrorAllowList.GoogleIDs.Contains(gdrive.Id);
             }
-            else
-            {
-                var url = ((IUrlDownloader)Downloader(archive)).UnParse(archive.State).ToString();
-                return mirrorAllowList.AllowedPrefixes.Any(p => url.StartsWith(p));
-            }
+
+            var downloader = Downloader(archive);
+
+            if (downloader is not IUrlDownloader ud) return false;
+            var url = ud.UnParse(archive.State).ToString();
+            return mirrorAllowList.AllowedPrefixes.Any(p => url.StartsWith(p));
+
         }
     }
 }

@@ -89,12 +89,12 @@ namespace Wabbajack.CLI.Verbs
             var mirrorCache = new LazyCache<string, Archive, (ArchiveStatus Status, Archive archive)>
                 (x => x.State.PrimaryKeyString, archive => AttemptToMirrorArchive(archive, archiveManager, mirrorAllowList, mirroredFiles, token));
             
-            foreach (var list in lists.Take(1))
+            foreach (var list in lists)
             {
                 _logger.LogInformation("Loading list of lists: {list}", list);
                 var listData = await _gitHubClient.GetData(list);
                 var stopWatch = Stopwatch.StartNew();
-                var validatedLists = await listData.Lists.Skip(2).Take(1).PMapAll(async modList =>
+                var validatedLists = await listData.Lists.Take(2).PMapAll(async modList =>
                 {
                     if (modList.ForceDown)
                     {
@@ -147,9 +147,10 @@ namespace Wabbajack.CLI.Verbs
                 _logger.LogInformation(" - {count} Mirrored", allArchives.Count(a => a.Status is ArchiveStatus.Mirrored));
                 _logger.LogInformation(" - {count} Updated", allArchives.Count(a => a.Status is ArchiveStatus.Updated));
 
-                foreach (var invalid in allArchives.Where(a => a.Status is ArchiveStatus.InValid))
+                foreach (var invalid in allArchives.Where(a => a.Status is ArchiveStatus.InValid)
+                    .DistinctBy(a => a.Original.Hash))
                 {
-                    _logger.LogInformation("-- Invalid : {primaryKeyString}", invalid.Original.State.PrimaryKeyString);
+                    _logger.LogInformation("-- Invalid {Hash}: {PrimaryKeyString}", invalid.Original.Hash.ToHex(), invalid.Original.State.PrimaryKeyString);
                 }
 
                 await ExportReports(reports, validatedLists);
