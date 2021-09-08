@@ -25,16 +25,14 @@ namespace Wabbajack.Downloaders
         private readonly HttpClient _client;
         private readonly IHttpDownloader _downloader;
         private readonly ILogger<NexusDownloader> _logger;
-        private readonly IRateLimiter _limiter;
 
         public NexusDownloader(ILogger<NexusDownloader> logger, HttpClient client, IHttpDownloader downloader,
-            NexusApi api, IRateLimiter limiter)
+            NexusApi api)
         {
             _logger = logger;
             _client = client;
             _downloader = downloader;
             _api = api;
-            _limiter = limiter;
         }
 
         public override async Task<bool> Prepare()
@@ -87,14 +85,14 @@ namespace Wabbajack.Downloaders
         }
 
         public override async Task<Hash> Download(Archive archive, Nexus state, AbsolutePath destination,
-            CancellationToken token)
+            IJob job, CancellationToken token)
         {
 
             var urls = await _api.DownloadLink(state.Game.MetaData().NexusName!, state.ModID, state.FileID, token);
             _logger.LogInformation("Downloading Nexus File: {game}|{modid}|{fileid}", state.Game, state.ModID,
                 state.FileID);
             var message = new HttpRequestMessage(HttpMethod.Get, urls.info.First().URI);
-            return await _downloader.Download(message, destination, token);
+            return await _downloader.Download(message, destination, job, token);
         }
 
         public override IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData)
@@ -116,7 +114,7 @@ namespace Wabbajack.Downloaders
 
         public override Priority Priority => Priority.Normal;
 
-        public override async Task<bool> Verify(Archive archive, Nexus state, CancellationToken token)
+        public override async Task<bool> Verify(Archive archive, Nexus state, IJob job, CancellationToken token)
         {
             try
             {

@@ -15,6 +15,7 @@ using Wabbajack.Networking.Http;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using Wabbajack.RateLimiter;
 using YamlDotNet.Core;
 
 namespace Wabbajack.Downloaders
@@ -24,20 +25,23 @@ namespace Wabbajack.Downloaders
         private readonly IDownloader[] _downloaders;
         private readonly ILogger<DownloadDispatcher> _logger;
         private readonly Client _wjClient;
+        private readonly IResource<DownloadDispatcher> _limiter;
 
         public DownloadDispatcher(ILogger<DownloadDispatcher> logger, IEnumerable<IDownloader> downloaders,
-            Client wjClient)
+            IResource<DownloadDispatcher> limiter, Client wjClient)
         {
             _downloaders = downloaders.OrderBy(d => d.Priority).ToArray();
             _logger = logger;
             _wjClient = wjClient;
+            _limiter = limiter;
         }
 
         public async Task<Hash> Download(Archive a, AbsolutePath dest, CancellationToken token)
         {
             using var downloadScope = _logger.BeginScope("Downloading {primaryKeyString}", a.State.PrimaryKeyString);
-
-            var hash = await Downloader(a).Download(a, dest, token);
+            using var job = await _limiter.Begin($"Downloading {a.State.PrimaryKeyString}", a.Size, token);
+            
+            var hash = await Downloader(a).Download(a, dest, job, token);
             _logger.BeginScope("Completed {hash}", hash);
             return hash;
         }
@@ -52,7 +56,8 @@ namespace Wabbajack.Downloaders
             try
             {
                 var downloader = Downloader(a);
-                return await downloader.Verify(a, token);
+                using var job = await _limiter.Begin($"Verifying {a.State.PrimaryKeyString}", -1, token);
+                return await downloader.Verify(a, job, token);
             }
             catch (HttpException)
             {

@@ -22,21 +22,19 @@ namespace Wabbajack.Downloaders.MediaFire
         private readonly ILogger<MediaFireDownloader> _logger;
         private readonly HttpClient _httpClient;
         private readonly IHttpDownloader _downloader;
-        private readonly IRateLimiter _limiter;
 
-        public MediaFireDownloader(ILogger<MediaFireDownloader> logger, HttpClient httpClient, IHttpDownloader downloader, IRateLimiter limiter)
+        public MediaFireDownloader(ILogger<MediaFireDownloader> logger, HttpClient httpClient, IHttpDownloader downloader)
         {
             _logger = logger;
             _httpClient = httpClient;
             _downloader = downloader;
-            _limiter = limiter;
         }
 
-        public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.MediaFire state, AbsolutePath destination, CancellationToken token)
+        public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.MediaFire state, AbsolutePath destination, IJob job, CancellationToken token)
         {
-            var url = await Resolve(state);
+            var url = await Resolve(state, job);
             var msg = new HttpRequestMessage(HttpMethod.Get, url!);
-            return await _downloader.Download(msg, destination, token);
+            return await _downloader.Download(msg, destination, job, token);
         }
 
 
@@ -68,15 +66,14 @@ namespace Wabbajack.Downloaders.MediaFire
 
         public override Priority Priority => Priority.Normal;
         
-        public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.MediaFire archiveState, CancellationToken token)
+        public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.MediaFire archiveState, IJob job, CancellationToken token)
         {
-            return await Resolve(archiveState, token) != null;
+            return await Resolve(archiveState, job, token) != null;
         }
         
-        private async Task<Uri?> Resolve(DTOs.DownloadStates.MediaFire state, CancellationToken? token = null)
+        private async Task<Uri?> Resolve(DTOs.DownloadStates.MediaFire state, IJob job, CancellationToken? token = null)
         {
             token ??= CancellationToken.None;
-            using var job = await _limiter.Begin($"Looking for link for MediaFire link {state.Url}", 0, (CancellationToken)token, Resource.Network, Resource.CPU);
             using var result = await _httpClient.GetAsync(state.Url, HttpCompletionOption.ResponseHeadersRead, (CancellationToken)token);
             if (!result.IsSuccessStatusCode)
                 return null;

@@ -28,7 +28,6 @@ namespace Wabbajack.Downloaders
         private readonly ILogger<WabbajackCDNDownloader> _logger;
         private readonly DTOSerializer _dtos;
         private readonly ParallelOptions _parallelOptions;
-        private readonly IRateLimiter _limiter;
         
         public static Dictionary<string, string> DomainRemaps = new()
         {
@@ -38,55 +37,38 @@ namespace Wabbajack.Downloaders
             {"wabbajacktest.b-cdn.net", "test-files.wabbajack.org"}
         };
         
-        public WabbajackCDNDownloader(ILogger<WabbajackCDNDownloader> logger, IRateLimiter limiter, HttpClient client, DTOSerializer dtos)
+        public WabbajackCDNDownloader(ILogger<WabbajackCDNDownloader> logger, HttpClient client, DTOSerializer dtos)
         {
             _client = client;
-            _limiter = limiter;
             _logger = logger;
             _dtos = dtos;
         }
-        public override async Task<Hash> Download(Archive archive, WabbajackCDN state, AbsolutePath destination, CancellationToken token)
+        public override async Task<Hash> Download(Archive archive, WabbajackCDN state, AbsolutePath destination, IJob job, CancellationToken token)
         {
             var definition = (await GetDefinition(state, token))!;
             await using var fs = destination.Open(FileMode.Create, FileAccess.Write, FileShare.None);
-            
-            SemaphoreSlim slim = new(1, 1);
-            await definition.Parts.PDoAll(
-            async part =>
+
+            foreach (var part in definition.Parts)
             {
-                using var networkJob = await _limiter.Begin(
-                    $"Downloading {definition.OriginalFileName} ({part.Index}/{definition.Parts.Length})", part.Size, token, Resource.Network);
-                
+
                 var msg = MakeMessage(new Uri(state.Url + $"/parts/{part.Index}"));
                 using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
                 if (!response.IsSuccessStatusCode)
                     throw new InvalidDataException($"Bad response for part request for part {part.Index}");
-                
-                using var data = await response.Content.ReadAsByteArrayAsync(token, networkJob);
-                if (data.Memory.Length < part.Size)
+
+                var length = response.Content.Headers.ContentLength;
+                if (length != part.Size)
                     throw new InvalidDataException(
-                        $"Bad part size, expected {part.Size} got {data.Memory.Length} for part {part.Index}");
-                
-                using var diskCpuJob = await _limiter.Begin(
-                    $"Hashing and saving {definition.OriginalFileName} ({part.Index}/{definition.Parts.Length})", part.Size,
-                    token, Resource.Disk, Resource.CPU);
+                        $"Bad part size, expected {part.Size} got {length} for part {part.Index}");
 
-                await slim.WaitAsync(token);
-                try
-                {
+                await using var data = await response.Content.ReadAsStreamAsync(token);
 
-                    fs.Position = part.Offset;
-
-                    var hash = await data.Memory[..(int)part.Size].AsStream().HashingCopy(fs, token, diskCpuJob);
-                    if (hash != part.Hash)
-                        throw new InvalidDataException($"Bad part hash, got {hash} expected {part.Hash} for part {part.Index}");
-                    await fs.FlushAsync(token);
-                }
-                finally
-                {
-                    slim.Release();
-                }
-            });
+                fs.Position = part.Offset;
+                var hash = await data.HashingCopy(fs, token, job);
+                if (hash != part.Hash)
+                    throw new InvalidDataException($"Bad part hash, got {hash} expected {part.Hash} for part {part.Index}");
+                await fs.FlushAsync(token);
+            }
             return definition.Hash;
         }
 
@@ -134,7 +116,7 @@ namespace Wabbajack.Downloaders
             return null;
         }
 
-        public override async Task<bool> Verify(Archive archive, WabbajackCDN archiveState, CancellationToken token)
+        public override async Task<bool> Verify(Archive archive, WabbajackCDN archiveState, IJob job, CancellationToken token)
         {
             return await GetDefinition(archiveState, token) != null;
         }

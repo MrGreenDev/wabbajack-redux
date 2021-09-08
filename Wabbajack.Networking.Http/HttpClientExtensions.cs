@@ -23,8 +23,7 @@ namespace Wabbajack.Networking.Http
                 .Select(h => (h[0], h[1]));
         }
 
-        public static async Task<IMemoryOwner<byte>> ReadAsByteArrayAsync(this HttpContent content, CancellationToken token,
-            IJob job)
+        public static async Task<IMemoryOwner<byte>> ReadAsByteArrayAsync(this HttpContent content, IJob job, CancellationToken token)
         {
             await using var stream = await content.ReadAsStreamAsync(token);
             var memory = MemoryPool<byte>.Shared.Rent((int)(job.Size));

@@ -20,6 +20,7 @@ using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.Http;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Paths;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
 {
@@ -99,13 +100,13 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
             }
         }
         
-        public override async Task<Hash> Download(Archive archive, TState state, AbsolutePath destination, CancellationToken token)
+        public override async Task<Hash> Download(Archive archive, TState state, AbsolutePath destination, IJob job, CancellationToken token)
         {
             if (state.IsAttachment)
             {
                 var msg = await MakeMessage(HttpMethod.Get,
                     new Uri($"{_siteURL}/applications/core/interface/file/attachment.php?id={state.IPS4Mod}"), false);
-                return await _downloader.Download(msg, destination, token);
+                return await _downloader.Download(msg, destination, job, token);
             }
             else
             {
@@ -114,7 +115,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
                 var msg = new HttpRequestMessage(HttpMethod.Get, fileEntry.Url);
                 msg.Version = new Version(2, 0);
                 msg.Headers.Add("User-Agent", _appInfo.UserAgent);
-                return await _downloader.Download(msg, destination, token);
+                return await _downloader.Download(msg, destination, job, token);
             }
         }
 
@@ -213,7 +214,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
         }
 
         public override Priority Priority => Priority.Normal;
-        public override async Task<bool> Verify(Archive archive, TState state, CancellationToken token)
+        public override async Task<bool> Verify(Archive archive, TState state, IJob job, CancellationToken token)
         {
             if (state.IsAttachment)
             {

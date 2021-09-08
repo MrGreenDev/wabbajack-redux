@@ -25,9 +25,9 @@ namespace Wabbajack.Networking.NexusApi
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly ILogger<NexusApi> _logger;
-        private readonly IRateLimiter _limiter;
+        private readonly IResource<HttpClient> _limiter;
 
-        public NexusApi(ITokenProvider<NexusApiState> apiKey, ILogger<NexusApi> logger, HttpClient client, IRateLimiter limiter, 
+        public NexusApi(ITokenProvider<NexusApiState> apiKey, ILogger<NexusApi> logger, HttpClient client, IResource<HttpClient> limiter, 
             ApplicationInfo appInfo, JsonSerializerOptions jsonOptions)
         {
             ApiKey = apiKey;
@@ -76,7 +76,7 @@ namespace Wabbajack.Networking.NexusApi
         protected virtual async Task<(T data, ResponseMetadata header)> Send<T>(HttpRequestMessage msg,
             CancellationToken token = default)
         {
-            using var job = await _limiter.Begin($"API call to the Nexus {msg.RequestUri!.PathAndQuery}", 0, token, Resource.CPU, Resource.Network);
+            using var job = await _limiter.Begin($"API call to the Nexus {msg.RequestUri!.PathAndQuery}", 0, token);
             
             using var result = await _client.SendAsync(msg, token);
             if (!result.IsSuccessStatusCode)

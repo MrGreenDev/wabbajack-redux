@@ -25,7 +25,7 @@ namespace Wabbajack.Networking.NexusApi
         private readonly ITokenProvider<WabbajackApiState> _apiState;
         private readonly Configuration _wabbajackClientConfiguration;
 
-        public ProxiedNexusApi(ITokenProvider<NexusApiState> apiKey, ILogger<ProxiedNexusApi> logger, HttpClient client, IRateLimiter limiter, 
+        public ProxiedNexusApi(ITokenProvider<NexusApiState> apiKey, ILogger<ProxiedNexusApi> logger, HttpClient client, IResource<HttpClient> limiter, 
             ApplicationInfo appInfo, JsonSerializerOptions jsonOptions, ITokenProvider<WabbajackApiState> apiState, Configuration wabbajackClientConfiguration)
             : base(apiKey, logger, client, limiter, appInfo, jsonOptions)
         {

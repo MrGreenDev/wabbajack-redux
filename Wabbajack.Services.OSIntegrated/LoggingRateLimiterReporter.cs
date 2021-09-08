@@ -12,67 +12,36 @@ namespace Wabbajack.Services.OSIntegrated
     public class LoggingRateLimiterReporter : IDisposable
     {
         private readonly Timer _timer;
-        private readonly ILogger<IRateLimiter> _logger;
-        private readonly IRateLimiter _limiter;
-        private Report _prevReport = new();
         private long _reportNumber = 0;
+        private readonly ILogger<LoggingRateLimiterReporter> _logger;
+        private readonly IEnumerable<IResource> _limiters;
+        private StatusReport[] _prevReport;
 
-        public LoggingRateLimiterReporter(ILogger<IRateLimiter> logger, IRateLimiter limiter)
+        public LoggingRateLimiterReporter(ILogger<LoggingRateLimiterReporter> logger, IEnumerable<IResource> limiters)
         {
             _logger = logger;
-            _limiter = limiter;
+            _limiters = limiters.ToArray();
             _timer = new Timer(StartLoop, null, TimeSpan.FromSeconds(0.25), TimeSpan.FromSeconds(1));
+            _prevReport = NextReport();
+        }
+
+        private StatusReport[] NextReport()
+        {
+            return _limiters.Select(r => r.StatusReport).ToArray();
         }
 
         private void StartLoop(object? state)
         {
             _reportNumber += 1;
-            
-            var report = _limiter.GetJobReports();
-
-            var itms = new Dictionary<Resource, long>();
-
-            var some = true;
-            foreach (var (resource, resourceReport) in report.Reports)
+            var report = NextReport();
+            var sb = new StringBuilder();
+            sb.Append($"[#{_reportNumber}] ");
+            foreach (var (prev, next, limiter) in _prevReport.Zip(report, _limiters))
             {
-
-                long used = 0;
-                if (_prevReport.Reports.TryGetValue(resource, out var prevResource))
-                {
-
-                    used = resourceReport.TotalUsed - prevResource.TotalUsed;
-                }
-                itms[resource] = used;
-                if (used > 0)
-                {
-                    some = true;
-                }
+                var throughput = next.Transferred - prev.Transferred;
+                sb.Append($"{limiter.Name}: [{next.Running}/{next.Pending}] {throughput.ToFileSizeString()}/sec ");
             }
-
-            var started = report.Reports.SelectMany(r => r.Value.JobReports.Values)
-                .Count(r => r.Started);
-            
-            var pending = report.Reports.SelectMany(r => r.Value.JobReports.Values)
-                .Count(r => !r.Started);
-
-            
-            var bleh = report.Reports.SelectMany(r => r.Value.JobReports.Values)
-                .Where(r => r.Started)
-                .Select(r => r.Description)
-                .Distinct();
-            foreach (var bl in bleh)
-            {
-                _logger.LogCritical(bl);
-            }
-            _logger.LogInformation("#{ReportNumber} [{Started}/{Pending}] Network: {Network}/sec, CPU: {Cpu}/sec, Disk: {Disk}/sec",
-                _reportNumber, started, pending,
-                itms[Resource.Network].ToFileSizeString(), itms[Resource.CPU].ToFileSizeString(),
-                itms[Resource.Disk].ToFileSizeString());
-
-            if (some)
-            {
-
-            }
+            _logger.LogInformation(sb.ToString());
             _prevReport = report;
         }
 

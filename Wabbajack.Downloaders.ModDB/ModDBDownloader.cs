@@ -13,6 +13,7 @@ using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Paths;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Downloaders.ModDB
 {
@@ -29,7 +30,7 @@ namespace Wabbajack.Downloaders.ModDB
             _downloader = downloader;
         }
 
-        public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.ModDB state, AbsolutePath destination, CancellationToken token)
+        public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.ModDB state, AbsolutePath destination, IJob job, CancellationToken token)
         {
             var urls = await GetDownloadUrls(state);
             foreach (var (url, idx) in urls.Zip(Enumerable.Range(0, urls.Length), (s, i) => (s, i)))
@@ -41,7 +42,7 @@ namespace Wabbajack.Downloaders.ModDB
                         Method = HttpMethod.Get,
                         RequestUri = new Uri(url)
                     };
-                    return await _downloader.Download(msg, destination, token);
+                    return await _downloader.Download(msg, destination, job, token);
                 }
                 catch (Exception)
                 {
@@ -109,7 +110,7 @@ namespace Wabbajack.Downloaders.ModDB
         }
 
         public override Priority Priority => Priority.Normal;
-        public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.ModDB archiveState, CancellationToken token)
+        public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.ModDB archiveState, IJob job, CancellationToken token)
         {
             var urls = await GetDownloadUrls(archiveState, token);
             return urls.Any();

@@ -12,6 +12,7 @@ using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Paths;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Downloaders.Http
 {
@@ -29,9 +30,9 @@ namespace Wabbajack.Downloaders.Http
         }
 
         public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.Http state,
-            AbsolutePath destination, CancellationToken token)
+            AbsolutePath destination, IJob job, CancellationToken token)
         {
-            return await _downloader.Download(MakeMessage(state), destination, token);
+            return await _downloader.Download(MakeMessage(state), destination, job, token);
         }
 
         private async Task<HttpResponseMessage> GetResponse(DTOs.DownloadStates.Http state, CancellationToken token)
@@ -76,7 +77,7 @@ namespace Wabbajack.Downloaders.Http
         }
 
         public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.Http archiveState,
-            CancellationToken token)
+            IJob job, CancellationToken token)
         {
             var response = await GetResponse(archiveState, token);
             if (!response.IsSuccessStatusCode) return false;
@@ -90,6 +91,9 @@ namespace Wabbajack.Downloaders.Http
                     if (!ulong.TryParse(headerVar, out headerContentSize))
                         return true;
             }
+
+            job.Size = 1024;
+            await job.Report(1024, token);
 
             response.Dispose();
             if (archive.Size != 0 && headerContentSize != 0)
