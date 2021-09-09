@@ -961,6 +961,7 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                   services.AddSingleton<JsonConverter, Wabbajack_DTOs_Directives_MergedPatchConverter>();
                                   services.AddSingleton<JsonConverter, Wabbajack_DTOs_Directives_NoMatchConverter>();
                                   services.AddSingleton<JsonConverter, Wabbajack_DTOs_Directives_PatchedFromArchiveConverter>();
+                                  services.AddSingleton<JsonConverter, Wabbajack_DTOs_Directives_PropertyFileConverter>();
                                   services.AddSingleton<JsonConverter, Wabbajack_DTOs_Directives_RemappedInlineFileConverter>();
                                   services.AddSingleton<JsonConverter, Wabbajack_DTOs_Directives_TransformedTextureConverter>();
                                   services.AddSingleton<JsonConverter, Wabbajack_DTOs_DirectiveConverter>();
@@ -1003,6 +1004,10 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                       return JsonSerializer.Deserialize<Wabbajack.DTOs.Directives.PatchedFromArchive>(ref reader, options)!;
                                     case "PatchedFromArchive, Wabbajack.Lib":
                                       return JsonSerializer.Deserialize<Wabbajack.DTOs.Directives.PatchedFromArchive>(ref reader, options)!;
+                                    case "PropertyFile":
+                                      return JsonSerializer.Deserialize<Wabbajack.DTOs.Directives.PropertyFile>(ref reader, options)!;
+                                    case "PropertyFile, Wabbajack.Lib":
+                                      return JsonSerializer.Deserialize<Wabbajack.DTOs.Directives.PropertyFile>(ref reader, options)!;
                                     case "RemappedInlineFile":
                                       return JsonSerializer.Deserialize<Wabbajack.DTOs.Directives.RemappedInlineFile>(ref reader, options)!;
                                     case "RemappedInlineFile, Wabbajack.Lib":
@@ -1023,29 +1028,32 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                     case Wabbajack.DTOs.Directives.PatchedFromArchive v1:
                                       JsonSerializer.Serialize(writer, v1, options);
                                        return;
-                                    case Wabbajack.DTOs.Directives.RemappedInlineFile v2:
+                                    case Wabbajack.DTOs.Directives.PropertyFile v2:
                                       JsonSerializer.Serialize(writer, v2, options);
                                        return;
-                                    case Wabbajack.DTOs.Directives.TransformedTexture v3:
+                                    case Wabbajack.DTOs.Directives.RemappedInlineFile v3:
                                       JsonSerializer.Serialize(writer, v3, options);
                                        return;
-                                    case Wabbajack.DTOs.Directives.ArchiveMeta v4:
+                                    case Wabbajack.DTOs.Directives.TransformedTexture v4:
                                       JsonSerializer.Serialize(writer, v4, options);
                                        return;
-                                    case Wabbajack.DTOs.Directives.CreateBSA v5:
+                                    case Wabbajack.DTOs.Directives.ArchiveMeta v5:
                                       JsonSerializer.Serialize(writer, v5, options);
                                        return;
-                                    case Wabbajack.DTOs.Directives.FromArchive v6:
+                                    case Wabbajack.DTOs.Directives.CreateBSA v6:
                                       JsonSerializer.Serialize(writer, v6, options);
                                        return;
-                                    case Wabbajack.DTOs.Directives.IgnoredDirectly v7:
+                                    case Wabbajack.DTOs.Directives.FromArchive v7:
                                       JsonSerializer.Serialize(writer, v7, options);
                                        return;
-                                    case Wabbajack.DTOs.Directives.InlineFile v8:
+                                    case Wabbajack.DTOs.Directives.IgnoredDirectly v8:
                                       JsonSerializer.Serialize(writer, v8, options);
                                        return;
-                                    case Wabbajack.DTOs.Directives.MergedPatch v9:
+                                    case Wabbajack.DTOs.Directives.InlineFile v9:
                                       JsonSerializer.Serialize(writer, v9, options);
+                                       return;
+                                    case Wabbajack.DTOs.Directives.MergedPatch v10:
+                                      JsonSerializer.Serialize(writer, v10, options);
                                        return;
                                   }
                                 }
@@ -1511,8 +1519,8 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                   writer.WriteEndObject();
                                                 }
                                               }
-                                              public class Wabbajack_DTOs_Directives_RemappedInlineFileConverter : JsonConverter<Wabbajack.DTOs.Directives.RemappedInlineFile> {
-                                                public override Wabbajack.DTOs.Directives.RemappedInlineFile Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+                                              public class Wabbajack_DTOs_Directives_PropertyFileConverter : JsonConverter<Wabbajack.DTOs.Directives.PropertyFile> {
+                                                public override Wabbajack.DTOs.Directives.PropertyFile Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
                                                   if (reader.TokenType != JsonTokenType.StartObject)
                                                     throw new JsonException();
                                                   Wabbajack.Hashing.xxHash64.Hash hashProp = default;
@@ -1545,16 +1553,16 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                         break;
                                                     }
                                                   }
-                                                  return new Wabbajack.DTOs.Directives.RemappedInlineFile {
+                                                  return new Wabbajack.DTOs.Directives.PropertyFile {
                                                     Hash = hashProp,
                                                     Size = sizeProp,
                                                     SourceDataID = sourcedataidProp,
                                                     To = toProp,
                                                     };
                                                   }
-                                                  public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.Directives.RemappedInlineFile value, JsonSerializerOptions options) {
+                                                  public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.Directives.PropertyFile value, JsonSerializerOptions options) {
                                                     writer.WriteStartObject();
-                                                    writer.WriteString("$type", "RemappedInlineFile");
+                                                    writer.WriteString("$type", "PropertyFile");
                                                     writer.WritePropertyName("Hash");
                                                     JsonSerializer.Serialize<Wabbajack.Hashing.xxHash64.Hash>(writer, value.Hash, options);
                                                     writer.WritePropertyName("Size");
@@ -1566,14 +1574,13 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                     writer.WriteEndObject();
                                                   }
                                                 }
-                                                public class Wabbajack_DTOs_Directives_TransformedTextureConverter : JsonConverter<Wabbajack.DTOs.Directives.TransformedTexture> {
-                                                  public override Wabbajack.DTOs.Directives.TransformedTexture Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+                                                public class Wabbajack_DTOs_Directives_RemappedInlineFileConverter : JsonConverter<Wabbajack.DTOs.Directives.RemappedInlineFile> {
+                                                  public override Wabbajack.DTOs.Directives.RemappedInlineFile Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
                                                     if (reader.TokenType != JsonTokenType.StartObject)
                                                       throw new JsonException();
-                                                    Wabbajack.Hashing.xxHash64.HashRelativePath archivehashpathProp = default;
                                                     Wabbajack.Hashing.xxHash64.Hash hashProp = default;
-                                                    Wabbajack.DTOs.Texture.ImageState imagestateProp = default;
                                                     System.Int64 sizeProp = default;
+                                                    Wabbajack.Paths.RelativePath sourcedataidProp = default;
                                                     Wabbajack.Paths.RelativePath toProp = default;
                                                     while (true) {
                                                       reader.Read();
@@ -1584,17 +1591,14 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                       var prop = reader.GetString();
                                                       reader.Read();
                                                       switch (prop) {
-                                                        case "ArchiveHashPath":
-                                                          archivehashpathProp = JsonSerializer.Deserialize<Wabbajack.Hashing.xxHash64.HashRelativePath>(ref reader, options);
-                                                          break;
                                                         case "Hash":
                                                           hashProp = JsonSerializer.Deserialize<Wabbajack.Hashing.xxHash64.Hash>(ref reader, options);
                                                           break;
-                                                        case "ImageState":
-                                                          imagestateProp = JsonSerializer.Deserialize<Wabbajack.DTOs.Texture.ImageState>(ref reader, options);
-                                                          break;
                                                         case "Size":
                                                           sizeProp = JsonSerializer.Deserialize<System.Int64>(ref reader, options);
+                                                          break;
+                                                        case "SourceDataID":
+                                                          sourcedataidProp = JsonSerializer.Deserialize<Wabbajack.Paths.RelativePath>(ref reader, options);
                                                           break;
                                                         case "To":
                                                           toProp = JsonSerializer.Deserialize<Wabbajack.Paths.RelativePath>(ref reader, options);
@@ -1604,100 +1608,36 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                           break;
                                                       }
                                                     }
-                                                    return new Wabbajack.DTOs.Directives.TransformedTexture {
-                                                      ArchiveHashPath = archivehashpathProp,
+                                                    return new Wabbajack.DTOs.Directives.RemappedInlineFile {
                                                       Hash = hashProp,
-                                                      ImageState = imagestateProp,
                                                       Size = sizeProp,
+                                                      SourceDataID = sourcedataidProp,
                                                       To = toProp,
                                                       };
                                                     }
-                                                    public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.Directives.TransformedTexture value, JsonSerializerOptions options) {
+                                                    public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.Directives.RemappedInlineFile value, JsonSerializerOptions options) {
                                                       writer.WriteStartObject();
-                                                      writer.WriteString("$type", "TransformedTexture");
-                                                      writer.WritePropertyName("ArchiveHashPath");
-                                                      JsonSerializer.Serialize<Wabbajack.Hashing.xxHash64.HashRelativePath>(writer, value.ArchiveHashPath, options);
+                                                      writer.WriteString("$type", "RemappedInlineFile");
                                                       writer.WritePropertyName("Hash");
                                                       JsonSerializer.Serialize<Wabbajack.Hashing.xxHash64.Hash>(writer, value.Hash, options);
-                                                      writer.WritePropertyName("ImageState");
-                                                      JsonSerializer.Serialize<Wabbajack.DTOs.Texture.ImageState>(writer, value.ImageState, options);
                                                       writer.WritePropertyName("Size");
                                                       JsonSerializer.Serialize<System.Int64>(writer, value.Size, options);
+                                                      writer.WritePropertyName("SourceDataID");
+                                                      JsonSerializer.Serialize<Wabbajack.Paths.RelativePath>(writer, value.SourceDataID, options);
                                                       writer.WritePropertyName("To");
                                                       JsonSerializer.Serialize<Wabbajack.Paths.RelativePath>(writer, value.To, options);
                                                       writer.WriteEndObject();
                                                     }
                                                   }
-                                                  public class Wabbajack_DTOs_BSA_FileStates_AFileConverter : JsonConverter<Wabbajack.DTOs.BSA.FileStates.AFile> {
-                                                    public static void ConfigureServices(IServiceCollection services) {
-                                                      services.AddSingleton<JsonConverter, Wabbajack_DTOs_BSA_FileStates_BA2DX10FileConverter>();
-                                                      services.AddSingleton<JsonConverter, Wabbajack_DTOs_BSA_FileStates_BA2FileConverter>();
-                                                      services.AddSingleton<JsonConverter, Wabbajack_DTOs_BSA_FileStates_BSAFileConverter>();
-                                                      services.AddSingleton<JsonConverter, Wabbajack_DTOs_BSA_FileStates_TES3FileConverter>();
-                                                      services.AddSingleton<JsonConverter, Wabbajack_DTOs_BSA_FileStates_AFileConverter>();
-                                                    }
-                                                    public override Wabbajack.DTOs.BSA.FileStates.AFile Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
-                                                      var cReader = reader;
+                                                  public class Wabbajack_DTOs_Directives_TransformedTextureConverter : JsonConverter<Wabbajack.DTOs.Directives.TransformedTexture> {
+                                                    public override Wabbajack.DTOs.Directives.TransformedTexture Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
                                                       if (reader.TokenType != JsonTokenType.StartObject)
                                                         throw new JsonException();
-                                                      cReader.Read();
-                                                      if (cReader.GetString() != "$type")
-                                                        throw new JsonException();
-                                                      cReader.Read();
-                                                      var type = cReader.GetString();
-                                                      switch(type) {
-                                                        case "BA2DX10Entry":
-                                                          return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2DX10File>(ref reader, options)!;
-                                                        case "BA2DX10Entry, Compression.BSA":
-                                                          return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2DX10File>(ref reader, options)!;
-                                                        case "BA2File":
-                                                          return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2File>(ref reader, options)!;
-                                                        case "BA2FileEntryState, Compression.BSA":
-                                                          return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2File>(ref reader, options)!;
-                                                        case "BSAFileState, Compression.BSA":
-                                                          return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BSAFile>(ref reader, options)!;
-                                                        case "BSAFile":
-                                                          return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BSAFile>(ref reader, options)!;
-                                                        case "TES3File":
-                                                          return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.TES3File>(ref reader, options)!;
-                                                        default:
-                                                          throw new JsonException($"No Type dispatch for {type}");
-                                                      }
-                                                    }
-                                                    public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.AFile value, JsonSerializerOptions options) {
-                                                      switch (value) {
-                                                        case Wabbajack.DTOs.BSA.FileStates.BA2DX10File v0:
-                                                          JsonSerializer.Serialize(writer, v0, options);
-                                                           return;
-                                                        case Wabbajack.DTOs.BSA.FileStates.BA2File v1:
-                                                          JsonSerializer.Serialize(writer, v1, options);
-                                                           return;
-                                                        case Wabbajack.DTOs.BSA.FileStates.BSAFile v2:
-                                                          JsonSerializer.Serialize(writer, v2, options);
-                                                           return;
-                                                        case Wabbajack.DTOs.BSA.FileStates.TES3File v3:
-                                                          JsonSerializer.Serialize(writer, v3, options);
-                                                           return;
-                                                      }
-                                                    }
-                                                  }
-                                                  public class Wabbajack_DTOs_BSA_FileStates_BA2DX10FileConverter : JsonConverter<Wabbajack.DTOs.BSA.FileStates.BA2DX10File> {
-                                                    public override Wabbajack.DTOs.BSA.FileStates.BA2DX10File Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
-                                                      if (reader.TokenType != JsonTokenType.StartObject)
-                                                        throw new JsonException();
-                                                      System.UInt16 chunkhdrlenProp = default;
-                                                      Wabbajack.DTOs.BSA.FileStates.BA2Chunk[] chunksProp = default;
-                                                      System.UInt32 dirhashProp = default;
-                                                      System.String extensionProp = default;
-                                                      System.UInt16 heightProp = default;
-                                                      System.Int32 indexProp = default;
-                                                      System.UInt32 namehashProp = default;
-                                                      System.Byte nummipsProp = default;
-                                                      Wabbajack.Paths.RelativePath pathProp = default;
-                                                      System.Byte pixelformatProp = default;
-                                                      System.UInt16 unk16Prop = default;
-                                                      System.Byte unk8Prop = default;
-                                                      System.UInt16 widthProp = default;
+                                                      Wabbajack.Hashing.xxHash64.HashRelativePath archivehashpathProp = default;
+                                                      Wabbajack.Hashing.xxHash64.Hash hashProp = default;
+                                                      Wabbajack.DTOs.Texture.ImageState imagestateProp = default;
+                                                      System.Int64 sizeProp = default;
+                                                      Wabbajack.Paths.RelativePath toProp = default;
                                                       while (true) {
                                                         reader.Read();
                                                         if (reader.TokenType == JsonTokenType.EndObject) {
@@ -1707,110 +1647,120 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                         var prop = reader.GetString();
                                                         reader.Read();
                                                         switch (prop) {
-                                                          case "ChunkHdrLen":
-                                                            chunkhdrlenProp = JsonSerializer.Deserialize<System.UInt16>(ref reader, options);
+                                                          case "ArchiveHashPath":
+                                                            archivehashpathProp = JsonSerializer.Deserialize<Wabbajack.Hashing.xxHash64.HashRelativePath>(ref reader, options);
                                                             break;
-                                                          case "Chunks":
-                                                            chunksProp = JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2Chunk[]>(ref reader, options);
+                                                          case "Hash":
+                                                            hashProp = JsonSerializer.Deserialize<Wabbajack.Hashing.xxHash64.Hash>(ref reader, options);
                                                             break;
-                                                          case "DirHash":
-                                                            dirhashProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                          case "ImageState":
+                                                            imagestateProp = JsonSerializer.Deserialize<Wabbajack.DTOs.Texture.ImageState>(ref reader, options);
                                                             break;
-                                                          case "Extension":
-                                                            extensionProp = JsonSerializer.Deserialize<System.String>(ref reader, options);
+                                                          case "Size":
+                                                            sizeProp = JsonSerializer.Deserialize<System.Int64>(ref reader, options);
                                                             break;
-                                                          case "Height":
-                                                            heightProp = JsonSerializer.Deserialize<System.UInt16>(ref reader, options);
-                                                            break;
-                                                          case "Index":
-                                                            indexProp = JsonSerializer.Deserialize<System.Int32>(ref reader, options);
-                                                            break;
-                                                          case "NameHash":
-                                                            namehashProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
-                                                            break;
-                                                          case "NumMips":
-                                                            nummipsProp = JsonSerializer.Deserialize<System.Byte>(ref reader, options);
-                                                            break;
-                                                          case "Path":
-                                                            pathProp = JsonSerializer.Deserialize<Wabbajack.Paths.RelativePath>(ref reader, options);
-                                                            break;
-                                                          case "PixelFormat":
-                                                            pixelformatProp = JsonSerializer.Deserialize<System.Byte>(ref reader, options);
-                                                            break;
-                                                          case "Unk16":
-                                                            unk16Prop = JsonSerializer.Deserialize<System.UInt16>(ref reader, options);
-                                                            break;
-                                                          case "Unk8":
-                                                            unk8Prop = JsonSerializer.Deserialize<System.Byte>(ref reader, options);
-                                                            break;
-                                                          case "Width":
-                                                            widthProp = JsonSerializer.Deserialize<System.UInt16>(ref reader, options);
+                                                          case "To":
+                                                            toProp = JsonSerializer.Deserialize<Wabbajack.Paths.RelativePath>(ref reader, options);
                                                             break;
                                                           default:
                                                             reader.Skip();
                                                             break;
                                                         }
                                                       }
-                                                      return new Wabbajack.DTOs.BSA.FileStates.BA2DX10File {
-                                                        ChunkHdrLen = chunkhdrlenProp,
-                                                        Chunks = chunksProp,
-                                                        DirHash = dirhashProp,
-                                                        Extension = extensionProp,
-                                                        Height = heightProp,
-                                                        Index = indexProp,
-                                                        NameHash = namehashProp,
-                                                        NumMips = nummipsProp,
-                                                        Path = pathProp,
-                                                        PixelFormat = pixelformatProp,
-                                                        Unk16 = unk16Prop,
-                                                        Unk8 = unk8Prop,
-                                                        Width = widthProp,
+                                                      return new Wabbajack.DTOs.Directives.TransformedTexture {
+                                                        ArchiveHashPath = archivehashpathProp,
+                                                        Hash = hashProp,
+                                                        ImageState = imagestateProp,
+                                                        Size = sizeProp,
+                                                        To = toProp,
                                                         };
                                                       }
-                                                      public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.BA2DX10File value, JsonSerializerOptions options) {
+                                                      public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.Directives.TransformedTexture value, JsonSerializerOptions options) {
                                                         writer.WriteStartObject();
-                                                        writer.WriteString("$type", "BA2DX10Entry");
-                                                        writer.WritePropertyName("ChunkHdrLen");
-                                                        JsonSerializer.Serialize<System.UInt16>(writer, value.ChunkHdrLen, options);
-                                                        writer.WritePropertyName("Chunks");
-                                                        JsonSerializer.Serialize<Wabbajack.DTOs.BSA.FileStates.BA2Chunk[]>(writer, value.Chunks, options);
-                                                        writer.WritePropertyName("DirHash");
-                                                        JsonSerializer.Serialize<System.UInt32>(writer, value.DirHash, options);
-                                                        writer.WritePropertyName("Extension");
-                                                        JsonSerializer.Serialize<System.String>(writer, value.Extension, options);
-                                                        writer.WritePropertyName("Height");
-                                                        JsonSerializer.Serialize<System.UInt16>(writer, value.Height, options);
-                                                        writer.WritePropertyName("Index");
-                                                        JsonSerializer.Serialize<System.Int32>(writer, value.Index, options);
-                                                        writer.WritePropertyName("NameHash");
-                                                        JsonSerializer.Serialize<System.UInt32>(writer, value.NameHash, options);
-                                                        writer.WritePropertyName("NumMips");
-                                                        JsonSerializer.Serialize<System.Byte>(writer, value.NumMips, options);
-                                                        writer.WritePropertyName("Path");
-                                                        JsonSerializer.Serialize<Wabbajack.Paths.RelativePath>(writer, value.Path, options);
-                                                        writer.WritePropertyName("PixelFormat");
-                                                        JsonSerializer.Serialize<System.Byte>(writer, value.PixelFormat, options);
-                                                        writer.WritePropertyName("Unk16");
-                                                        JsonSerializer.Serialize<System.UInt16>(writer, value.Unk16, options);
-                                                        writer.WritePropertyName("Unk8");
-                                                        JsonSerializer.Serialize<System.Byte>(writer, value.Unk8, options);
-                                                        writer.WritePropertyName("Width");
-                                                        JsonSerializer.Serialize<System.UInt16>(writer, value.Width, options);
+                                                        writer.WriteString("$type", "TransformedTexture");
+                                                        writer.WritePropertyName("ArchiveHashPath");
+                                                        JsonSerializer.Serialize<Wabbajack.Hashing.xxHash64.HashRelativePath>(writer, value.ArchiveHashPath, options);
+                                                        writer.WritePropertyName("Hash");
+                                                        JsonSerializer.Serialize<Wabbajack.Hashing.xxHash64.Hash>(writer, value.Hash, options);
+                                                        writer.WritePropertyName("ImageState");
+                                                        JsonSerializer.Serialize<Wabbajack.DTOs.Texture.ImageState>(writer, value.ImageState, options);
+                                                        writer.WritePropertyName("Size");
+                                                        JsonSerializer.Serialize<System.Int64>(writer, value.Size, options);
+                                                        writer.WritePropertyName("To");
+                                                        JsonSerializer.Serialize<Wabbajack.Paths.RelativePath>(writer, value.To, options);
                                                         writer.WriteEndObject();
                                                       }
                                                     }
-                                                    public class Wabbajack_DTOs_BSA_FileStates_BA2FileConverter : JsonConverter<Wabbajack.DTOs.BSA.FileStates.BA2File> {
-                                                      public override Wabbajack.DTOs.BSA.FileStates.BA2File Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+                                                    public class Wabbajack_DTOs_BSA_FileStates_AFileConverter : JsonConverter<Wabbajack.DTOs.BSA.FileStates.AFile> {
+                                                      public static void ConfigureServices(IServiceCollection services) {
+                                                        services.AddSingleton<JsonConverter, Wabbajack_DTOs_BSA_FileStates_BA2DX10FileConverter>();
+                                                        services.AddSingleton<JsonConverter, Wabbajack_DTOs_BSA_FileStates_BA2FileConverter>();
+                                                        services.AddSingleton<JsonConverter, Wabbajack_DTOs_BSA_FileStates_BSAFileConverter>();
+                                                        services.AddSingleton<JsonConverter, Wabbajack_DTOs_BSA_FileStates_TES3FileConverter>();
+                                                        services.AddSingleton<JsonConverter, Wabbajack_DTOs_BSA_FileStates_AFileConverter>();
+                                                      }
+                                                      public override Wabbajack.DTOs.BSA.FileStates.AFile Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+                                                        var cReader = reader;
                                                         if (reader.TokenType != JsonTokenType.StartObject)
                                                           throw new JsonException();
-                                                        System.UInt32 alignProp = default;
-                                                        System.Boolean compressedProp = default;
+                                                        cReader.Read();
+                                                        if (cReader.GetString() != "$type")
+                                                          throw new JsonException();
+                                                        cReader.Read();
+                                                        var type = cReader.GetString();
+                                                        switch(type) {
+                                                          case "BA2DX10Entry":
+                                                            return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2DX10File>(ref reader, options)!;
+                                                          case "BA2DX10Entry, Compression.BSA":
+                                                            return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2DX10File>(ref reader, options)!;
+                                                          case "BA2File":
+                                                            return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2File>(ref reader, options)!;
+                                                          case "BA2FileEntryState, Compression.BSA":
+                                                            return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2File>(ref reader, options)!;
+                                                          case "BSAFileState, Compression.BSA":
+                                                            return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BSAFile>(ref reader, options)!;
+                                                          case "BSAFile":
+                                                            return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BSAFile>(ref reader, options)!;
+                                                          case "TES3File":
+                                                            return JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.TES3File>(ref reader, options)!;
+                                                          default:
+                                                            throw new JsonException($"No Type dispatch for {type}");
+                                                        }
+                                                      }
+                                                      public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.AFile value, JsonSerializerOptions options) {
+                                                        switch (value) {
+                                                          case Wabbajack.DTOs.BSA.FileStates.BA2DX10File v0:
+                                                            JsonSerializer.Serialize(writer, v0, options);
+                                                             return;
+                                                          case Wabbajack.DTOs.BSA.FileStates.BA2File v1:
+                                                            JsonSerializer.Serialize(writer, v1, options);
+                                                             return;
+                                                          case Wabbajack.DTOs.BSA.FileStates.BSAFile v2:
+                                                            JsonSerializer.Serialize(writer, v2, options);
+                                                             return;
+                                                          case Wabbajack.DTOs.BSA.FileStates.TES3File v3:
+                                                            JsonSerializer.Serialize(writer, v3, options);
+                                                             return;
+                                                        }
+                                                      }
+                                                    }
+                                                    public class Wabbajack_DTOs_BSA_FileStates_BA2DX10FileConverter : JsonConverter<Wabbajack.DTOs.BSA.FileStates.BA2DX10File> {
+                                                      public override Wabbajack.DTOs.BSA.FileStates.BA2DX10File Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+                                                        if (reader.TokenType != JsonTokenType.StartObject)
+                                                          throw new JsonException();
+                                                        System.UInt16 chunkhdrlenProp = default;
+                                                        Wabbajack.DTOs.BSA.FileStates.BA2Chunk[] chunksProp = default;
                                                         System.UInt32 dirhashProp = default;
                                                         System.String extensionProp = default;
-                                                        System.UInt32 flagsProp = default;
+                                                        System.UInt16 heightProp = default;
                                                         System.Int32 indexProp = default;
                                                         System.UInt32 namehashProp = default;
+                                                        System.Byte nummipsProp = default;
                                                         Wabbajack.Paths.RelativePath pathProp = default;
+                                                        System.Byte pixelformatProp = default;
+                                                        System.UInt16 unk16Prop = default;
+                                                        System.Byte unk8Prop = default;
+                                                        System.UInt16 widthProp = default;
                                                         while (true) {
                                                           reader.Read();
                                                           if (reader.TokenType == JsonTokenType.EndObject) {
@@ -1820,11 +1770,11 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                           var prop = reader.GetString();
                                                           reader.Read();
                                                           switch (prop) {
-                                                            case "Align":
-                                                              alignProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                            case "ChunkHdrLen":
+                                                              chunkhdrlenProp = JsonSerializer.Deserialize<System.UInt16>(ref reader, options);
                                                               break;
-                                                            case "Compressed":
-                                                              compressedProp = JsonSerializer.Deserialize<System.Boolean>(ref reader, options);
+                                                            case "Chunks":
+                                                              chunksProp = JsonSerializer.Deserialize<Wabbajack.DTOs.BSA.FileStates.BA2Chunk[]>(ref reader, options);
                                                               break;
                                                             case "DirHash":
                                                               dirhashProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
@@ -1832,8 +1782,8 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                             case "Extension":
                                                               extensionProp = JsonSerializer.Deserialize<System.String>(ref reader, options);
                                                               break;
-                                                            case "Flags":
-                                                              flagsProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                            case "Height":
+                                                              heightProp = JsonSerializer.Deserialize<System.UInt16>(ref reader, options);
                                                               break;
                                                             case "Index":
                                                               indexProp = JsonSerializer.Deserialize<System.Int32>(ref reader, options);
@@ -1841,53 +1791,88 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                             case "NameHash":
                                                               namehashProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
                                                               break;
+                                                            case "NumMips":
+                                                              nummipsProp = JsonSerializer.Deserialize<System.Byte>(ref reader, options);
+                                                              break;
                                                             case "Path":
                                                               pathProp = JsonSerializer.Deserialize<Wabbajack.Paths.RelativePath>(ref reader, options);
+                                                              break;
+                                                            case "PixelFormat":
+                                                              pixelformatProp = JsonSerializer.Deserialize<System.Byte>(ref reader, options);
+                                                              break;
+                                                            case "Unk16":
+                                                              unk16Prop = JsonSerializer.Deserialize<System.UInt16>(ref reader, options);
+                                                              break;
+                                                            case "Unk8":
+                                                              unk8Prop = JsonSerializer.Deserialize<System.Byte>(ref reader, options);
+                                                              break;
+                                                            case "Width":
+                                                              widthProp = JsonSerializer.Deserialize<System.UInt16>(ref reader, options);
                                                               break;
                                                             default:
                                                               reader.Skip();
                                                               break;
                                                           }
                                                         }
-                                                        return new Wabbajack.DTOs.BSA.FileStates.BA2File {
-                                                          Align = alignProp,
-                                                          Compressed = compressedProp,
+                                                        return new Wabbajack.DTOs.BSA.FileStates.BA2DX10File {
+                                                          ChunkHdrLen = chunkhdrlenProp,
+                                                          Chunks = chunksProp,
                                                           DirHash = dirhashProp,
                                                           Extension = extensionProp,
-                                                          Flags = flagsProp,
+                                                          Height = heightProp,
                                                           Index = indexProp,
                                                           NameHash = namehashProp,
+                                                          NumMips = nummipsProp,
                                                           Path = pathProp,
+                                                          PixelFormat = pixelformatProp,
+                                                          Unk16 = unk16Prop,
+                                                          Unk8 = unk8Prop,
+                                                          Width = widthProp,
                                                           };
                                                         }
-                                                        public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.BA2File value, JsonSerializerOptions options) {
+                                                        public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.BA2DX10File value, JsonSerializerOptions options) {
                                                           writer.WriteStartObject();
-                                                          writer.WriteString("$type", "BA2File");
-                                                          writer.WritePropertyName("Align");
-                                                          JsonSerializer.Serialize<System.UInt32>(writer, value.Align, options);
-                                                          writer.WritePropertyName("Compressed");
-                                                          JsonSerializer.Serialize<System.Boolean>(writer, value.Compressed, options);
+                                                          writer.WriteString("$type", "BA2DX10Entry");
+                                                          writer.WritePropertyName("ChunkHdrLen");
+                                                          JsonSerializer.Serialize<System.UInt16>(writer, value.ChunkHdrLen, options);
+                                                          writer.WritePropertyName("Chunks");
+                                                          JsonSerializer.Serialize<Wabbajack.DTOs.BSA.FileStates.BA2Chunk[]>(writer, value.Chunks, options);
                                                           writer.WritePropertyName("DirHash");
                                                           JsonSerializer.Serialize<System.UInt32>(writer, value.DirHash, options);
                                                           writer.WritePropertyName("Extension");
                                                           JsonSerializer.Serialize<System.String>(writer, value.Extension, options);
-                                                          writer.WritePropertyName("Flags");
-                                                          JsonSerializer.Serialize<System.UInt32>(writer, value.Flags, options);
+                                                          writer.WritePropertyName("Height");
+                                                          JsonSerializer.Serialize<System.UInt16>(writer, value.Height, options);
                                                           writer.WritePropertyName("Index");
                                                           JsonSerializer.Serialize<System.Int32>(writer, value.Index, options);
                                                           writer.WritePropertyName("NameHash");
                                                           JsonSerializer.Serialize<System.UInt32>(writer, value.NameHash, options);
+                                                          writer.WritePropertyName("NumMips");
+                                                          JsonSerializer.Serialize<System.Byte>(writer, value.NumMips, options);
                                                           writer.WritePropertyName("Path");
                                                           JsonSerializer.Serialize<Wabbajack.Paths.RelativePath>(writer, value.Path, options);
+                                                          writer.WritePropertyName("PixelFormat");
+                                                          JsonSerializer.Serialize<System.Byte>(writer, value.PixelFormat, options);
+                                                          writer.WritePropertyName("Unk16");
+                                                          JsonSerializer.Serialize<System.UInt16>(writer, value.Unk16, options);
+                                                          writer.WritePropertyName("Unk8");
+                                                          JsonSerializer.Serialize<System.Byte>(writer, value.Unk8, options);
+                                                          writer.WritePropertyName("Width");
+                                                          JsonSerializer.Serialize<System.UInt16>(writer, value.Width, options);
                                                           writer.WriteEndObject();
                                                         }
                                                       }
-                                                      public class Wabbajack_DTOs_BSA_FileStates_BSAFileConverter : JsonConverter<Wabbajack.DTOs.BSA.FileStates.BSAFile> {
-                                                        public override Wabbajack.DTOs.BSA.FileStates.BSAFile Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+                                                      public class Wabbajack_DTOs_BSA_FileStates_BA2FileConverter : JsonConverter<Wabbajack.DTOs.BSA.FileStates.BA2File> {
+                                                        public override Wabbajack.DTOs.BSA.FileStates.BA2File Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
                                                           if (reader.TokenType != JsonTokenType.StartObject)
                                                             throw new JsonException();
-                                                          System.Boolean flipcompressionProp = default;
+                                                          System.UInt32 alignProp = default;
+                                                          System.Boolean compressedProp = default;
+                                                          System.UInt32 dirhashProp = default;
+                                                          System.String extensionProp = default;
+                                                          System.UInt32 flagsProp = default;
                                                           System.Int32 indexProp = default;
+                                                          System.UInt32 namehashProp = default;
                                                           Wabbajack.Paths.RelativePath pathProp = default;
                                                           while (true) {
                                                             reader.Read();
@@ -1898,11 +1883,26 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                             var prop = reader.GetString();
                                                             reader.Read();
                                                             switch (prop) {
-                                                              case "FlipCompression":
-                                                                flipcompressionProp = JsonSerializer.Deserialize<System.Boolean>(ref reader, options);
+                                                              case "Align":
+                                                                alignProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                                break;
+                                                              case "Compressed":
+                                                                compressedProp = JsonSerializer.Deserialize<System.Boolean>(ref reader, options);
+                                                                break;
+                                                              case "DirHash":
+                                                                dirhashProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                                break;
+                                                              case "Extension":
+                                                                extensionProp = JsonSerializer.Deserialize<System.String>(ref reader, options);
+                                                                break;
+                                                              case "Flags":
+                                                                flagsProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
                                                                 break;
                                                               case "Index":
                                                                 indexProp = JsonSerializer.Deserialize<System.Int32>(ref reader, options);
+                                                                break;
+                                                              case "NameHash":
+                                                                namehashProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
                                                                 break;
                                                               case "Path":
                                                                 pathProp = JsonSerializer.Deserialize<Wabbajack.Paths.RelativePath>(ref reader, options);
@@ -1912,35 +1912,46 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                                 break;
                                                             }
                                                           }
-                                                          return new Wabbajack.DTOs.BSA.FileStates.BSAFile {
-                                                            FlipCompression = flipcompressionProp,
+                                                          return new Wabbajack.DTOs.BSA.FileStates.BA2File {
+                                                            Align = alignProp,
+                                                            Compressed = compressedProp,
+                                                            DirHash = dirhashProp,
+                                                            Extension = extensionProp,
+                                                            Flags = flagsProp,
                                                             Index = indexProp,
+                                                            NameHash = namehashProp,
                                                             Path = pathProp,
                                                             };
                                                           }
-                                                          public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.BSAFile value, JsonSerializerOptions options) {
+                                                          public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.BA2File value, JsonSerializerOptions options) {
                                                             writer.WriteStartObject();
-                                                            writer.WriteString("$type", "BSAFileState, Compression.BSA");
-                                                            writer.WritePropertyName("FlipCompression");
-                                                            JsonSerializer.Serialize<System.Boolean>(writer, value.FlipCompression, options);
+                                                            writer.WriteString("$type", "BA2File");
+                                                            writer.WritePropertyName("Align");
+                                                            JsonSerializer.Serialize<System.UInt32>(writer, value.Align, options);
+                                                            writer.WritePropertyName("Compressed");
+                                                            JsonSerializer.Serialize<System.Boolean>(writer, value.Compressed, options);
+                                                            writer.WritePropertyName("DirHash");
+                                                            JsonSerializer.Serialize<System.UInt32>(writer, value.DirHash, options);
+                                                            writer.WritePropertyName("Extension");
+                                                            JsonSerializer.Serialize<System.String>(writer, value.Extension, options);
+                                                            writer.WritePropertyName("Flags");
+                                                            JsonSerializer.Serialize<System.UInt32>(writer, value.Flags, options);
                                                             writer.WritePropertyName("Index");
                                                             JsonSerializer.Serialize<System.Int32>(writer, value.Index, options);
+                                                            writer.WritePropertyName("NameHash");
+                                                            JsonSerializer.Serialize<System.UInt32>(writer, value.NameHash, options);
                                                             writer.WritePropertyName("Path");
                                                             JsonSerializer.Serialize<Wabbajack.Paths.RelativePath>(writer, value.Path, options);
                                                             writer.WriteEndObject();
                                                           }
                                                         }
-                                                        public class Wabbajack_DTOs_BSA_FileStates_TES3FileConverter : JsonConverter<Wabbajack.DTOs.BSA.FileStates.TES3File> {
-                                                          public override Wabbajack.DTOs.BSA.FileStates.TES3File Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+                                                        public class Wabbajack_DTOs_BSA_FileStates_BSAFileConverter : JsonConverter<Wabbajack.DTOs.BSA.FileStates.BSAFile> {
+                                                          public override Wabbajack.DTOs.BSA.FileStates.BSAFile Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
                                                             if (reader.TokenType != JsonTokenType.StartObject)
                                                               throw new JsonException();
-                                                            System.UInt32 hash1Prop = default;
-                                                            System.UInt32 hash2Prop = default;
+                                                            System.Boolean flipcompressionProp = default;
                                                             System.Int32 indexProp = default;
-                                                            System.UInt32 nameoffsetProp = default;
-                                                            System.UInt32 offsetProp = default;
                                                             Wabbajack.Paths.RelativePath pathProp = default;
-                                                            System.UInt32 sizeProp = default;
                                                             while (true) {
                                                               reader.Read();
                                                               if (reader.TokenType == JsonTokenType.EndObject) {
@@ -1950,59 +1961,111 @@ public class Wabbajack_DTOs_DownloadStates_DeprecatedLoversLabConverter : JsonCo
                                                               var prop = reader.GetString();
                                                               reader.Read();
                                                               switch (prop) {
-                                                                case "Hash1":
-                                                                  hash1Prop = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
-                                                                  break;
-                                                                case "Hash2":
-                                                                  hash2Prop = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                                case "FlipCompression":
+                                                                  flipcompressionProp = JsonSerializer.Deserialize<System.Boolean>(ref reader, options);
                                                                   break;
                                                                 case "Index":
                                                                   indexProp = JsonSerializer.Deserialize<System.Int32>(ref reader, options);
                                                                   break;
-                                                                case "NameOffset":
-                                                                  nameoffsetProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
-                                                                  break;
-                                                                case "Offset":
-                                                                  offsetProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
-                                                                  break;
                                                                 case "Path":
                                                                   pathProp = JsonSerializer.Deserialize<Wabbajack.Paths.RelativePath>(ref reader, options);
-                                                                  break;
-                                                                case "Size":
-                                                                  sizeProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
                                                                   break;
                                                                 default:
                                                                   reader.Skip();
                                                                   break;
                                                               }
                                                             }
-                                                            return new Wabbajack.DTOs.BSA.FileStates.TES3File {
-                                                              Hash1 = hash1Prop,
-                                                              Hash2 = hash2Prop,
+                                                            return new Wabbajack.DTOs.BSA.FileStates.BSAFile {
+                                                              FlipCompression = flipcompressionProp,
                                                               Index = indexProp,
-                                                              NameOffset = nameoffsetProp,
-                                                              Offset = offsetProp,
                                                               Path = pathProp,
-                                                              Size = sizeProp,
                                                               };
                                                             }
-                                                            public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.TES3File value, JsonSerializerOptions options) {
+                                                            public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.BSAFile value, JsonSerializerOptions options) {
                                                               writer.WriteStartObject();
-                                                              writer.WriteString("$type", "TES3File");
-                                                              writer.WritePropertyName("Hash1");
-                                                              JsonSerializer.Serialize<System.UInt32>(writer, value.Hash1, options);
-                                                              writer.WritePropertyName("Hash2");
-                                                              JsonSerializer.Serialize<System.UInt32>(writer, value.Hash2, options);
+                                                              writer.WriteString("$type", "BSAFileState, Compression.BSA");
+                                                              writer.WritePropertyName("FlipCompression");
+                                                              JsonSerializer.Serialize<System.Boolean>(writer, value.FlipCompression, options);
                                                               writer.WritePropertyName("Index");
                                                               JsonSerializer.Serialize<System.Int32>(writer, value.Index, options);
-                                                              writer.WritePropertyName("NameOffset");
-                                                              JsonSerializer.Serialize<System.UInt32>(writer, value.NameOffset, options);
-                                                              writer.WritePropertyName("Offset");
-                                                              JsonSerializer.Serialize<System.UInt32>(writer, value.Offset, options);
                                                               writer.WritePropertyName("Path");
                                                               JsonSerializer.Serialize<Wabbajack.Paths.RelativePath>(writer, value.Path, options);
-                                                              writer.WritePropertyName("Size");
-                                                              JsonSerializer.Serialize<System.UInt32>(writer, value.Size, options);
                                                               writer.WriteEndObject();
                                                             }
                                                           }
+                                                          public class Wabbajack_DTOs_BSA_FileStates_TES3FileConverter : JsonConverter<Wabbajack.DTOs.BSA.FileStates.TES3File> {
+                                                            public override Wabbajack.DTOs.BSA.FileStates.TES3File Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+                                                              if (reader.TokenType != JsonTokenType.StartObject)
+                                                                throw new JsonException();
+                                                              System.UInt32 hash1Prop = default;
+                                                              System.UInt32 hash2Prop = default;
+                                                              System.Int32 indexProp = default;
+                                                              System.UInt32 nameoffsetProp = default;
+                                                              System.UInt32 offsetProp = default;
+                                                              Wabbajack.Paths.RelativePath pathProp = default;
+                                                              System.UInt32 sizeProp = default;
+                                                              while (true) {
+                                                                reader.Read();
+                                                                if (reader.TokenType == JsonTokenType.EndObject) {
+                                                                  reader.Read();
+                                                                  break;
+                                                                }
+                                                                var prop = reader.GetString();
+                                                                reader.Read();
+                                                                switch (prop) {
+                                                                  case "Hash1":
+                                                                    hash1Prop = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                                    break;
+                                                                  case "Hash2":
+                                                                    hash2Prop = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                                    break;
+                                                                  case "Index":
+                                                                    indexProp = JsonSerializer.Deserialize<System.Int32>(ref reader, options);
+                                                                    break;
+                                                                  case "NameOffset":
+                                                                    nameoffsetProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                                    break;
+                                                                  case "Offset":
+                                                                    offsetProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                                    break;
+                                                                  case "Path":
+                                                                    pathProp = JsonSerializer.Deserialize<Wabbajack.Paths.RelativePath>(ref reader, options);
+                                                                    break;
+                                                                  case "Size":
+                                                                    sizeProp = JsonSerializer.Deserialize<System.UInt32>(ref reader, options);
+                                                                    break;
+                                                                  default:
+                                                                    reader.Skip();
+                                                                    break;
+                                                                }
+                                                              }
+                                                              return new Wabbajack.DTOs.BSA.FileStates.TES3File {
+                                                                Hash1 = hash1Prop,
+                                                                Hash2 = hash2Prop,
+                                                                Index = indexProp,
+                                                                NameOffset = nameoffsetProp,
+                                                                Offset = offsetProp,
+                                                                Path = pathProp,
+                                                                Size = sizeProp,
+                                                                };
+                                                              }
+                                                              public override void Write(Utf8JsonWriter writer, Wabbajack.DTOs.BSA.FileStates.TES3File value, JsonSerializerOptions options) {
+                                                                writer.WriteStartObject();
+                                                                writer.WriteString("$type", "TES3File");
+                                                                writer.WritePropertyName("Hash1");
+                                                                JsonSerializer.Serialize<System.UInt32>(writer, value.Hash1, options);
+                                                                writer.WritePropertyName("Hash2");
+                                                                JsonSerializer.Serialize<System.UInt32>(writer, value.Hash2, options);
+                                                                writer.WritePropertyName("Index");
+                                                                JsonSerializer.Serialize<System.Int32>(writer, value.Index, options);
+                                                                writer.WritePropertyName("NameOffset");
+                                                                JsonSerializer.Serialize<System.UInt32>(writer, value.NameOffset, options);
+                                                                writer.WritePropertyName("Offset");
+                                                                JsonSerializer.Serialize<System.UInt32>(writer, value.Offset, options);
+                                                                writer.WritePropertyName("Path");
+                                                                JsonSerializer.Serialize<Wabbajack.Paths.RelativePath>(writer, value.Path, options);
+                                                                writer.WritePropertyName("Size");
+                                                                JsonSerializer.Serialize<System.UInt32>(writer, value.Size, options);
+                                                                writer.WriteEndObject();
+                                                              }
+                                                            }

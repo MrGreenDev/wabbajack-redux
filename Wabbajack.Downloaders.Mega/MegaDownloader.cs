@@ -19,23 +19,18 @@ namespace Wabbajack.Downloaders.ModDB
 {
     public class MegaDownloader : ADownloader<Mega>, IUrlDownloader
     {
-        private readonly ILogger<MegaDownloader> _logger;
         private readonly MegaApiClient _apiClient;
-        private readonly IRateLimiter _limiter;
+        private readonly ILogger<MegaDownloader> _logger;
         private const string MegaPrefix = "https://mega.nz/#!";
         private const string MegaFilePrefix = "https://mega.nz/file/";
 
-        public MegaDownloader(ILogger<MegaDownloader> logger, MegaApiClient apiClient, IRateLimiter limiter)
+        public MegaDownloader(ILogger<MegaDownloader> logger, MegaApiClient apiClient)
         {
             _logger = logger;
             _apiClient = apiClient;
-            _limiter = limiter;
         }
-        public override async Task<Hash> Download(Archive archive, Mega state, AbsolutePath destination, CancellationToken token)
+        public override async Task<Hash> Download(Archive archive, Mega state, AbsolutePath destination, IJob job, CancellationToken token)
         {
-            using var job = await _limiter.Begin($"Downloading {destination.FileName}", archive.Size, token,
-                Resource.Disk, Resource.Network, Resource.CPU);
-            
             if (!_apiClient.IsLoggedIn)
                 await _apiClient.LoginAsync();
 
@@ -72,7 +67,7 @@ namespace Wabbajack.Downloaders.ModDB
         }
 
         public override Priority Priority => Priority.Normal;
-        public override async Task<bool> Verify(Archive archive, Mega archiveState, CancellationToken token)
+        public override async Task<bool> Verify(Archive archive, Mega archiveState, IJob job, CancellationToken token)
         {
             if (!_apiClient.IsLoggedIn)
                 await _apiClient.LoginAsync();

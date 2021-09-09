@@ -6,6 +6,7 @@ using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Downloaders.Interfaces
 {
@@ -26,7 +27,7 @@ namespace Wabbajack.Downloaders.Interfaces
         /// <param name="destination"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public Task<Hash> Download(Archive archive, AbsolutePath destination, CancellationToken token);
+        public Task<Hash> Download(Archive archive, AbsolutePath destination, IJob job, CancellationToken token);
 
         /// <summary>
         ///     Return true if the given archive state is still valid.
@@ -34,7 +35,7 @@ namespace Wabbajack.Downloaders.Interfaces
         /// <param name="archive"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public Task<bool> Verify(Archive archive, CancellationToken token);
+        public Task<bool> Verify(Archive archive, IJob job, CancellationToken token);
 
         /// <summary>
         ///     Starts the downloader and configures it to start downloading. Should return null if more data is needed
@@ -54,6 +55,6 @@ namespace Wabbajack.Downloaders.Interfaces
     public interface IDownloader<T> : IDownloader
         where T : IDownloadState
     {
-        public Task<Hash> Download(Archive archive, T state, AbsolutePath destination, CancellationToken token);
+        public Task<Hash> Download(Archive archive, T state, AbsolutePath destination, IJob job, CancellationToken token);
     }
 }

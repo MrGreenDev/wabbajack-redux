@@ -12,6 +12,6 @@ namespace Wabbajack.Common
             msg.Headers.Add("Cookie", string.Join(";", cookies.Select(c => $"{c.Name}={c.Value}")));
             return msg;
         }
-        
+
     }
 }

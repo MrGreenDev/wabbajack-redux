@@ -107,7 +107,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
         [JsonPropertyName("url")]
         public string? Url { get; set; }
 
-        [JsonPropertyName("size")] public string Size { get; set; } = "";
+        [JsonPropertyName("size")] public long? Size { get; set; }
     }
 
     public class PrimaryScreenshot
@@ -119,7 +119,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
         public string? Url { get; set; }
 
         [JsonPropertyName("size")]
-        public string? Size { get; set; }
+        public long? Size { get; set; }
     }
 
     public class Forum

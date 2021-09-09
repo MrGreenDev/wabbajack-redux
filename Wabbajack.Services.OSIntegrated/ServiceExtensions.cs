@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Wabbajack.Common;
 using Wabbajack.Compiler;
 using Wabbajack.Downloaders;
@@ -54,13 +55,9 @@ namespace Wabbajack.Services.OSIntegrated
                 : new BinaryPatchCache(KnownFolders.EntryPoint.Combine("patchCache.sqlite")));
             
             service.AddSingleton(new ParallelOptions {MaxDegreeOfParallelism = Environment.ProcessorCount});
-            service.AddSingleton<IRateLimiter, StandardRateLimiter>(s => new StandardRateLimiter(
-                new ResourceLimitConfiguration
-                {
-                    CPU = new ResourceLimit { MaxConcurrentTasks = Environment.ProcessorCount, MaxThroughput = -1 },
-                    Disk = new ResourceLimit { MaxConcurrentTasks = 4, MaxThroughput = -1 },
-                    Network = new ResourceLimit { MaxConcurrentTasks = 4, MaxThroughput = -1 }
-                }));
+            service.AddAllSingleton<IResource, IResource<DownloadDispatcher>>(s => new Resource<DownloadDispatcher>(12));
+            service.AddAllSingleton<IResource, IResource<HttpClient>>(s => new Resource<HttpClient>(12));
+
             service.AddSingleton<LoggingRateLimiterReporter>();
 
             service.AddScoped<Context>();

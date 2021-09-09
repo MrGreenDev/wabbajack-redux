@@ -15,7 +15,7 @@ namespace Wabbajack.Paths
         public static explicit operator RelativePath(string i)
         {
             var splits = i.Split(AbsolutePath.StringSplits, StringSplitOptions.RemoveEmptyEntries);
-            if (splits.Length >= 1 && splits[0].Contains(":"))
+            if (splits.Length >= 1 && splits[0].Contains(':'))
                 throw new PathException($"Tried to parse `{i} but `:` not valid in a path name");
             return new RelativePath(splits);
         }

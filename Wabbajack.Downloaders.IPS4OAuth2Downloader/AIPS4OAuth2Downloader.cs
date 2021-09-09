@@ -4,6 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -18,6 +20,7 @@ using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.Http;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Paths;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
 {
@@ -51,7 +54,6 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
             var msg = new HttpRequestMessage(method, url);
             msg.Version = new Version(2, 0);
             var loginData = await _loginInfo.Get();
-            _logger.LogInformation("BLEH {tok}", loginData.ResultState.AccessToken);
             if (useOAuth2)
             {
                 msg.Headers.Add("User-Agent", _appInfo.UserAgent);
@@ -64,6 +66,11 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
 
             return msg;
         }
+        
+        private static readonly JsonSerializerOptions SerializerOptions = new()
+        {
+            NumberHandling = JsonNumberHandling.AllowReadingFromString
+        };
 
         public async Task<IPS4OAuthFilesResponse.Root> GetDownloads(long modID, CancellationToken token)
         {
@@ -75,7 +82,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
                 using var response = await _client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, token);
 
                 if (response.IsSuccessStatusCode)
-                    return (await response.Content.ReadFromJsonAsync<IPS4OAuthFilesResponse.Root>(cancellationToken: token))!;
+                    return (await response.Content.ReadFromJsonAsync<IPS4OAuthFilesResponse.Root>(SerializerOptions, token))!;
 
                 if (retried)
                 {
@@ -92,13 +99,13 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
             }
         }
         
-        public override async Task<Hash> Download(Archive archive, TState state, AbsolutePath destination, CancellationToken token)
+        public override async Task<Hash> Download(Archive archive, TState state, AbsolutePath destination, IJob job, CancellationToken token)
         {
             if (state.IsAttachment)
             {
                 var msg = await MakeMessage(HttpMethod.Get,
                     new Uri($"{_siteURL}/applications/core/interface/file/attachment.php?id={state.IPS4Mod}"), false);
-                return await _downloader.Download(msg, destination, token);
+                return await _downloader.Download(msg, destination, job, token);
             }
             else
             {
@@ -107,7 +114,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
                 var msg = new HttpRequestMessage(HttpMethod.Get, fileEntry.Url);
                 msg.Version = new Version(2, 0);
                 msg.Headers.Add("User-Agent", _appInfo.UserAgent);
-                return await _downloader.Download(msg, destination, token);
+                return await _downloader.Download(msg, destination, job, token);
             }
         }
 
@@ -206,7 +213,7 @@ namespace Wabbajack.Downloaders.IPS4OAuth2Downloader
         }
 
         public override Priority Priority => Priority.Normal;
-        public override async Task<bool> Verify(Archive archive, TState state, CancellationToken token)
+        public override async Task<bool> Verify(Archive archive, TState state, IJob job, CancellationToken token)
         {
             if (state.IsAttachment)
             {

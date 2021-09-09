@@ -28,7 +28,6 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
         private bool AutoPassTest(Archive archive)
         {
             return false;
-            return Environment.GetEnvironmentVariable("CI") != default && archive.State is IPS4OAuth2;
         }
 
         /// <summary>
@@ -98,6 +97,25 @@ namespace Wabbajack.Downloaders.Dispatcher.Test
                     new Archive
                     {
                         State = new LoversLab { IsAttachment = true, IPS4Mod = 85329599 }
+                    }
+                },
+                // MediaFire Data
+                new object[]
+                {
+                    new Archive
+                    {
+                        Hash = Hash.FromBase64("eSIyd+KOG3s="),
+                        State = new DTOs.DownloadStates.MediaFire
+                        {
+                            Url = new Uri("http://www.mediafire.com/file/agiqzm1xwebczpx/WABBAJACK_TEST_FILE.txt")
+                        }
+                    },
+                    new Archive
+                    {
+                        State = new DTOs.DownloadStates.MediaFire
+                        {
+                            Url = new Uri("http://www.mediafire.com/file/agiqzm1xwebcz42/WABBAJACK_TEST_FILE.txt")
+                        }
                     }
                 },
                 // Mega Data

@@ -1,0 +1,18 @@
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Wabbajack.RateLimiter
+{
+    public interface IResource
+    {
+        StatusReport StatusReport { get; }
+        string Name { get; }
+    }
+    public interface IResource<T> : IResource
+    {
+        public ValueTask<Job<T>> Begin(string jobTitle, long size, CancellationToken token);
+        ValueTask Report(Job<T> job, int processedSize, CancellationToken token);
+        void Finish(Job<T> job);
+
+    }
+}

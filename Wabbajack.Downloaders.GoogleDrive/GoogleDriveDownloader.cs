@@ -14,6 +14,7 @@ using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Networking.Http;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Paths;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Downloaders.GoogleDrive
 {
@@ -61,10 +62,10 @@ namespace Wabbajack.Downloaders.GoogleDrive
         }
 
         public override async Task<Hash> Download(Archive archive, DTOs.DownloadStates.GoogleDrive state,
-            AbsolutePath destination, CancellationToken token)
+            AbsolutePath destination, IJob job, CancellationToken token)
         {
             var msg = await ToMessage(state, true, token);
-            return await _downloader.Download(msg!, destination, token);
+            return await _downloader.Download(msg!, destination, job, token);
         }
 
         public override IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData)
@@ -75,7 +76,7 @@ namespace Wabbajack.Downloaders.GoogleDrive
         }
 
         public override async Task<bool> Verify(Archive archive, DTOs.DownloadStates.GoogleDrive state,
-            CancellationToken token)
+            IJob job, CancellationToken token)
         {
             var result = await ToMessage(state, false, token);
             return result != null;

@@ -10,8 +10,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.Logins;
+using Wabbajack.Networking.Http;
 using Wabbajack.Networking.Http.Interfaces;
 using Wabbajack.Networking.NexusApi.DTOs;
+using Wabbajack.RateLimiter;
 using Wabbajack.Server.DTOs;
 
 namespace Wabbajack.Networking.NexusApi
@@ -23,15 +25,17 @@ namespace Wabbajack.Networking.NexusApi
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly ILogger<NexusApi> _logger;
+        private readonly IResource<HttpClient> _limiter;
 
-        public NexusApi(ITokenProvider<NexusApiState> apiKey, ILogger<NexusApi> logger, HttpClient client, ApplicationInfo appInfo,
-            JsonSerializerOptions jsonOptions)
+        public NexusApi(ITokenProvider<NexusApiState> apiKey, ILogger<NexusApi> logger, HttpClient client, IResource<HttpClient> limiter, 
+            ApplicationInfo appInfo, JsonSerializerOptions jsonOptions)
         {
             ApiKey = apiKey;
             _logger = logger;
             _client = client;
             _appInfo = appInfo;
             _jsonOptions = jsonOptions;
+            _limiter = limiter;
         }
 
         public virtual async Task<(ValidateInfo info, ResponseMetadata header)> Validate(
@@ -72,11 +76,16 @@ namespace Wabbajack.Networking.NexusApi
         protected virtual async Task<(T data, ResponseMetadata header)> Send<T>(HttpRequestMessage msg,
             CancellationToken token = default)
         {
-            _logger.LogInformation("Nexus Call: {Url}", msg.RequestUri);
+            using var job = await _limiter.Begin($"API call to the Nexus {msg.RequestUri!.PathAndQuery}", 0, token);
+            
             using var result = await _client.SendAsync(msg, token);
+            if (!result.IsSuccessStatusCode)
+                throw new HttpException(result);
 
             var headers = ParseHeaders(result);
-
+            job.Size = result.Content.Headers.ContentLength ?? 0;
+            await job.Report((int)(result.Content.Headers.ContentLength ?? 0), token);
+            
             var body = await result.Content.ReadAsByteArrayAsync(token);
             return (JsonSerializer.Deserialize<T>(body, _jsonOptions)!, headers);
         }

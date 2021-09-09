@@ -6,6 +6,7 @@ using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.Validation;
 using Wabbajack.Hashing.xxHash64;
 using Wabbajack.Paths;
+using Wabbajack.RateLimiter;
 
 namespace Wabbajack.Downloaders.Interfaces
 {
@@ -13,21 +14,21 @@ namespace Wabbajack.Downloaders.Interfaces
         where T : IDownloadState
     {
         public abstract Task<Hash> Download(Archive archive, T state, AbsolutePath destination,
-            CancellationToken token);
+            IJob job, CancellationToken token);
 
         public bool CanDownload(Archive a)
         {
             return a.State is T;
         }
 
-        public Task<Hash> Download(Archive archive, AbsolutePath destination, CancellationToken token)
+        public Task<Hash> Download(Archive archive, AbsolutePath destination, IJob job, CancellationToken token)
         {
-            return Download(archive, (T)archive.State, destination, token);
+            return Download(archive, (T)archive.State, destination, job, token);
         }
 
-        public Task<bool> Verify(Archive archive, CancellationToken token)
+        public Task<bool> Verify(Archive archive, IJob job, CancellationToken token)
         {
-            return Verify(archive, (T)archive.State, token);
+            return Verify(archive, (T)archive.State, job, token);
         }
 
         public abstract Task<bool> Prepare();
@@ -41,7 +42,7 @@ namespace Wabbajack.Downloaders.Interfaces
         public abstract IDownloadState? Resolve(IReadOnlyDictionary<string, string> iniData);
         public abstract Priority Priority { get; }
 
-        public abstract Task<bool> Verify(Archive archive, T archiveState, CancellationToken token);
+        public abstract Task<bool> Verify(Archive archive, T archiveState, IJob job, CancellationToken token);
         public abstract IEnumerable<string> MetaIni(Archive a, T state);
     }
 }
