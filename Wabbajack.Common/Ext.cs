@@ -18,5 +18,6 @@ namespace Wabbajack.Common
         public static Extension Wabbajack = new(".wabbajack");
         public static Extension Dds = new(".dds");
         public static Extension Json = new(".json");
+        public static Extension Md = new(".md");
     }
 }
