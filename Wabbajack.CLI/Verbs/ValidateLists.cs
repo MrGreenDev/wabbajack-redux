@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Wabbajack.CLI.Services;
 using Wabbajack.Common;
 using Wabbajack.Downloaders;
+using Wabbajack.Downloaders.Interfaces;
 using Wabbajack.DTOs;
 using Wabbajack.DTOs.DownloadStates;
 using Wabbajack.DTOs.GitHub;
@@ -94,7 +95,7 @@ namespace Wabbajack.CLI.Verbs
                 _logger.LogInformation("Loading list of lists: {list}", list);
                 var listData = await _gitHubClient.GetData(list);
                 var stopWatch = Stopwatch.StartNew();
-                var validatedLists = await listData.Lists.Take(2).PMapAll(async modList =>
+                var validatedLists = await listData.Lists.PMapAll(async modList =>
                 {
                     if (modList.ForceDown)
                     {
@@ -164,10 +165,44 @@ namespace Wabbajack.CLI.Verbs
         {
             foreach (var validatedList in validatedLists)
             {
-                var baseFile = reports.Combine(validatedList.MachineURL);
-                await using var jsonFile = baseFile.WithExtension(Ext.Json)
+                var baseFolder = reports.Combine(validatedList.MachineURL);
+                baseFolder.CreateDirectory();
+                await using var jsonFile = baseFolder.Combine("status").WithExtension(Ext.Json)
                     .Open(FileMode.Create, FileAccess.Write, FileShare.None);
                 await _dtos.Serialize(validatedList, jsonFile, true);
+
+                await using var mdFile = baseFolder.Combine("status").WithExtension(Ext.Md)
+                    .Open(FileMode.Create, FileAccess.Write, FileShare.None);
+                await using var sw = new StreamWriter(mdFile);
+                
+                await sw.WriteLineAsync($"## Validation Report - {validatedList.Name} ({validatedList.MachineURL})");
+                await sw.WriteAsync("\n\n");
+
+                async Task WriteSection(TextWriter w, ArchiveStatus status, string sectionName)
+                {
+                    var archives = validatedList.Archives.Where(a => a.Status == status).ToArray();
+                    await w.WriteLineAsync($"### {sectionName} ({archives.Length})");
+
+                    foreach (var archive in archives.OrderBy(a => a.Original.Name))
+                    {
+                        if (_dispatcher.TryGetDownloader(archive.Original, out var downloader) && downloader is IUrlDownloader u)
+                        {
+                            await w.WriteLineAsync(
+                                $"*  [{archive.Original.Name}]({u.UnParse(archive.Original.State)})");
+                        }
+                        else 
+                        {
+                            await w.WriteLineAsync(
+                                $"*  {archive.Original.Name}");
+                        }
+                    }
+                }
+
+                await WriteSection(sw, ArchiveStatus.InValid, "Invalid");
+                await WriteSection(sw, ArchiveStatus.Updated, "Updated");
+                await WriteSection(sw, ArchiveStatus.Mirrored, "Mirrored");
+                await WriteSection(sw, ArchiveStatus.Valid, "Valid");
+                
             }
 
 

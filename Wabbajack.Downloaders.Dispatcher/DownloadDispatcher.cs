@@ -167,6 +167,18 @@ namespace Wabbajack.Downloaders
             _logger.LogError("No downloader found for {type}", archive.State.GetType());
             throw new NotImplementedException($"No downloader for {archive.State.GetType()}");
         }
+        
+        public bool TryGetDownloader(Archive archive, out IDownloader downloader)
+        {
+            var result = _downloaders.FirstOrDefault(d => d.CanDownload(archive));
+            if (result != null)
+            {
+                downloader = result!;
+                return true;
+            }
+            downloader = _downloaders.First();
+            return false;
+        }
 
         public async Task<Archive> FillInMetadata(Archive a)
         {
