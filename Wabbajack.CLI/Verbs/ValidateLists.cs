@@ -64,14 +64,18 @@ namespace Wabbajack.CLI.Verbs
             var command = new Command("validate-lists");
             command.Add(new Option<List[]>(new[] { "-l", "-lists" }, "Lists of lists to validate") {IsRequired = true});
             command.Add(new Option<AbsolutePath>(new [] {"-r", "--reports"}, "Location to store validation report outputs"));
-            command.Add(new Option<AbsolutePath>(new[] { "-a", "-archives" }, "Location to store archives (files are named as the hex version of their hashes)")
+            command.Add(new Option<AbsolutePath>(new[] { "-a", "--archives" }, "Location to store archives (files are named as the hex version of their hashes)")
                 {IsRequired = true});
+
+            command.Add(new Option<AbsolutePath>(new[] { "--other-archives" }, "Look for files here before downloading (stored by hex hash name)")
+                {IsRequired = false});
+
             command.Description = "Gets a list of modlists, validates them and exports a result list";
             command.Handler = CommandHandler.Create(Run);
             return command;
         }
         
-        public async Task<int> Run(List[] lists, AbsolutePath archives, AbsolutePath reports)
+        public async Task<int> Run(List[] lists, AbsolutePath archives, AbsolutePath reports, AbsolutePath otherArchives)
         {
             reports.CreateDirectory();
             var archiveManager = new ArchiveManager(_logger, archives);
@@ -81,11 +85,13 @@ namespace Wabbajack.CLI.Verbs
             var mirroredFiles = await AllMirroredFiles(token);
             var patchFiles = await AllPatchFiles(token);
 
+            var otherArchiveManager = otherArchives == default ? null : new ArchiveManager(_logger, otherArchives);
+
             _logger.LogInformation("Loading Mirror Allow List");
             var mirrorAllowList = await _wjClient.LoadMirrorAllowList();
 
             var validationCache = new LazyCache<string, Archive, (ArchiveStatus Status, Archive archive)>
-                (x => x.State.PrimaryKeyString, archive => DownloadAndValidate(archive, archiveManager, token));
+                (x => x.State.PrimaryKeyString, archive => DownloadAndValidate(archive, archiveManager, otherArchiveManager, token));
 
             var mirrorCache = new LazyCache<string, Archive, (ArchiveStatus Status, Archive archive)>
                 (x => x.State.PrimaryKeyString, archive => AttemptToMirrorArchive(archive, archiveManager, mirrorAllowList, mirroredFiles, token));
@@ -94,6 +100,7 @@ namespace Wabbajack.CLI.Verbs
             {
                 _logger.LogInformation("Loading list of lists: {list}", list);
                 var listData = await _gitHubClient.GetData(list);
+
                 var stopWatch = Stopwatch.StartNew();
                 var validatedLists = await listData.Lists.PMapAll(async modList =>
                 {
@@ -299,7 +306,8 @@ namespace Wabbajack.CLI.Verbs
             return (ArchiveStatus.Mirrored, mirroredArchive);
         }
 
-        private async Task<(ArchiveStatus, Archive)> DownloadAndValidate(Archive archive, ArchiveManager archiveManager, CancellationToken token)
+        private async Task<(ArchiveStatus, Archive)> DownloadAndValidate(Archive archive, ArchiveManager archiveManager,
+            ArchiveManager? otherArchiveManager, CancellationToken token)
         {
             switch (archive.State)
             {
@@ -314,18 +322,27 @@ namespace Wabbajack.CLI.Verbs
             {
                 _logger.LogInformation("Downloading {name} {hash}", archive.Name, archive.Hash);
 
-                try
+                if (otherArchiveManager != null && otherArchiveManager.HaveArchive(archive.Hash))
                 {
-                    await using var tempFile = _temporaryFileManager.CreateFile();
-                    var hash = await _dispatcher.Download(archive, tempFile.Path, token);
-                    if (hash != archive.Hash)
-                        return (ArchiveStatus.InValid, archive);
-                    await archiveManager.Ingest(tempFile.Path, token);
+                    _logger.LogInformation("Found {name} {hash} in other archive manager", archive.Name, archive.Hash);
+                    await archiveManager.Ingest(otherArchiveManager.GetPath(archive.Hash), token);
                 }
-                catch (Exception ex)
+                else
                 {
-                    _logger.LogCritical(ex, "Downloading {primaryKeyString}", archive.State.PrimaryKeyString);
-                    return (ArchiveStatus.InValid, archive);
+
+                    try
+                    {
+                        await using var tempFile = _temporaryFileManager.CreateFile();
+                        var hash = await _dispatcher.Download(archive, tempFile.Path, token);
+                        if (hash != archive.Hash)
+                            return (ArchiveStatus.InValid, archive);
+                        await archiveManager.Ingest(tempFile.Path, token);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogCritical(ex, "Downloading {primaryKeyString}", archive.State.PrimaryKeyString);
+                        return (ArchiveStatus.InValid, archive);
+                    }
                 }
             }
 
