@@ -26,6 +26,7 @@ using Wabbajack.Installer;
 using Wabbajack.Networking.WabbajackClientApi;
 using Wabbajack.Paths;
 using Wabbajack.Paths.IO;
+using Wabbajack.RateLimiter;
 using Wabbajack.Server.Lib.DTOs;
 using Wabbajack.Server.Lib.TokenProviders;
 
@@ -43,11 +44,12 @@ namespace Wabbajack.CLI.Verbs
         private readonly DTOSerializer _dtos;
         private readonly ParallelOptions _parallelOptions;
         private readonly IFtpSiteCredentials _ftpSiteCredentials;
+        private readonly IResource<IFtpSiteCredentials> _ftpRateLimiter;
 
         public ValidateLists(ILogger<ValidateLists> logger, Client wjClient, 
             Wabbajack.Networking.GitHub.Client gitHubClient, TemporaryFileManager temporaryFileManager,
             DownloadDispatcher dispatcher, DTOSerializer dtos, ParallelOptions parallelOptions,
-            IFtpSiteCredentials ftpSiteCredentials)
+            IFtpSiteCredentials ftpSiteCredentials, IResource<IFtpSiteCredentials> ftpRateLimiter)
         {
             _logger = logger;
             _wjClient = wjClient;
@@ -57,6 +59,7 @@ namespace Wabbajack.CLI.Verbs
             _dtos = dtos;
             _parallelOptions = parallelOptions;
             _ftpSiteCredentials = ftpSiteCredentials;
+            _ftpRateLimiter = ftpRateLimiter;
         }
         
         public Command MakeCommand()
@@ -253,10 +256,12 @@ namespace Wabbajack.CLI.Verbs
             if (!archiveManager.HaveArchive(archive.Hash)) return (ArchiveStatus.InValid, mirroredArchive);
 
             var srcPath = archiveManager.GetPath(archive.Hash);
+
             var definition = await _wjClient.GenerateFileDefinition(srcPath);
 
             using (var client = await GetMirrorFtpClient(token))
             {
+                using var job = await _ftpRateLimiter.Begin("Starting uploading mirrored file", 0, token);
                 await client.CreateDirectoryAsync($"{definition.Hash.ToHex()}", token);
                 await client.CreateDirectoryAsync($"{definition.Hash.ToHex()}/parts", token);
             }
@@ -269,7 +274,8 @@ namespace Wabbajack.CLI.Verbs
             await definition.Parts.PDo(_parallelOptions, async part =>
             {
                 _logger.LogInformation("Uploading mirror part of {name} {hash} ({index}/{length})", archive.Name, archive.Hash, part.Index, definition.Parts.Length);
-
+                using var job = await _ftpRateLimiter.Begin("Uploading mirror part", part.Size, token);
+                
                 var buffer = new byte[part.Size];
                 await using (var fs = srcPath.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
@@ -277,11 +283,13 @@ namespace Wabbajack.CLI.Verbs
                     await fs.ReadAsync(buffer, token);
                 }
                 
+                var tsk = job.Report((int)part.Size, token);
                 await CircuitBreaker.WithAutoRetryAllAsync(_logger, async () =>{
                     using var client = await GetMirrorFtpClient(token);
                     var name = MakePath(part.Index);
                     await client.UploadAsync(new MemoryStream(buffer), name, token: token);
                 });
+                await tsk;
 
             });
 
@@ -289,7 +297,7 @@ namespace Wabbajack.CLI.Verbs
             {
                 using var client = await GetMirrorFtpClient(token);
                 _logger.LogInformation($"Finishing mirror upload");
-
+                using var job = await _ftpRateLimiter.Begin("Finishing mirror upload", 0, token);
 
                 await using var ms = new MemoryStream();
                 await using (var gz = new GZipStream(ms, CompressionLevel.Optimal, true))
@@ -409,6 +417,7 @@ namespace Wabbajack.CLI.Verbs
         public async ValueTask<HashSet<Hash>> AllMirroredFiles(CancellationToken token)
         {
             using var client = await GetMirrorFtpClient(token);
+            using var job = await _ftpRateLimiter.Begin("Getting mirror list", 0, token);
             var files = await client.GetListingAsync(token);
             var parsed = files.TryKeep(f => (Hash.TryGetFromHex(f.Name, out var hash), hash)).ToHashSet();
             return parsed;
@@ -417,6 +426,7 @@ namespace Wabbajack.CLI.Verbs
         public async ValueTask<HashSet<(Hash, Hash)>> AllPatchFiles(CancellationToken token)
         {
             using var client = await GetPatchesFtpClient(token);
+            using var job = await _ftpRateLimiter.Begin("Getting patches list", 0, token);
             var files = await client.GetListingAsync(token);
             var parsed = files.TryKeep(f =>
             {
@@ -444,4 +454,5 @@ namespace Wabbajack.CLI.Verbs
             return client;
         }
     }
+
 }
